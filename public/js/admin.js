@@ -608,7 +608,7 @@ function renderNewInstJsonSection() {
       se guarda automáticamente en Supabase y los bloques se cargan en un solo paso.
     </p>
     <textarea id="ad-bulk-json" rows="7"
-      placeholder='Pegá aquí el JSON de Claude. Puede tener markdown (```json ... ```) — lo extrae automáticamente.&#10;&#10;Formato esperado: [ { "tab_index": 0, "block_order": 10, "block_type": "...", "data": {...} }, ... ]'
+      placeholder='Pegá aquí el JSON de Claude. Puede tener markdown (\`\`\`json ... \`\`\`) — lo extrae automáticamente.&#10;&#10;Formato esperado: [ { "tab_index": 0, "block_order": 10, "block_type": "...", "data": {...} }, ... ]'
       style="font-family:monospace;font-size:12px;width:100%;box-sizing:border-box;"></textarea>
     <div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
       <button class="admin-btn yellow" id="ad-bulk-load" style="font-size:14px;padding:10px 22px;">📥 Guardar instrumento y cargar bloques</button>
