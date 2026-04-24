@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NU Holdings (Nubank) — Análisis Completo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --nu-purple: #820AD1;
+    --nu-purple-light: #A855F7;
+    --nu-purple-dark: #5B0A91;
+    --nu-bg: #0F0B1A;
+    --nu-card: #1A1528;
+    --nu-card-border: #2D2640;
+    --nu-text: #E8E0F0;
+    --nu-text-muted: #9B8FB8;
+    --nu-green: #22C55E;
+    --nu-red: #EF4444;
+    --nu-yellow: #FACC15;
+    --nu-blue: #3B82F6;
+    --nu-cyan: #06B6D4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--nu-bg);
+    color: var(--nu-text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, var(--nu-purple-dark) 0%, var(--nu-purple) 50%, #2D1B69 100%);
+    padding: 48px 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(168,85,247,0.15) 0%, transparent 50%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+  .hero h1 {
+    font-size: 42px;
+    font-weight: 800;
+    position: relative;
+    letter-spacing: -1px;
+  }
+  .hero h1 span { color: var(--nu-yellow); }
+  .hero .subtitle {
+    font-size: 18px;
+    color: rgba(255,255,255,0.8);
+    margin-top: 8px;
+    position: relative;
+  }
+  .hero .price-bar {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 24px;
+    position: relative;
+    flex-wrap: wrap;
+  }
+  .price-item {
+    text-align: center;
+  }
+  .price-item .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.6);
+  }
+  .price-item .value {
+    font-size: 28px;
+    font-weight: 700;
+  }
+  .price-item .change {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .change.up { color: var(--nu-green); }
+  .change.down { color: var(--nu-red); }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+
+  /* Tab navigation */
+  .tab-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--nu-card);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 32px;
+    overflow-x: auto;
+    border: 1px solid var(--nu-card-border);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    color: var(--nu-text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--nu-text); background: rgba(130,10,209,0.15); }
+  .tab-btn.active {
+    background: var(--nu-purple);
+    color: white;
+    box-shadow: 0 4px 15px rgba(130,10,209,0.4);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Section titles */
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .icon { font-size: 28px; }
+
+  /* Cards grid */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .metric-card {
+    background: var(--nu-card);
+    border: 1px solid var(--nu-card-border);
+    border-radius: 14px;
+    padding: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(130,10,209,0.2);
+  }
+  .metric-card .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--nu-text-muted);
+    margin-bottom: 6px;
+  }
+  .metric-card .value {
+    font-size: 26px;
+    font-weight: 700;
+  }
+  .metric-card .detail {
+    font-size: 13px;
+    color: var(--nu-text-muted);
+    margin-top: 4px;
+  }
+  .metric-card .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+  .badge.green { background: rgba(34,197,94,0.15); color: var(--nu-green); }
+  .badge.red { background: rgba(239,68,68,0.15); color: var(--nu-red); }
+  .badge.yellow { background: rgba(250,204,21,0.15); color: var(--nu-yellow); }
+  .badge.blue { background: rgba(59,130,246,0.15); color: var(--nu-blue); }
+
+  /* Chart containers */
+  .chart-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .chart-card {
+    background: var(--nu-card);
+    border: 1px solid var(--nu-card-border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .chart-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--nu-text);
+  }
+  .chart-card canvas {
+    max-height: 320px;
+  }
+
+  /* Thesis box */
+  .thesis-box {
+    background: linear-gradient(135deg, rgba(130,10,209,0.1), rgba(59,130,246,0.08));
+    border: 1px solid var(--nu-purple);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+  .thesis-box h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--nu-purple-light);
+    margin-bottom: 14px;
+  }
+  .thesis-box p {
+    color: var(--nu-text);
+    margin-bottom: 10px;
+    font-size: 15px;
+  }
+  .thesis-point {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .thesis-point .num {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--nu-purple);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  /* Risk section */
+  .risk-card {
+    background: var(--nu-card);
+    border: 1px solid var(--nu-card-border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .risk-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .risk-level {
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .risk-level.high { background: rgba(239,68,68,0.2); color: var(--nu-red); }
+  .risk-level.medium { background: rgba(250,204,21,0.2); color: var(--nu-yellow); }
+  .risk-level.low { background: rgba(34,197,94,0.2); color: var(--nu-green); }
+
+  /* Analyst target */
+  .target-bar {
+    background: var(--nu-card);
+    border: 1px solid var(--nu-card-border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .target-visual {
+    position: relative;
+    height: 60px;
+    background: linear-gradient(90deg, rgba(239,68,68,0.2), rgba(250,204,21,0.2), rgba(34,197,94,0.2));
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  .target-marker {
+    position: absolute;
+    top: -8px;
+    width: 3px;
+    height: 76px;
+    border-radius: 2px;
+  }
+  .target-label {
+    position: absolute;
+    top: -28px;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .target-val {
+    position: absolute;
+    bottom: -22px;
+    transform: translateX(-50%);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* Table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: rgba(130,10,209,0.15);
+    color: var(--nu-purple-light);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--nu-card-border);
+  }
+  .data-table tr:hover td {
+    background: rgba(130,10,209,0.05);
+  }
+
+  /* Comparative bar */
+  .comp-bar-container {
+    margin-bottom: 14px;
+  }
+  .comp-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .comp-bar-track {
+    height: 24px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .comp-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 1s ease;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--nu-text-muted);
+    font-size: 13px;
+    border-top: 1px solid var(--nu-card-border);
+    margin-top: 40px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 28px; }
+    .hero .price-bar { gap: 20px; }
+    .price-item .value { font-size: 22px; }
+    .chart-row { grid-template-columns: 1fr; }
+    .tab-btn { font-size: 12px; padding: 10px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>NU Holdings <span>(NYSE: NU)</span></h1>
+  <p class="subtitle">El neobank más grande del mundo — Análisis fundamental completo | Abril 2026</p>
+  <div class="price-bar">
+    <div class="price-item">
+      <div class="label">Precio actual</div>
+      <div class="value">$15.40</div>
+      <div class="change up">52W: $10.55 – $18.98</div>
+    </div>
+    <div class="price-item">
+      <div class="label">Market Cap</div>
+      <div class="value">$70.5B</div>
+    </div>
+    <div class="price-item">
+      <div class="label">P/E (TTM)</div>
+      <div class="value">22.9x</div>
+    </div>
+    <div class="price-item">
+      <div class="label">P/E Forward</div>
+      <div class="value">16.7x</div>
+      <div class="change up">2026E EPS: $0.92</div>
+    </div>
+    <div class="price-item">
+      <div class="label">Consenso</div>
+      <div class="value" style="color: var(--nu-green);">Strong Buy</div>
+      <div class="change">19 Buy · 2 Hold · 0 Sell</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- TABS -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('overview')">Resumen</button>
+    <button class="tab-btn" onclick="showTab('financials')">Financieros</button>
+    <button class="tab-btn" onclick="showTab('growth')">Crecimiento</button>
+    <button class="tab-btn" onclick="showTab('valuation')">Valuación</button>
+    <button class="tab-btn" onclick="showTab('risks')">Riesgos</button>
+    <button class="tab-btn" onclick="showTab('outlook')">Perspectivas</button>
+    <button class="tab-btn" onclick="showTab('model2028')" style="background: linear-gradient(90deg, rgba(250,204,21,0.15), rgba(34,197,94,0.15)); border: 1px solid rgba(250,204,21,0.3);">Modelo 2028</button>
+  </div>
+
+  <!-- ==================== OVERVIEW TAB ==================== -->
+  <div id="overview" class="tab-content active">
+
+    <div class="thesis-box">
+      <h3>Tesis de inversión</h3>
+      <p style="margin-bottom:18px;">Nubank es el banco digital más grande del mundo por número de clientes, y ha demostrado que la tesis de "servicios financieros más baratos y accesibles en LatAm" era correcta. En una década pasó de 0 a 131 millones de clientes, con una eficiencia operativa inalcanzable para la banca tradicional.</p>
+      <div class="thesis-point">
+        <div class="num">1</div>
+        <div><strong>Escala masiva + bajo costo:</strong> Con un costo de $0.80/cliente/mes y un efficiency ratio de 28.3% (vs 40-50% en banca tradicional), Nubank monetiza su base con márgenes superiores a medida que madura la cartera.</div>
+      </div>
+      <div class="thesis-point">
+        <div class="num">2</div>
+        <div><strong>Expansión multi-país:</strong> México (14M clientes, 14% adultos) y Colombia (4M, 10% adultos) están en fases tempranas de monetización, replicando el playbook brasileño con enorme TAM.</div>
+      </div>
+      <div class="thesis-point">
+        <div class="num">3</div>
+        <div><strong>ARPAC en ascenso:</strong> El ingreso por cliente activo creció 27% YoY a $15/mes, con múltiples productos aún por cross-sell (seguros, inversiones, crypto, préstamos personales).</div>
+      </div>
+      <div class="thesis-point">
+        <div class="num">4</div>
+        <div><strong>Rentabilidad probada:</strong> ROE de 33%, net income de $2.9B en 2025 (+45% YoY). Ya no es una historia de "algún día será rentable" — la rentabilidad es presente y creciente.</div>
+      </div>
+    </div>
+
+    <div class="section-title"><span class="icon">📊</span> Métricas clave — FY 2025</div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="label">Revenue</div>
+        <div class="value">$15.8B</div>
+        <div class="detail">+37% YoY (vs $11.5B en 2024)</div>
+        <span class="badge green">↑ 37%</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">Net Income</div>
+        <div class="value">$2.9B</div>
+        <div class="detail">+45% YoY (vs $2.0B en 2024)</div>
+        <span class="badge green">↑ 45%</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">Clientes globales</div>
+        <div class="value">131M</div>
+        <div class="detail">+17M en 2025 (+15% YoY)</div>
+        <span class="badge green">↑ 15%</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">ARPAC mensual</div>
+        <div class="value">$15.0</div>
+        <div class="detail">+27% YoY (desde $11.1)</div>
+        <span class="badge green">↑ 27%</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">ROE (Q4'25)</div>
+        <div class="value">33%</div>
+        <div class="detail">All-time high trimestral</div>
+        <span class="badge blue">Record</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">Depósitos totales</div>
+        <div class="value">$41.9B</div>
+        <div class="detail">+29% YoY</div>
+        <span class="badge green">↑ 29%</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">Cartera de crédito</div>
+        <div class="value">$32.7B</div>
+        <div class="detail">+40% YoY, +11% QoQ</div>
+        <span class="badge green">↑ 40%</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">Costo por cliente</div>
+        <div class="value">$0.80</div>
+        <div class="detail">/mes — Efficiency ratio 28.3%</div>
+        <span class="badge blue">Best-in-class</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FINANCIALS TAB ==================== -->
+  <div id="financials" class="tab-content">
+    <div class="section-title"><span class="icon">💰</span> Evolución financiera</div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Revenue trimestral (USD B)</h3>
+        <canvas id="revenueChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Net Income trimestral (USD M)</h3>
+        <canvas id="netIncomeChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Revenue anual & crecimiento YoY</h3>
+        <canvas id="annualRevenueChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Composición del Balance — FY2025</h3>
+        <canvas id="balanceChart"></canvas>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top: 20px;"><span class="icon">📋</span> Resumen financiero</div>
+    <div class="chart-card" style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Métrica</th>
+            <th>FY 2023</th>
+            <th>FY 2024</th>
+            <th>FY 2025</th>
+            <th>YoY 24→25</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Revenue</td><td>$7.7B</td><td>$11.5B</td><td>$15.8B</td><td style="color:var(--nu-green)">+37%</td></tr>
+          <tr><td>Net Income</td><td>$1.0B</td><td>$2.0B</td><td>$2.9B</td><td style="color:var(--nu-green)">+45%</td></tr>
+          <tr><td>Clientes</td><td>93M</td><td>114M</td><td>131M</td><td style="color:var(--nu-green)">+15%</td></tr>
+          <tr><td>ARPAC</td><td>$9.3</td><td>$11.1</td><td>$15.0</td><td style="color:var(--nu-green)">+35%</td></tr>
+          <tr><td>Depósitos</td><td>$20.6B</td><td>$32.5B</td><td>$41.9B</td><td style="color:var(--nu-green)">+29%</td></tr>
+          <tr><td>Cartera de crédito</td><td>$16.0B</td><td>$23.4B</td><td>$32.7B</td><td style="color:var(--nu-green)">+40%</td></tr>
+          <tr><td>Total Assets</td><td>$37B</td><td>$51B</td><td>$68.4B</td><td style="color:var(--nu-green)">+34%</td></tr>
+          <tr><td>Efficiency Ratio</td><td>~34%</td><td>~30%</td><td>28.3%</td><td style="color:var(--nu-green)">Mejora</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== GROWTH TAB ==================== -->
+  <div id="growth" class="tab-content">
+    <div class="section-title"><span class="icon">🚀</span> Motor de crecimiento</div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Clientes por país (Millones) — Dic 2025</h3>
+        <canvas id="customersCountryChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Penetración de población adulta</h3>
+        <canvas id="penetrationChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Evolución de clientes totales (M)</h3>
+        <canvas id="customerGrowthChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>ARPAC mensual (USD) — evolución</h3>
+        <canvas id="arpacChart"></canvas>
+      </div>
+    </div>
+
+    <div class="thesis-box" style="background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(34,197,94,0.08)); border-color: var(--nu-cyan);">
+      <h3 style="color: var(--nu-cyan);">Oportunidad en México y Colombia</h3>
+      <p><strong>México:</strong> ~14M clientes = 14% de la población adulta. Es el líder en emisión de nuevas tarjetas de crédito. Depósitos crecieron 52% YoY en 2025. La oportunidad es gigante: México tiene ~100M de adultos, muchos sub-bancarizados.</p>
+      <p><strong>Colombia:</strong> ~4M clientes = 10% adultos. Depósitos explotaron +841% YoY (desde base chica). Fase muy temprana de monetización. Nubank ya está expandiendo la cartera de crédito agresivamente.</p>
+      <p style="margin-top:12px; color: var(--nu-cyan);"><strong>Clave:</strong> Si México y Colombia replican el ARPAC de Brasil ($15→$20+ potencial), el upside de revenue es masivo sin necesidad de adquirir un solo cliente nuevo en Brasil.</p>
+    </div>
+  </div>
+
+  <!-- ==================== VALUATION TAB ==================== -->
+  <div id="valuation" class="tab-content">
+    <div class="section-title"><span class="icon">🎯</span> Valuación & comparables</div>
+
+    <!-- Analyst target bar -->
+    <div class="target-bar">
+      <h3 style="margin-bottom: 8px;">Price Target de analistas (21 analistas)</h3>
+      <div class="target-visual">
+        <!-- Low -->
+        <div class="target-marker" style="left: 0%; background: var(--nu-red);">
+          <div class="target-label" style="color: var(--nu-red);">Low</div>
+          <div class="target-val" style="color: var(--nu-red);">$15.30</div>
+        </div>
+        <!-- Current price -->
+        <div class="target-marker" style="left: 1.5%; background: white; width: 4px;">
+          <div class="target-label" style="color: white;">Actual</div>
+          <div class="target-val" style="color: white;">$15.40</div>
+        </div>
+        <!-- Average -->
+        <div class="target-marker" style="left: 69%; background: var(--nu-yellow);">
+          <div class="target-label" style="color: var(--nu-yellow);">Promedio</div>
+          <div class="target-val" style="color: var(--nu-yellow);">$19.97</div>
+        </div>
+        <!-- High -->
+        <div class="target-marker" style="left: 100%; background: var(--nu-green);">
+          <div class="target-label" style="color: var(--nu-green);">High</div>
+          <div class="target-val" style="color: var(--nu-green);">$22.00</div>
+        </div>
+      </div>
+      <p style="text-align:center; color: var(--nu-green); font-weight: 600; margin-top: 32px; font-size: 18px;">
+        Upside potencial al target promedio: +29.7%
+      </p>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="label">P/E TTM</div>
+        <div class="value">22.9x</div>
+        <div class="detail">vs Banks promedio 11.2x</div>
+        <span class="badge yellow">Premium</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">P/E Forward 2026E</div>
+        <div class="value">16.7x</div>
+        <div class="detail">EPS est. $0.92</div>
+        <span class="badge green">Atractivo</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">P/B Ratio</div>
+        <div class="value">6.43x</div>
+        <div class="detail">vs Banks mediana 1.06x</div>
+        <span class="badge yellow">Premium</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">EV/Revenue</div>
+        <div class="value">~4.5x</div>
+        <div class="detail">En línea con fintech growth</div>
+        <span class="badge blue">Razonable</span>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Comparación P/E — NU vs Peers</h3>
+        <canvas id="peCompChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>ROE vs P/B — NU vs Sector</h3>
+        <canvas id="roePbChart"></canvas>
+      </div>
+    </div>
+
+    <div class="thesis-box" style="background: linear-gradient(135deg, rgba(250,204,21,0.08), rgba(59,130,246,0.08)); border-color: var(--nu-yellow);">
+      <h3 style="color: var(--nu-yellow);">¿Está cara o barata?</h3>
+      <p>A primera vista, NU parece cara vs bancos tradicionales (P/E 22.9x vs 11.2x industria). Pero el Forward P/E de 16.7x con un crecimiento de earnings del ~30-40% anual implica un <strong>PEG ratio < 0.5</strong>, que es atractivo para un growth story.</p>
+      <p>El P/B de 6.4x se justifica por el ROE de 33% — pocas empresas financieras logran esa rentabilidad con la escala de Nubank. Si pensás en NU como una tech company con licencia bancaria, la valuación empieza a lucir razonable.</p>
+    </div>
+  </div>
+
+  <!-- ==================== RISKS TAB ==================== -->
+  <div id="risks" class="tab-content">
+    <div class="section-title"><span class="icon">⚠️</span> Factores de riesgo</div>
+
+    <div class="risk-card">
+      <div class="risk-header">
+        <span class="risk-level high">Alto</span>
+        <strong>Riesgo cambiario (FX)</strong>
+      </div>
+      <p style="color: var(--nu-text-muted); font-size: 14px;">~85% de los ingresos provienen de Brasil en BRL. Una depreciación del real impacta directamente el revenue y earnings reportados en USD. El BRL ha sido volátil históricamente, y este es quizás el riesgo más significativo para inversores en USD. La depreciación del BRL explicó ~45% de la compresión de NIM en trimestres recientes.</p>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-header">
+        <span class="risk-level medium">Medio</span>
+        <strong>Compresión de NIM (Margen de Interés Neto)</strong>
+      </div>
+      <p style="color: var(--nu-text-muted); font-size: 14px;">El risk-adjusted NIM bajó a 8.2% antes de recuperarse a 9.2% en Q2'25. La expansión agresiva en México/Colombia con pricing competitivo de depósitos puede presionar márgenes en el corto plazo. Sin embargo, a medida que la cartera madura, los márgenes deberían mejorar como ocurrió en Brasil.</p>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-header">
+        <span class="risk-level medium">Medio</span>
+        <strong>Calidad crediticia / Morosidad</strong>
+      </div>
+      <p style="color: var(--nu-text-muted); font-size: 14px;">NPL 15-90 días: 4.7% (subió 60bps pero dentro de lo estacional). NPL 90+: 6.5% (bajó 50bps, buena señal). Nubank opera en segmentos de consumo masivo donde la morosidad es estructuralmente más alta, pero su underwriting basado en data science ha demostrado resiliencia.</p>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-header">
+        <span class="risk-level medium">Medio</span>
+        <strong>Riesgo macro Brasil</strong>
+      </div>
+      <p style="color: var(--nu-text-muted); font-size: 14px;">Brasil es el mercado core. Una recesión significativa podría aumentar defaults, reducir gasto del consumidor y comprimir la originación de crédito. La Selic alta presiona el costo de fondeo, aunque Nubank fondea a 87% de la tasa interbancaria (ventaja competitiva).</p>
+    </div>
+
+    <div class="risk-card">
+      <div class="risk-header">
+        <span class="risk-level low">Bajo</span>
+        <strong>Competencia</strong>
+      </div>
+      <p style="color: var(--nu-text-muted); font-size: 14px;">Mercado Pago, Itaú, Inter, PicPay compiten en Brasil. Sin embargo, Nubank tiene escala, brand recognition y un costo operativo que es difícil de replicar. En México, la competencia fintech es menor y Nu ya es líder en nuevas tarjetas de crédito.</p>
+    </div>
+
+    <div class="chart-row" style="margin-top: 24px;">
+      <div class="chart-card">
+        <h3>NPL Rates — Evolución</h3>
+        <canvas id="nplChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Risk-Adjusted NIM — Evolución</h3>
+        <canvas id="nimChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== OUTLOOK TAB ==================== -->
+  <div id="outlook" class="tab-content">
+    <div class="section-title"><span class="icon">🔮</span> Perspectivas & proyecciones</div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="label">EPS Estimado 2026</div>
+        <div class="value">$0.92</div>
+        <div class="detail">Rango: $0.84 – $1.04</div>
+        <span class="badge green">+35-55% YoY</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">Revenue Est. 2026</div>
+        <div class="value">~$20-21B</div>
+        <div class="detail">~30% crecimiento implícito</div>
+        <span class="badge green">↑ 30%</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">Target promedio</div>
+        <div class="value">$19.97</div>
+        <div class="detail">+29.7% upside desde $15.40</div>
+        <span class="badge green">Strong Buy</span>
+      </div>
+      <div class="metric-card">
+        <div class="label">Próximo earnings</div>
+        <div class="value">14 Mayo</div>
+        <div class="detail">Q1 2026 results</div>
+        <span class="badge yellow">En 27 días</span>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Proyección de Revenue (USD B)</h3>
+        <canvas id="revProjectionChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Proyección de clientes (M)</h3>
+        <canvas id="custProjectionChart"></canvas>
+      </div>
+    </div>
+
+    <div class="thesis-box" style="background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(6,182,212,0.08)); border-color: var(--nu-green);">
+      <h3 style="color: var(--nu-green);">Bull case vs Bear case</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
+        <div>
+          <p style="color: var(--nu-green); font-weight: 700; margin-bottom: 8px;">🟢 Bull Case → $22+</p>
+          <p style="font-size: 14px;">México y Colombia aceleran monetización. ARPAC sube a $18+. Eficiencia operativa sigue mejorando. Revenue crece 30%+ sostenido. Nuevos productos (seguros, inversiones, crypto) incrementan cross-sell. NIM se estabiliza/expande.</p>
+        </div>
+        <div>
+          <p style="color: var(--nu-red); font-weight: 700; margin-bottom: 8px;">🔴 Bear Case → $10-12</p>
+          <p style="font-size: 14px;">Depreciación fuerte del BRL. Recesión en Brasil aumenta defaults. NIM sigue comprimiéndose. México no logra scale economics. Regulación restrictiva. Competencia intensificada de incumbents digitalizados.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top: 20px;">
+      <h3>Escenarios de valuación — 2026E</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Escenario</th><th>P/E asumido</th><th>EPS 2026E</th><th>Fair Value</th><th>Upside/Downside</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Bear</td>
+            <td>14x</td>
+            <td>$0.84</td>
+            <td style="color:var(--nu-red)">$11.76</td>
+            <td style="color:var(--nu-red)">-23.6%</td>
+          </tr>
+          <tr>
+            <td>Base</td>
+            <td>20x</td>
+            <td>$0.92</td>
+            <td style="color:var(--nu-yellow)">$18.40</td>
+            <td style="color:var(--nu-green)">+19.5%</td>
+          </tr>
+          <tr>
+            <td>Bull</td>
+            <td>25x</td>
+            <td>$1.04</td>
+            <td style="color:var(--nu-green)">$26.00</td>
+            <td style="color:var(--nu-green)">+68.8%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== MODEL 2028 TAB ==================== -->
+  <div id="model2028" class="tab-content">
+    <div class="section-title"><span class="icon">🧮</span> Modelo de valuación 2028 — Tesis @FacundoArg28</div>
+
+    <!-- Source callout -->
+    <div class="thesis-box" style="background: linear-gradient(135deg, rgba(250,204,21,0.12), rgba(130,10,209,0.08)); border-color: var(--nu-yellow); margin-bottom: 28px;">
+      <h3 style="color: var(--nu-yellow);">La tesis: "Siendo conservador, me da que duplica"</h3>
+      <p>Este modelo toma supuestos deliberadamente conservadores para proyectar a 2028. No incluye expansión a EE.UU. ni nuevos mercados, y asume un ARPAC de $21 (vs $30+ que generan cohortes maduras de 8 años). La conclusión: incluso siendo conservador, el fair value implícito es ~$140B vs $70B actuales.</p>
+    </div>
+
+    <!-- Assumptions -->
+    <div class="section-title"><span class="icon">📐</span> Supuestos de crecimiento por país</div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Clientes proyectados 2028 vs hoy (M)</h3>
+        <canvas id="model2028CustomersChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Penetración adulta: Actual vs 2028E</h3>
+        <canvas id="model2028PenChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card" style="overflow-x:auto; margin-bottom: 24px;">
+      <h3>Supuestos detallados — Clientes 2028</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>País</th><th>Pob. adulta</th><th>Clientes hoy</th><th>% hoy</th><th>Target 2028</th><th>Clientes 2028E</th><th>Crec. necesario/año</th><th>Crec. actual/año</th><th>Factible?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Brasil</strong></td><td>~182M</td><td>113M</td><td>62%</td><td style="color:var(--nu-purple-light)">70%</td><td><strong>127M</strong></td><td>~4.8M</td><td>~11M</td>
+            <td><span class="badge green">Conservador</span></td>
+          </tr>
+          <tr>
+            <td><strong>México</strong></td><td>~95M</td><td>14M</td><td>14%</td><td style="color:var(--nu-cyan)">30%</td><td><strong>28M</strong></td><td>~4.6M</td><td>~4M</td>
+            <td><span class="badge green">Alcanzable</span></td>
+          </tr>
+          <tr>
+            <td><strong>Colombia</strong></td><td>~40M</td><td>4M</td><td>10%</td><td style="color:var(--nu-green)">25%</td><td><strong>10M</strong></td><td>~2M</td><td>~1.7M</td>
+            <td><span class="badge green">Alcanzable</span></td>
+          </tr>
+          <tr style="background: rgba(130,10,209,0.08);">
+            <td><strong>TOTAL</strong></td><td></td><td><strong>131M</strong></td><td></td><td></td><td style="font-size:18px; color:var(--nu-purple-light);"><strong>165M</strong></td><td></td><td></td>
+            <td><span class="badge blue">+26% en 3 años</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- The key insight: ARPAC by cohort -->
+    <div class="section-title"><span class="icon">💎</span> El dato clave: ARPAC por cohorte (fuente: Nubank IR Q4'25)</div>
+    <div class="chart-row">
+      <div class="chart-card" style="flex: 2;">
+        <h3>ARPAC mensual por antigüedad del cliente (USD) — El "moat" de Nubank</h3>
+        <canvas id="arpacCohortChart"></canvas>
+        <p style="color: var(--nu-text-muted); font-size: 13px; margin-top: 12px; text-align: center;">
+          Un cliente de 8 años genera $30.2/mes → <strong>$362/año</strong>. El modelo usa apenas $21/mes ($252/año) — muy conservador.
+        </p>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>ARPAC trimestral real (USD) — de la presentación oficial</h3>
+        <canvas id="arpacQuarterlyRealChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Cost to Serve por cliente activo (USD/mes)</h3>
+        <canvas id="costToServeChart"></canvas>
+      </div>
+    </div>
+
+    <!-- The math -->
+    <div class="section-title"><span class="icon">🔢</span> El cálculo: de clientes a fair value</div>
+
+    <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+      <div class="metric-card" style="border-color: var(--nu-purple);">
+        <div class="label">Clientes 2028E</div>
+        <div class="value" style="color: var(--nu-purple-light);">165M</div>
+        <div class="detail">Tasa actividad 83%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label" style="font-size: 24px; margin-top: 10px;">→</div>
+      </div>
+      <div class="metric-card" style="border-color: var(--nu-cyan);">
+        <div class="label">Clientes activos</div>
+        <div class="value" style="color: var(--nu-cyan);">137M</div>
+        <div class="detail">165M × 83%</div>
+      </div>
+      <div class="metric-card">
+        <div class="label" style="font-size: 24px; margin-top: 10px;">×</div>
+      </div>
+      <div class="metric-card" style="border-color: var(--nu-yellow);">
+        <div class="label">ARPAC anual</div>
+        <div class="value" style="color: var(--nu-yellow);">$252</div>
+        <div class="detail">$21/mes × 12</div>
+        <span class="badge yellow">Conservador</span>
+      </div>
+      <div class="metric-card">
+        <div class="label" style="font-size: 24px; margin-top: 10px;">=</div>
+      </div>
+      <div class="metric-card" style="border-color: var(--nu-green); background: rgba(34,197,94,0.05);">
+        <div class="label">Revenue 2028E</div>
+        <div class="value" style="color: var(--nu-green);">$34.5B</div>
+        <div class="detail">137M × $252</div>
+        <span class="badge green">+118% vs 2025</span>
+      </div>
+    </div>
+
+    <div class="chart-row" style="margin-top: 16px;">
+      <div class="chart-card">
+        <h3>Waterfall: del revenue al fair value</h3>
+        <canvas id="waterfallChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Revenue actual vs modelo 2028</h3>
+        <canvas id="revenuePathChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card" style="overflow-x:auto; margin-bottom: 24px;">
+      <h3>Del revenue al market cap — paso a paso</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Paso</th><th>Concepto</th><th>Valor</th><th>Nota</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Clientes activos 2028E</td><td><strong>137M</strong></td><td>165M totales × 83% actividad (Nubank ya logra esto)</td></tr>
+          <tr><td>2</td><td>ARPAC mensual asumido</td><td><strong>$21</strong></td><td>+40% en 3 años (conservador: creció 35% solo en 2025)</td></tr>
+          <tr><td>3</td><td>Revenue anual implícito</td><td><strong>$34.5B</strong></td><td>137M × $21 × 12 meses</td></tr>
+          <tr><td>4</td><td>Margen neto asumido</td><td><strong>20%</strong></td><td>Conservador — actual ~18%, mejorando con escala</td></tr>
+          <tr><td>5</td><td>Net Income 2028E</td><td style="color:var(--nu-green);"><strong>$6.9B</strong></td><td>$34.5B × 20%</td></tr>
+          <tr><td>6</td><td>P/E asumido</td><td><strong>20x</strong></td><td>Conservador para growth compounder (hoy 22.9x)</td></tr>
+          <tr><td>7</td><td style="color:var(--nu-yellow);"><strong>Fair Value Market Cap</strong></td><td style="font-size:20px; color:var(--nu-yellow);"><strong>$140B</strong></td><td>$6.9B × 20x</td></tr>
+          <tr style="background: rgba(34,197,94,0.08);">
+            <td>→</td><td style="color:var(--nu-green);"><strong>Upside vs Market Cap actual ($70B)</strong></td><td style="font-size:20px; color:var(--nu-green);"><strong>+100%</strong></td><td>~$29/acción (vs $15.40 hoy)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Sensitivity analysis -->
+    <div class="section-title"><span class="icon">🎛️</span> Análisis de sensibilidad</div>
+    <div class="chart-card" style="overflow-x:auto; margin-bottom: 24px;">
+      <h3>Market Cap implícito (USD B) según ARPAC y P/E</h3>
+      <p style="color: var(--nu-text-muted); font-size: 13px; margin-bottom: 12px;">Base: 137M clientes activos, 20% margen neto. Valores en <span style="color:var(--nu-green);">verde</span> = upside > 50% vs $70B actual.</p>
+      <table class="data-table" style="text-align: center;">
+        <thead>
+          <tr><th>ARPAC ↓ / P/E →</th><th>15x</th><th>18x</th><th style="background: rgba(250,204,21,0.15);">20x</th><th>22x</th><th>25x</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>$18/mes</strong></td>
+            <td>$89B</td><td>$107B</td><td style="background: rgba(250,204,21,0.05);">$119B</td><td>$130B</td><td style="color:var(--nu-green);">$148B</td>
+          </tr>
+          <tr>
+            <td><strong>$21/mes</strong></td>
+            <td>$104B</td><td style="color:var(--nu-green);">$124B</td><td style="background: rgba(250,204,21,0.05); color:var(--nu-yellow); font-weight:700;">$138B</td><td style="color:var(--nu-green);">$152B</td><td style="color:var(--nu-green);">$173B</td>
+          </tr>
+          <tr>
+            <td><strong>$25/mes</strong></td>
+            <td style="color:var(--nu-green);">$123B</td><td style="color:var(--nu-green);">$148B</td><td style="background: rgba(250,204,21,0.05); color:var(--nu-green);">$164B</td><td style="color:var(--nu-green);">$181B</td><td style="color:var(--nu-green);">$205B</td>
+          </tr>
+          <tr>
+            <td><strong>$30/mes</strong> <span class="badge blue" style="font-size:10px;">cohorte 96m</span></td>
+            <td style="color:var(--nu-green);">$148B</td><td style="color:var(--nu-green);">$177B</td><td style="background: rgba(250,204,21,0.05); color:var(--nu-green);">$197B</td><td style="color:var(--nu-green);">$217B</td><td style="color:var(--nu-green);">$247B</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="color: var(--nu-text-muted); font-size: 12px; margin-top: 10px; text-align: center;">
+        Nota: $30/mes es el ARPAC real de cohortes de 8 años según Nubank IR. Si la base madura, el upside es aún mayor.
+      </p>
+    </div>
+
+    <!-- Key takeaway -->
+    <div class="thesis-box" style="background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(250,204,21,0.1)); border-color: var(--nu-green); border-width: 2px;">
+      <h3 style="color: var(--nu-green); font-size: 22px;">Conclusión del modelo</h3>
+      <p style="font-size: 16px; line-height: 1.7;">Con supuestos conservadores (ARPAC $21, margen 20%, P/E 20x), el fair value a 2028 es <strong style="color: var(--nu-yellow); font-size: 20px;">~$140B</strong> — el doble del market cap actual. Esto sin considerar:</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px;">
+        <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+          <p style="color: var(--nu-purple-light); font-weight: 700;">Potencial expansión a EE.UU.</p>
+          <p style="font-size: 13px; color: var(--nu-text-muted);">Un mercado de 260M de adultos donde Nubank aún no opera.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+          <p style="color: var(--nu-cyan); font-weight: 700;">ARPAC maduro de $30+/mes</p>
+          <p style="font-size: 13px; color: var(--nu-text-muted);">Las cohortes de 8 años ya generan $30.2/mes. A medida que la base envejece, el ARPAC promedio sube naturalmente.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+          <p style="color: var(--nu-yellow); font-weight: 700;">Mejora de márgenes</p>
+          <p style="font-size: 13px; color: var(--nu-text-muted);">El efficiency ratio sigue mejorando (28.3% → sub-25% posible). Más escala = más leverage operativo.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+          <p style="color: var(--nu-green); font-weight: 700;">Nuevos productos</p>
+          <p style="font-size: 13px; color: var(--nu-text-muted);">Seguros, inversiones, crypto, marketplace. Cada producto nuevo incrementa ARPAC sin costo incremental significativo.</p>
+        </div>
+      </div>
+      <p style="margin-top: 20px; font-size: 14px; color: var(--nu-text-muted); font-style: italic;">Fuente: Tesis de @FacundoArg28 con datos de Nubank IR Q4'25. No constituye recomendación de inversión.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Análisis elaborado con datos públicos al 17 de abril de 2026. No constituye recomendación de inversión.<br>
+  Fuentes: Nubank IR, SEC Filings, Yahoo Finance, MarketBeat, TipRanks, Seeking Alpha, Investing.com
+</div>
+
+<script>
+// ============================================
+// TAB LOGIC
+// ============================================
+function showTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  event.target.classList.add('active');
+  // Trigger chart resize
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+}
+
+// ============================================
+// CHART DEFAULTS
+// ============================================
+Chart.defaults.color = '#9B8FB8';
+Chart.defaults.borderColor = 'rgba(45,38,64,0.6)';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+const purple = '#820AD1';
+const purpleLight = '#A855F7';
+const green = '#22C55E';
+const yellow = '#FACC15';
+const blue = '#3B82F6';
+const cyan = '#06B6D4';
+const red = '#EF4444';
+
+function gradient(ctx, c1, c2) {
+  const g = ctx.createLinearGradient(0, 0, 0, 300);
+  g.addColorStop(0, c1);
+  g.addColorStop(1, c2);
+  return g;
+}
+
+// ============================================
+// QUARTERLY REVENUE CHART
+// ============================================
+new Chart(document.getElementById('revenueChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+    datasets: [{
+      label: 'Revenue (USD B)',
+      data: [2.4, 2.8, 3.3, 3.0, 3.4, 3.8, 4.2, 4.9],
+      backgroundColor: [
+        'rgba(130,10,209,0.4)','rgba(130,10,209,0.45)','rgba(130,10,209,0.5)','rgba(130,10,209,0.55)',
+        'rgba(168,85,247,0.6)','rgba(168,85,247,0.65)','rgba(168,85,247,0.7)','rgba(168,85,247,0.85)'
+      ],
+      borderColor: purple,
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: v => '$'+v+'B' } }
+    }
+  }
+});
+
+// ============================================
+// NET INCOME CHART
+// ============================================
+new Chart(document.getElementById('netIncomeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+    datasets: [{
+      label: 'Net Income (USD M)',
+      data: [380, 480, 530, 610, 560, 650, 795, 895],
+      backgroundColor: [
+        'rgba(34,197,94,0.35)','rgba(34,197,94,0.4)','rgba(34,197,94,0.45)','rgba(34,197,94,0.5)',
+        'rgba(34,197,94,0.6)','rgba(34,197,94,0.65)','rgba(34,197,94,0.7)','rgba(34,197,94,0.85)'
+      ],
+      borderColor: green,
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: v => '$'+v+'M' } }
+    }
+  }
+});
+
+// ============================================
+// ANNUAL REVENUE + GROWTH
+// ============================================
+new Chart(document.getElementById('annualRevenueChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2021','2022','2023','2024','2025'],
+    datasets: [
+      {
+        label: 'Revenue (USD B)',
+        data: [1.7, 4.8, 7.7, 11.5, 15.8],
+        backgroundColor: 'rgba(130,10,209,0.6)',
+        borderColor: purple,
+        borderWidth: 1,
+        borderRadius: 6,
+        yAxisID: 'y',
+      },
+      {
+        label: 'Crecimiento YoY %',
+        data: [null, 182, 60, 49, 37],
+        type: 'line',
+        borderColor: yellow,
+        backgroundColor: 'rgba(250,204,21,0.1)',
+        borderWidth: 3,
+        pointRadius: 5,
+        pointBackgroundColor: yellow,
+        yAxisID: 'y1',
+        tension: 0.3,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: v => '$'+v+'B' } },
+      y1: { position: 'right', min: 0, max: 200, ticks: { callback: v => v+'%' }, grid: { display: false } }
+    }
+  }
+});
+
+// ============================================
+// BALANCE SHEET DONUT
+// ============================================
+new Chart(document.getElementById('balanceChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Depósitos', 'Cartera crédito (neta)', 'Otros activos', 'Equity'],
+    datasets: [{
+      data: [41.9, 19.0, 7.5, 10.6],
+      backgroundColor: [purple, green, blue, yellow],
+      borderWidth: 0,
+      hoverOffset: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '55%',
+    plugins: {
+      legend: { position: 'bottom' },
+      tooltip: { callbacks: { label: (c) => c.label + ': $' + c.raw + 'B' } }
+    }
+  }
+});
+
+// ============================================
+// CUSTOMERS BY COUNTRY
+// ============================================
+new Chart(document.getElementById('customersCountryChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Brasil', 'México', 'Colombia'],
+    datasets: [{
+      label: 'Clientes (M)',
+      data: [113, 14, 4],
+      backgroundColor: [purple, cyan, green],
+      borderRadius: 8,
+      barPercentage: 0.5,
+    }]
+  },
+  options: {
+    responsive: true,
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: { x: { ticks: { callback: v => v+'M' } } }
+  }
+});
+
+// ============================================
+// PENETRATION CHART
+// ============================================
+new Chart(document.getElementById('penetrationChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Brasil (62%)', 'México (14%)', 'Colombia (10%)'],
+    datasets: [
+      {
+        label: 'Penetrados',
+        data: [62, 14, 10],
+        backgroundColor: [purple, cyan, green],
+        borderRadius: 6,
+      },
+      {
+        label: 'Oportunidad restante',
+        data: [38, 86, 90],
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 6,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      x: { stacked: true, max: 100, ticks: { callback: v => v+'%' } },
+      y: { stacked: true }
+    },
+    indexAxis: 'y',
+    plugins: { legend: { position: 'top' } }
+  }
+});
+
+// ============================================
+// CUSTOMER GROWTH LINE
+// ============================================
+new Chart(document.getElementById('customerGrowthChart'), {
+  type: 'line',
+  data: {
+    labels: ['Q4\'21','Q2\'22','Q4\'22','Q2\'23','Q4\'23','Q2\'24','Q4\'24','Q2\'25','Q4\'25'],
+    datasets: [{
+      label: 'Clientes (M)',
+      data: [48, 59, 71, 80, 93, 100, 114, 122, 131],
+      borderColor: purple,
+      backgroundColor: 'rgba(130,10,209,0.1)',
+      borderWidth: 3,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 5,
+      pointBackgroundColor: purple,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: false, ticks: { callback: v => v+'M' } }
+    }
+  }
+});
+
+// ============================================
+// ARPAC TREND (corrected with official NU IR data)
+// ============================================
+new Chart(document.getElementById('arpacChart'), {
+  type: 'line',
+  data: {
+    labels: ['Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+    datasets: [{
+      label: 'ARPAC (USD/mes)',
+      data: [11.1, 11.1, 11.6, 12.5, 13.8, 15.0],
+      borderColor: cyan,
+      backgroundColor: 'rgba(6,182,212,0.1)',
+      borderWidth: 3,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 5,
+      pointBackgroundColor: cyan,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: false, ticks: { callback: v => '$'+v } }
+    }
+  }
+});
+
+// ============================================
+// P/E COMPARISON
+// ============================================
+new Chart(document.getElementById('peCompChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Nubank (NU)', 'SoFi (SOFI)', 'MercadoLibre (MELI)', 'Itaú (ITUB)', 'Bradesco (BBD)', 'Banks Avg'],
+    datasets: [{
+      label: 'P/E TTM',
+      data: [22.9, 28, 42, 8.5, 7.2, 11.2],
+      backgroundColor: [purple, blue, yellow, 'rgba(255,255,255,0.2)', 'rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => v+'x' } } }
+  }
+});
+
+// ============================================
+// ROE vs P/B SCATTER
+// ============================================
+new Chart(document.getElementById('roePbChart'), {
+  type: 'bubble',
+  data: {
+    datasets: [
+      { label: 'Nubank', data: [{ x: 33, y: 6.43, r: 18 }], backgroundColor: 'rgba(130,10,209,0.7)' },
+      { label: 'SoFi', data: [{ x: 8, y: 2.5, r: 10 }], backgroundColor: 'rgba(59,130,246,0.5)' },
+      { label: 'Itaú', data: [{ x: 20, y: 1.8, r: 14 }], backgroundColor: 'rgba(250,204,21,0.5)' },
+      { label: 'Bradesco', data: [{ x: 12, y: 1.1, r: 12 }], backgroundColor: 'rgba(255,255,255,0.3)' },
+      { label: 'Inter', data: [{ x: 15, y: 2.0, r: 8 }], backgroundColor: 'rgba(6,182,212,0.5)' },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { title: { display: true, text: 'ROE %' }, ticks: { callback: v => v+'%' } },
+      y: { title: { display: true, text: 'P/B Ratio' }, ticks: { callback: v => v+'x' } }
+    }
+  }
+});
+
+// ============================================
+// NPL CHART
+// ============================================
+new Chart(document.getElementById('nplChart'), {
+  type: 'line',
+  data: {
+    labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+    datasets: [
+      {
+        label: 'NPL 15-90 días',
+        data: [4.5, 4.4, 4.2, 4.1, 4.5, 4.4, 4.3, 4.7],
+        borderColor: yellow,
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 4,
+      },
+      {
+        label: 'NPL 90+',
+        data: [6.3, 6.5, 6.8, 7.0, 6.8, 6.7, 6.6, 6.5],
+        borderColor: red,
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: { y: { ticks: { callback: v => v+'%' } } }
+  }
+});
+
+// ============================================
+// NIM CHART
+// ============================================
+new Chart(document.getElementById('nimChart'), {
+  type: 'line',
+  data: {
+    labels: ['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+    datasets: [{
+      label: 'Risk-Adj NIM %',
+      data: [10.2, 10.5, 9.8, 9.0, 8.2, 9.2, 9.0, 8.8],
+      borderColor: purple,
+      backgroundColor: 'rgba(130,10,209,0.1)',
+      borderWidth: 3,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 5,
+      pointBackgroundColor: purple,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { ticks: { callback: v => v+'%' } } }
+  }
+});
+
+// ============================================
+// REVENUE PROJECTION
+// ============================================
+new Chart(document.getElementById('revProjectionChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2022','2023','2024','2025','2026E','2027E'],
+    datasets: [
+      {
+        label: 'Revenue real',
+        data: [4.8, 7.7, 11.5, 15.8, null, null],
+        backgroundColor: 'rgba(130,10,209,0.6)',
+        borderRadius: 6,
+      },
+      {
+        label: 'Revenue estimado',
+        data: [null, null, null, null, 20.5, 26.0],
+        backgroundColor: 'rgba(130,10,209,0.25)',
+        borderColor: purple,
+        borderWidth: 2,
+        borderDash: [5,5],
+        borderRadius: 6,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => '$'+v+'B' } } }
+  }
+});
+
+// ============================================
+// CUSTOMER PROJECTION
+// ============================================
+new Chart(document.getElementById('custProjectionChart'), {
+  type: 'line',
+  data: {
+    labels: ['2021','2022','2023','2024','2025','2026E','2027E'],
+    datasets: [{
+      label: 'Clientes (M)',
+      data: [48, 71, 93, 114, 131, 150, 170],
+      borderColor: cyan,
+      backgroundColor: 'rgba(6,182,212,0.1)',
+      borderWidth: 3,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 5,
+      pointBackgroundColor: cyan,
+      segment: {
+        borderDash: ctx => ctx.p1DataIndex >= 4 ? [6, 4] : undefined,
+      }
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { ticks: { callback: v => v+'M' } } }
+  }
+});
+
+// ============================================
+// MODEL 2028: CUSTOMERS COMPARISON
+// ============================================
+new Chart(document.getElementById('model2028CustomersChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Brasil', 'México', 'Colombia'],
+    datasets: [
+      {
+        label: 'Hoy (2025)',
+        data: [113, 14, 4],
+        backgroundColor: 'rgba(130,10,209,0.5)',
+        borderRadius: 6,
+      },
+      {
+        label: '2028E (modelo)',
+        data: [127, 28, 10],
+        backgroundColor: 'rgba(250,204,21,0.6)',
+        borderColor: yellow,
+        borderWidth: 1,
+        borderRadius: 6,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: { y: { ticks: { callback: v => v+'M' } } }
+  }
+});
+
+// ============================================
+// MODEL 2028: PENETRATION COMPARISON
+// ============================================
+new Chart(document.getElementById('model2028PenChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Brasil', 'México', 'Colombia'],
+    datasets: [
+      {
+        label: 'Penetración actual',
+        data: [62, 14, 10],
+        backgroundColor: 'rgba(130,10,209,0.4)',
+        borderRadius: 6,
+      },
+      {
+        label: 'Target 2028E',
+        data: [70, 30, 25],
+        backgroundColor: 'rgba(34,197,94,0.5)',
+        borderColor: green,
+        borderWidth: 1,
+        borderRadius: 6,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: { y: { max: 100, ticks: { callback: v => v+'%' } } }
+  }
+});
+
+// ============================================
+// ARPAC BY COHORT (from Nubank IR Q4'25 slide)
+// ============================================
+new Chart(document.getElementById('arpacCohortChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Mes 1', 'Mes 12', 'Mes 24', 'Mes 36', 'Mes 48', 'Mes 60', 'Mes 72', 'Mes 84', 'Mes 96'],
+    datasets: [{
+      label: 'ARPAC mensual (USD)',
+      data: [0.8, 4.8, 7.4, 9.8, 12.3, 14.8, 17.7, 24.7, 30.2],
+      backgroundColor: [
+        'rgba(130,10,209,0.25)',
+        'rgba(130,10,209,0.35)',
+        'rgba(130,10,209,0.42)',
+        'rgba(130,10,209,0.50)',
+        'rgba(130,10,209,0.58)',
+        'rgba(130,10,209,0.65)',
+        'rgba(168,85,247,0.72)',
+        'rgba(168,85,247,0.82)',
+        'rgba(168,85,247,0.95)',
+      ],
+      borderColor: purple,
+      borderWidth: 1,
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          afterLabel: function(c) {
+            if (c.dataIndex === 8) return '→ $362/año por cliente!';
+            return '→ $' + (c.raw * 12).toFixed(0) + '/año';
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { callback: v => '$'+v },
+      },
+      x: {
+        ticks: { font: { size: 11 } }
+      }
+    }
+  }
+});
+
+// ============================================
+// ARPAC QUARTERLY REAL (from NU IR slide)
+// ============================================
+new Chart(document.getElementById('arpacQuarterlyRealChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+    datasets: [{
+      label: 'ARPAC (USD/mes)',
+      data: [11.1, 11.1, 11.6, 12.5, 13.8, 15.0],
+      backgroundColor: [
+        'rgba(130,10,209,0.4)',
+        'rgba(130,10,209,0.45)',
+        'rgba(168,85,247,0.55)',
+        'rgba(168,85,247,0.6)',
+        'rgba(168,85,247,0.7)',
+        'rgba(168,85,247,0.85)',
+      ],
+      borderColor: purple,
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      annotation: {}
+    },
+    scales: {
+      y: { beginAtZero: false, min: 9, ticks: { callback: v => '$'+v } }
+    }
+  }
+});
+
+// ============================================
+// COST TO SERVE (from NU IR Q4'25 slide)
+// ============================================
+new Chart(document.getElementById('costToServeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+    datasets: [{
+      label: 'Cost to Serve (USD/mes)',
+      data: [0.7, 0.8, 0.7, 0.8, 0.9, 0.8],
+      backgroundColor: 'rgba(6,182,212,0.5)',
+      borderColor: cyan,
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, max: 1.5, ticks: { callback: v => '$'+v.toFixed(1) } }
+    }
+  }
+});
+
+// ============================================
+// WATERFALL: Revenue → Net Income → Market Cap
+// ============================================
+new Chart(document.getElementById('waterfallChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Revenue 2028E', 'Margen Neto 20%', 'Net Income', 'P/E 20x', 'Fair Value Mkt Cap'],
+    datasets: [{
+      label: 'USD Billions',
+      data: [34.5, -27.6, 6.9, null, 138],
+      backgroundColor: [
+        'rgba(130,10,209,0.7)',
+        'rgba(239,68,68,0.4)',
+        'rgba(34,197,94,0.6)',
+        'transparent',
+        'rgba(250,204,21,0.7)',
+      ],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(c) {
+            const labels = ['$34.5B revenue', '-$27.6B costos/taxes', '$6.9B net income', '×20 P/E múltiplo', '$138B fair value'];
+            return labels[c.dataIndex];
+          }
+        }
+      }
+    },
+    scales: {
+      y: { ticks: { callback: v => '$'+v+'B' } }
+    }
+  }
+});
+
+// ============================================
+// REVENUE PATH: Actual → 2028E
+// ============================================
+new Chart(document.getElementById('revenuePathChart'), {
+  type: 'line',
+  data: {
+    labels: ['2022','2023','2024','2025','2026E','2027E','2028E'],
+    datasets: [
+      {
+        label: 'Revenue real',
+        data: [4.8, 7.7, 11.5, 15.8, null, null, null],
+        borderColor: purple,
+        backgroundColor: 'rgba(130,10,209,0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 6,
+        pointBackgroundColor: purple,
+      },
+      {
+        label: 'Modelo conservador 2028',
+        data: [null, null, null, 15.8, 21, 27, 34.5],
+        borderColor: yellow,
+        backgroundColor: 'rgba(250,204,21,0.08)',
+        borderWidth: 3,
+        borderDash: [8, 4],
+        fill: true,
+        tension: 0.3,
+        pointRadius: 6,
+        pointBackgroundColor: yellow,
+      },
+      {
+        label: 'Market cap actual ($70B)',
+        data: [70/15, 70/15, 70/15, 70/15, 70/15, 70/15, 70/15],
+        borderColor: 'rgba(255,255,255,0.15)',
+        borderWidth: 1,
+        borderDash: [3, 3],
+        pointRadius: 0,
+        fill: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: v => '$'+v+'B' } }
+    }
+  }
+});
+</script>
+
+</body>
+</html>

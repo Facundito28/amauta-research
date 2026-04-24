@@ -1,0 +1,13 @@
+{
+  "name": "Amauta Research",
+  "short_name": "AMAVTA",
+  "description": "Research browser de Amauta Inversiones Financieras",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#231F20",
+  "theme_color": "#231F20",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

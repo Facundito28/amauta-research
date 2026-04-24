@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amauta Research | Inversiones Financieras</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --am-yellow: #F3CF11;
+  --am-bordo: #621044;
+  --am-black: #231F20;
+  --am-pure-black: #000000;
+  --am-white: #FFFFFF;
+  --am-gray: #666666;
+  --am-gray-light: #F1F1F1;
+  --am-gray-dark: #58585A;
+  --am-green: #27AE60;
+  --am-red: #C0392B;
+  --am-blue: #2980B9;
+  --sidebar-w: 280px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Fira Sans', Arial, sans-serif;
+  background: var(--am-gray-light);
+  color: var(--am-pure-black);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--am-black);
+  color: var(--am-white);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-header {
+  padding: 20px 18px 14px;
+  border-bottom: 2px solid var(--am-yellow);
+}
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.sidebar-logo .star {
+  color: var(--am-yellow);
+  font-size: 26px;
+  font-weight: 800;
+}
+.sidebar-logo h1 {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--am-yellow);
+}
+.sidebar-logo h1 span {
+  display: block;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  color: var(--am-gray);
+  text-transform: uppercase;
+}
+.sidebar-search {
+  margin-top: 12px;
+  position: relative;
+}
+.sidebar-search input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border: 1px solid #3a3537;
+  border-radius: 8px;
+  background: #1a1718;
+  color: var(--am-white);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border 0.2s;
+}
+.sidebar-search input:focus { border-color: var(--am-yellow); }
+.sidebar-search input::placeholder { color: var(--am-gray-dark); }
+.sidebar-search .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--am-gray-dark);
+  font-size: 14px;
+}
+
+/* Categories */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 0;
+}
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: #3a3537; border-radius: 4px; }
+
+.category {
+  margin-bottom: 4px;
+}
+.category-header {
+  padding: 8px 18px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--am-gray-dark);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.category-header:hover { color: var(--am-yellow); }
+.category-header .arrow { transition: transform 0.2s; font-size: 10px; }
+.category.open .arrow { transform: rotate(90deg); }
+
+.instrument-list { display: none; }
+.category.open .instrument-list { display: block; }
+
+.instrument-item {
+  padding: 10px 18px 10px 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.15s;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  border-left: 3px solid transparent;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.instrument-item:hover {
+  background: rgba(243,207,17,0.06);
+  color: var(--am-white);
+}
+.instrument-item.active {
+  background: rgba(243,207,17,0.1);
+  border-left-color: var(--am-yellow);
+  color: var(--am-yellow);
+  font-weight: 600;
+}
+.instrument-item .ticker {
+  font-weight: 700;
+  min-width: 48px;
+  color: inherit;
+}
+.instrument-item .inst-name {
+  flex: 1;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.instrument-item .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.ready { background: var(--am-green); }
+.status-dot.wip { background: var(--am-yellow); }
+.status-dot.empty { background: var(--am-gray-dark); }
+
+/* Sidebar footer */
+.sidebar-footer {
+  padding: 12px 18px;
+  border-top: 1px solid #3a3537;
+  font-size: 11px;
+  color: var(--am-gray-dark);
+}
+.admin-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 0;
+  color: var(--am-gray-dark);
+  transition: color 0.2s;
+}
+.admin-toggle:hover { color: var(--am-yellow); }
+.admin-toggle .lock-icon { font-size: 14px; }
+.admin-badge {
+  display: none;
+  padding: 2px 8px;
+  background: var(--am-yellow);
+  color: var(--am-black);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.admin-mode .admin-badge { display: inline; }
+
+/* ========== MAIN CONTENT ========== */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar */
+.topbar {
+  background: var(--am-white);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.topbar-ticker {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--am-bordo);
+}
+.topbar-name {
+  font-size: 15px;
+  color: var(--am-gray);
+  font-weight: 400;
+}
+.topbar-type {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.type-equity { background: rgba(41,128,185,0.12); color: var(--am-blue); }
+.type-renta-fija { background: rgba(98,16,68,0.1); color: var(--am-bordo); }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+}
+.topbar-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--am-pure-black);
+}
+.topbar-change {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.change-up { background: rgba(39,174,96,0.1); color: var(--am-green); }
+.change-down { background: rgba(192,57,43,0.1); color: var(--am-red); }
+.topbar-updated {
+  color: var(--am-gray-dark);
+  font-size: 11px;
+}
+
+/* TradingView widget */
+.tv-chart-container {
+  background: var(--am-white);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  height: 420px;
+}
+.tv-mini-container {
+  height: 46px;
+  overflow: hidden;
+  border-bottom: 1px solid #e0e0e0;
+}
+.tv-price-widget {
+  min-width: 320px;
+  height: 46px;
+  overflow: hidden;
+}
+
+/* Content area */
+.content-area {
+  flex: 1;
+  padding: 24px 28px;
+  overflow-y: auto;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--am-white);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  overflow-x: auto;
+}
+.tab-btn {
+  padding: 10px 18px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--am-gray);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--am-bordo); background: var(--am-gray-light); }
+.tab-btn.active {
+  background: var(--am-bordo);
+  color: var(--am-white);
+}
+
+/* Cards */
+.card {
+  background: var(--am-white);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--am-bordo);
+  margin-bottom: 14px;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--am-gray-light);
+  border-radius: 10px;
+  padding: 16px;
+  border-left: 4px solid var(--am-yellow);
+}
+.stat-card .stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--am-gray-dark);
+  margin-bottom: 4px;
+}
+.stat-card .stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--am-pure-black);
+}
+.stat-card .stat-detail {
+  font-size: 12px;
+  color: var(--am-gray);
+  margin-top: 2px;
+}
+.stat-card .stat-badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-green { background: rgba(39,174,96,0.12); color: var(--am-green); }
+.badge-red { background: rgba(192,57,43,0.12); color: var(--am-red); }
+.badge-yellow { background: rgba(243,207,17,0.2); color: #9a8300; }
+.badge-blue { background: rgba(41,128,185,0.12); color: var(--am-blue); }
+.badge-bordo { background: rgba(98,16,68,0.1); color: var(--am-bordo); }
+
+/* Chart containers */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.chart-card {
+  background: var(--am-white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.chart-card h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--am-bordo);
+  margin-bottom: 12px;
+}
+.chart-card canvas { max-height: 300px; }
+
+/* Thesis box */
+.thesis-box {
+  background: linear-gradient(135deg, rgba(98,16,68,0.04), rgba(243,207,17,0.06));
+  border: 1px solid rgba(98,16,68,0.15);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.thesis-box h3 { color: var(--am-bordo); margin-bottom: 12px; }
+.thesis-box p { font-size: 14px; line-height: 1.7; margin-bottom: 10px; }
+
+.thesis-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.thesis-point .num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--am-bordo);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+.thesis-point .tp-text { font-size: 14px; line-height: 1.6; }
+
+/* Risk cards */
+.risk-item {
+  background: var(--am-white);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--am-gray);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.risk-item.high { border-left-color: var(--am-red); }
+.risk-item.medium { border-left-color: var(--am-yellow); }
+.risk-item.low { border-left-color: var(--am-green); }
+.risk-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.risk-level-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.tag-high { background: rgba(192,57,43,0.1); color: var(--am-red); }
+.tag-medium { background: rgba(243,207,17,0.2); color: #9a8300; }
+.tag-low { background: rgba(39,174,96,0.1); color: var(--am-green); }
+
+/* Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--am-bordo);
+  color: var(--am-white);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.data-table th:first-child { border-radius: 8px 0 0 0; }
+.data-table th:last-child { border-radius: 0 8px 0 0; }
+.data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--am-gray-light);
+}
+.data-table tr:nth-child(even) td { background: #fafafa; }
+.data-table tr:hover td { background: rgba(243,207,17,0.06); }
+
+/* Sensitivity matrix */
+.matrix-highlight { background: rgba(243,207,17,0.15) !important; font-weight: 700; }
+
+/* Target bar */
+.target-visual {
+  position: relative;
+  height: 50px;
+  background: linear-gradient(90deg, rgba(192,57,43,0.1), rgba(243,207,17,0.1), rgba(39,174,96,0.1));
+  border-radius: 8px;
+  margin: 16px 0;
+}
+.target-marker {
+  position: absolute;
+  top: -6px;
+  width: 3px;
+  height: 62px;
+  border-radius: 2px;
+}
+.target-label-top {
+  position: absolute;
+  top: -22px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.target-label-bottom {
+  position: absolute;
+  bottom: -20px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Bull/Bear grid */
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 14px;
+}
+.scenario-box {
+  background: var(--am-gray-light);
+  border-radius: 10px;
+  padding: 18px;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: var(--am-gray);
+  text-align: center;
+}
+.empty-state .empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+.empty-state h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--am-gray-dark);
+  margin-bottom: 8px;
+}
+.empty-state p { font-size: 14px; max-width: 400px; }
+
+/* Welcome screen */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80vh;
+  text-align: center;
+}
+.welcome .welcome-logo {
+  font-size: 48px;
+  color: var(--am-yellow);
+  margin-bottom: 16px;
+}
+.welcome h2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--am-bordo);
+  margin-bottom: 8px;
+}
+.welcome p {
+  font-size: 15px;
+  color: var(--am-gray);
+  max-width: 500px;
+  line-height: 1.6;
+}
+.welcome .legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--am-gray-dark);
+}
+.welcome .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Admin modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--am-white);
+  border-radius: 14px;
+  padding: 32px;
+  width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--am-bordo);
+  margin-bottom: 16px;
+  text-align: center;
+}
+.modal input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 14px;
+  transition: border 0.2s;
+}
+.modal input:focus { border-color: var(--am-bordo); }
+.modal .modal-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--am-bordo);
+  color: var(--am-white);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.modal .modal-btn:hover { background: #7a1456; }
+.modal .modal-error {
+  color: var(--am-red);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+  display: none;
+}
+.modal .modal-cancel {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  color: var(--am-gray);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Disclaimer */
+.disclaimer {
+  background: #fafafa;
+  border-top: 1px solid #e0e0e0;
+  padding: 16px 28px;
+  font-size: 10px;
+  color: var(--am-gray);
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+/* Tab panel */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ========== MOBILE MENU ========== */
+.mobile-topbar {
+  display: none;
+  background: var(--am-black);
+  padding: 12px 18px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--am-yellow);
+  flex-shrink: 0;
+}
+.sidebar-close {
+  display: none;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: var(--am-white);
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 1001;
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  border-radius: 50%;
+  text-decoration: none;
+}
+
+/* ========== RESPONSIVE — TABLET ========== */
+@media (max-width: 1024px) {
+  .chart-grid { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .scenario-grid { grid-template-columns: 1fr; }
+}
+
+/* ========== RESPONSIVE — MOBILE ========== */
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+
+  /* Sidebar becomes full-screen overlay on mobile */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .sidebar-close { display: block; }
+  .mobile-topbar { display: flex !important; }
+
+  /* Sidebar elements full width when open */
+  .sidebar-header { padding: 20px 20px 14px; }
+  .sidebar-search { display: block; }
+  .sidebar-nav .inst-name { display: inline; }
+  .sidebar-footer span { display: inline; }
+  .category-header span { display: inline; }
+  .instrument-item { padding: 14px 20px 14px 30px; }
+  .instrument-item .ticker { min-width: 48px; font-size: 14px; }
+  .instrument-item .inst-name { font-size: 14px; }
+
+  /* Main content */
+  .main { height: 100vh; }
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px 16px;
+  }
+  .topbar-left { flex-wrap: wrap; gap: 8px; }
+  .topbar-ticker { font-size: 22px; }
+  .topbar-name { font-size: 13px; }
+  .topbar-right { width: 100%; justify-content: space-between; }
+  .topbar-price { font-size: 18px; }
+  .tv-price-widget { min-width: 200px; }
+
+  .content-area { padding: 16px 14px; }
+
+  /* Tabs scroll horizontally */
+  .tabs {
+    gap: 2px;
+    padding: 3px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 9px 14px; font-size: 12px; flex-shrink: 0; }
+
+  /* Cards and grids */
+  .card { padding: 16px; }
+  .card-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 12px; }
+  .stat-card .stat-value { font-size: 18px; }
+  .stat-card .stat-label { font-size: 10px; }
+
+  .chart-grid { grid-template-columns: 1fr; gap: 12px; }
+  .chart-card { padding: 14px; }
+  .chart-card h4 { font-size: 12px; }
+
+  /* Tables scroll */
+  .card { overflow-x: auto; }
+  .data-table { font-size: 12px; min-width: 500px; }
+  .data-table th, .data-table td { padding: 8px 10px; }
+
+  /* Thesis box */
+  .thesis-box { padding: 18px; }
+  .thesis-box h3 { font-size: 16px; }
+  .thesis-box p { font-size: 13px; }
+  .thesis-point .num { width: 24px; height: 24px; font-size: 12px; }
+  .thesis-point .tp-text { font-size: 13px; }
+
+  /* Risk items */
+  .risk-item { padding: 14px; }
+  .risk-item p { font-size: 12px; }
+
+  /* Target bar */
+  .target-visual { height: 40px; }
+  .target-label-top { font-size: 9px; top: -18px; }
+  .target-label-bottom { font-size: 10px; bottom: -18px; }
+
+  /* Welcome screen */
+  .welcome h2 { font-size: 20px; }
+  .welcome p { font-size: 13px; padding: 0 10px; }
+  .welcome .legend { flex-direction: column; gap: 8px; }
+
+  /* Disclaimer */
+  .disclaimer { padding: 12px 14px; font-size: 9px; }
+
+  /* Scenario grid */
+  .scenario-grid { grid-template-columns: 1fr; }
+
+  /* Empty state */
+  .empty-state { height: 50vh; }
+  .empty-state .empty-icon { font-size: 48px; }
+  .empty-state h2 { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== SIDEBAR ========== -->
+<div class="mobile-topbar" id="mobileTopbar">
+  <a href="javascript:void(0)" id="mobileMenuLink" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--am-yellow);">
+    <span style="font-size:22px;">☰</span>
+    <span style="font-weight:800;font-size:15px;letter-spacing:1px;">AMAVTA</span>
+  </a>
+  <span style="font-size:10px;color:var(--am-gray-dark);">Research</span>
+</div>
+<aside class="sidebar" id="sidebar">
+  <a href="javascript:void(0)" id="sidebarCloseLink" class="sidebar-close">✕</a>
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <span class="star">✦</span>
+      <h1>AMAVTA<span>Research Browser</span></h1>
+    </div>
+    <div class="sidebar-search">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar instrumento..." oninput="filterInstruments()">
+    </div>
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav">
+    <!-- Built dynamically from JS -->
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="admin-toggle" onclick="toggleAdmin()">
+      <span class="lock-icon">🔒</span>
+      <span>Panel Admin</span>
+      <span class="admin-badge">ADMIN</span>
+    </div>
+    <div style="margin-top:8px; font-size:10px;">CNV Mat. 1029 · amautainversiones.com</div>
+  </div>
+</aside>
+
+<!-- ========== MAIN ========== -->
+<div class="main" id="mainArea">
+  <!-- Top bar -->
+  <div class="topbar" id="topbar" style="display:none;"></div>
+
+  <!-- Content -->
+  <div class="content-area" id="contentArea">
+    <!-- Welcome screen (default) -->
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-logo">✦</div>
+      <h2>Amauta Research</h2>
+      <p>Seleccioná un instrumento del panel izquierdo para ver el análisis completo. Cada ficha incluye tesis de inversión, métricas financieras, gráficos y modelo de valuación.</p>
+      <div class="legend">
+        <div class="legend-item"><span class="status-dot ready" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--am-green);"></span> Análisis completo</div>
+        <div class="legend-item"><span class="status-dot wip" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--am-yellow);"></span> En desarrollo</div>
+        <div class="legend-item"><span class="status-dot empty" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--am-gray-dark);"></span> Pendiente</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    Este material es preparado por Amauta Inversiones Financieras (Matrícula CNV 1029) con fines informativos y no constituye una recomendación de inversión. La información proviene de fuentes consideradas confiables, sin garantizar su exactitud ni completitud. Las inversiones en mercados financieros implican riesgos, incluyendo la posible pérdida del capital invertido. Rentabilidades pasadas no garantizan resultados futuros.
+  </div>
+</div>
+
+<!-- ========== ADMIN MODAL ========== -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <h3>🔐 Acceso Admin</h3>
+    <input type="password" id="adminPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkAdmin()">
+    <button class="modal-btn" onclick="checkAdmin()">Ingresar</button>
+    <div class="modal-error" id="adminError">Contraseña incorrecta</div>
+    <span class="modal-cancel" onclick="closeAdminModal()">Cancelar</span>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// DATA STORE — All instruments live here
+// ================================================================
+const INSTRUMENTS = {
+  // ==================== EQUITY US ====================
+  "NU": {
+    ticker: "NU",
+    name: "Nu Holdings (Nubank)",
+    type: "equity",
+    category: "Equity US",
+    status: "ready",
+    tvSymbol: "NYSE:NU",
+    price: "Live ↓",
+    change: "+29.7% al target",
+    changeDir: "up",
+    updated: "Real-time (15m delay)",
+    topMetrics: { marketCap: "$70.5B", pe: "22.9x", fwdPe: "16.7x", consensus: "Strong Buy" },
+    tabs: ["Tesis", "Financieros", "Crecimiento", "Valuación", "Riesgos", "Modelo 2028"],
+    render: renderNU
+  },
+  "MSFT": {
+    ticker: "MSFT",
+    name: "Microsoft Corp",
+    type: "equity",
+    category: "Equity US",
+    status: "ready",
+    tvSymbol: "NASDAQ:MSFT",
+    price: "$420",
+    change: "+39% al target",
+    changeDir: "up",
+    updated: "17 Abr 2026",
+    topMetrics: { marketCap: "$3.04T", pe: "23x", fwdPe: "19x", consensus: "Strong Buy" },
+    tabs: ["Tesis", "Financieros", "Segmentos & AI", "Valuación", "Riesgos"],
+    render: renderMSFT
+  },
+  "UBER": {
+    ticker: "UBER",
+    name: "Uber Technologies",
+    type: "equity",
+    category: "Equity US",
+    status: "empty",
+    tvSymbol: "NYSE:UBER",
+    price: "Live ↓",
+    change: "—",
+    changeDir: "up",
+    updated: "Pendiente",
+    tabs: [],
+    render: renderEmpty
+  },
+  "V": {
+    ticker: "V",
+    name: "Visa Inc",
+    type: "equity",
+    category: "Equity US",
+    status: "empty",
+    tvSymbol: "NYSE:V",
+    price: "Live ↓",
+    change: "—",
+    changeDir: "up",
+    updated: "Pendiente",
+    tabs: [],
+    render: renderEmpty
+  },
+
+  // ==================== RENTA FIJA ARG ====================
+  "SOBERANOS_USD": {
+    ticker: "GD/AL",
+    name: "Soberanos Hard Dollar",
+    type: "renta-fija",
+    category: "Renta Fija AR",
+    status: "empty",
+    price: "—",
+    change: "—",
+    changeDir: "up",
+    updated: "Pendiente",
+    tabs: [],
+    render: renderEmpty
+  },
+  "LECAPS": {
+    ticker: "LECAPs",
+    name: "Letras Capitalizables",
+    type: "renta-fija",
+    category: "Renta Fija AR",
+    status: "empty",
+    price: "—",
+    change: "—",
+    changeDir: "up",
+    updated: "Pendiente",
+    tabs: [],
+    render: renderEmpty
+  },
+  "CER": {
+    ticker: "CER",
+    name: "Bonos CER (TX26, DICP...)",
+    type: "renta-fija",
+    category: "Renta Fija AR",
+    status: "empty",
+    price: "—",
+    change: "—",
+    changeDir: "up",
+    updated: "Pendiente",
+    tabs: [],
+    render: renderEmpty
+  },
+  "ONS": {
+    ticker: "ONs",
+    name: "Obligaciones Negociables",
+    type: "renta-fija",
+    category: "Renta Fija AR",
+    status: "empty",
+    price: "—",
+    change: "—",
+    changeDir: "up",
+    updated: "Pendiente",
+    tabs: [],
+    render: renderEmpty
+  }
+};
+
+const ADMIN_PASS = "Amauta2026";
+let isAdmin = false;
+let activeInstrument = null;
+let activeTab = 0;
+let chartInstances = [];
+
+// ================================================================
+// SIDEBAR RENDERING
+// ================================================================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  const categories = {};
+  Object.values(INSTRUMENTS).forEach(inst => {
+    if (!categories[inst.category]) categories[inst.category] = [];
+    categories[inst.category].push(inst);
+  });
+
+  let html = '';
+  for (const [cat, instruments] of Object.entries(categories)) {
+    html += `<div class="category open" id="cat-${cat.replace(/\s/g,'')}">
+      <div class="category-header" onclick="this.parentElement.classList.toggle('open')">
+        <span>${cat}</span><span class="arrow">▶</span>
+      </div>
+      <div class="instrument-list">`;
+    instruments.forEach(inst => {
+      html += `<div class="instrument-item" data-ticker="${inst.ticker}" onclick="selectInstrument('${Object.keys(INSTRUMENTS).find(k => INSTRUMENTS[k] === inst)}')">
+        <span class="ticker">${inst.ticker}</span>
+        <span class="inst-name">${inst.name}</span>
+        <span class="status-dot ${inst.status}"></span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+  nav.innerHTML = html;
+}
+
+function filterInstruments() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.instrument-item').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
+// ================================================================
+// INSTRUMENT SELECTION
+// ================================================================
+function selectInstrument(key) {
+  destroyCharts();
+  activeInstrument = key;
+  activeTab = 0;
+  const inst = INSTRUMENTS[key];
+
+  // Update sidebar active
+  document.querySelectorAll('.instrument-item').forEach(i => i.classList.remove('active'));
+  document.querySelector(`.instrument-item[data-ticker="${inst.ticker}"]`)?.classList.add('active');
+
+  // Show topbar
+  const topbar = document.getElementById('topbar');
+  topbar.style.display = 'flex';
+  topbar.innerHTML = `
+    <div class="topbar-left">
+      <span class="topbar-ticker">${inst.ticker}</span>
+      <span class="topbar-name">${inst.name}</span>
+      <span class="topbar-type type-${inst.type}">${inst.type === 'equity' ? 'Equity' : 'Renta Fija'}</span>
+    </div>
+    <div class="topbar-right">
+      ${inst.tvSymbol ? `<div class="tv-price-widget" id="tvPriceWidget"></div>` : `<span class="topbar-price">${inst.price}</span>`}
+      <span class="topbar-change ${inst.changeDir === 'up' ? 'change-up' : 'change-down'}">${inst.change}</span>
+    </div>
+  `;
+
+  // Load TradingView price ticker in topbar
+  if (inst.tvSymbol) {
+    loadTVTickerWidget(inst.tvSymbol);
+  }
+
+  // Close mobile sidebar & hide welcome
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('welcomeScreen')?.remove();
+
+  // Render content
+  const content = document.getElementById('contentArea');
+  content.innerHTML = '';
+
+  if (inst.render) {
+    inst.render(content, inst);
+  }
+}
+
+function switchTab(idx) {
+  activeTab = idx;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  destroyCharts();
+  if (activeInstrument === 'NU') setTimeout(() => renderNUCharts(idx), 50);
+  if (activeInstrument === 'MSFT') setTimeout(() => renderMSFTCharts(idx), 50);
+}
+
+function destroyCharts() {
+  chartInstances.forEach(c => c.destroy());
+  chartInstances = [];
+}
+
+// ================================================================
+// ADMIN
+// ================================================================
+function toggleAdmin() {
+  if (isAdmin) {
+    isAdmin = false;
+    document.body.classList.remove('admin-mode');
+    return;
+  }
+  document.getElementById('adminModal').classList.add('show');
+  document.getElementById('adminPass').focus();
+}
+
+function checkAdmin() {
+  const val = document.getElementById('adminPass').value;
+  if (val === ADMIN_PASS) {
+    isAdmin = true;
+    document.body.classList.add('admin-mode');
+    document.getElementById('adminModal').classList.remove('show');
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminError').style.display = 'none';
+  } else {
+    document.getElementById('adminError').style.display = 'block';
+  }
+}
+
+function closeAdminModal() {
+  document.getElementById('adminModal').classList.remove('show');
+  document.getElementById('adminPass').value = '';
+  document.getElementById('adminError').style.display = 'none';
+}
+
+// ================================================================
+// EMPTY RENDERER
+// ================================================================
+function renderEmpty(container, inst) {
+  container.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <h2>Análisis pendiente</h2>
+      <p>El research de <strong>${inst.name}</strong> aún no fue cargado. Próximamente se agregará el análisis completo${inst.type === 'renta-fija' ? ' con curvas, TIR, duration y spreads' : ' con tesis, financials, valuación y modelo'}.</p>
+    </div>
+  `;
+}
+
+// ================================================================
+// NU HOLDINGS — FULL RENDER
+// ================================================================
+function renderNU(container, inst) {
+  // Tabs
+  let html = '<div class="tabs">';
+  inst.tabs.forEach((t, i) => {
+    html += `<button class="tab-btn ${i===0?'active':''}" onclick="switchTab(${i})">${t}</button>`;
+  });
+  html += '</div>';
+
+  // TAB 0: Tesis
+  html += `<div class="tab-panel active" id="nuTab0">
+    <div class="thesis-box">
+      <h3>Tesis de inversión</h3>
+      <p>Nubank es el banco digital más grande del mundo por número de clientes, y ha demostrado que la tesis de "servicios financieros más baratos y accesibles en LatAm" era correcta. En una década pasó de 0 a 131 millones de clientes, con una eficiencia operativa inalcanzable para la banca tradicional.</p>
+      <div class="thesis-point"><div class="num">1</div><div class="tp-text"><strong>Escala masiva + bajo costo:</strong> Con un costo de $0.80/cliente/mes y un efficiency ratio de 28.3% (vs 40-50% en banca tradicional), Nubank monetiza su base con márgenes superiores.</div></div>
+      <div class="thesis-point"><div class="num">2</div><div class="tp-text"><strong>Expansión multi-país:</strong> México (14M clientes, 14% adultos) y Colombia (4M, 10% adultos) están en fases tempranas, replicando el playbook brasileño.</div></div>
+      <div class="thesis-point"><div class="num">3</div><div class="tp-text"><strong>ARPAC en ascenso:</strong> El ingreso por cliente activo creció 25% YoY FXN a $15/mes, con múltiples productos aún por cross-sell.</div></div>
+      <div class="thesis-point"><div class="num">4</div><div class="tp-text"><strong>Rentabilidad probada:</strong> ROE de 33%, net income de $2.9B en 2025 (+45% YoY). La rentabilidad es presente y creciente.</div></div>
+    </div>
+    <div class="card-grid">
+      <div class="stat-card"><div class="stat-label">Revenue FY25</div><div class="stat-value">$15.8B</div><div class="stat-detail">+37% YoY</div><span class="stat-badge badge-green">↑ 37%</span></div>
+      <div class="stat-card"><div class="stat-label">Net Income FY25</div><div class="stat-value">$2.9B</div><div class="stat-detail">+45% YoY</div><span class="stat-badge badge-green">↑ 45%</span></div>
+      <div class="stat-card"><div class="stat-label">Clientes</div><div class="stat-value">131M</div><div class="stat-detail">+17M en 2025</div><span class="stat-badge badge-green">↑ 15%</span></div>
+      <div class="stat-card"><div class="stat-label">ARPAC</div><div class="stat-value">$15.0</div><div class="stat-detail">+25% YoY FXN</div><span class="stat-badge badge-green">↑ 25%</span></div>
+      <div class="stat-card"><div class="stat-label">ROE Q4'25</div><div class="stat-value">33%</div><div class="stat-detail">All-time high</div><span class="stat-badge badge-blue">Record</span></div>
+      <div class="stat-card"><div class="stat-label">Depósitos</div><div class="stat-value">$41.9B</div><div class="stat-detail">+29% YoY</div><span class="stat-badge badge-green">↑ 29%</span></div>
+      <div class="stat-card"><div class="stat-label">Cartera crédito</div><div class="stat-value">$32.7B</div><div class="stat-detail">+40% YoY</div><span class="stat-badge badge-green">↑ 40%</span></div>
+      <div class="stat-card"><div class="stat-label">Costo/cliente</div><div class="stat-value">$0.80</div><div class="stat-detail">Efficiency 28.3%</div><span class="stat-badge badge-blue">Best-in-class</span></div>
+    </div>
+  </div>`;
+
+  // TAB 1: Financieros
+  html += `<div class="tab-panel" id="nuTab1">
+    <div class="chart-grid"><div class="chart-card"><h4>Revenue trimestral (USD B)</h4><canvas id="nu_revQ"></canvas></div><div class="chart-card"><h4>Net Income trimestral (USD M)</h4><canvas id="nu_niQ"></canvas></div></div>
+    <div class="chart-grid"><div class="chart-card"><h4>Revenue anual & crecimiento YoY</h4><canvas id="nu_revA"></canvas></div><div class="chart-card"><h4>Composición del Balance — FY2025</h4><canvas id="nu_balance"></canvas></div></div>
+    <div class="card" style="overflow-x:auto;"><h3>Resumen financiero</h3>
+      <table class="data-table"><thead><tr><th>Métrica</th><th>FY23</th><th>FY24</th><th>FY25</th><th>YoY</th></tr></thead><tbody>
+      <tr><td>Revenue</td><td>$7.7B</td><td>$11.5B</td><td>$15.8B</td><td style="color:var(--am-green)">+37%</td></tr>
+      <tr><td>Net Income</td><td>$1.0B</td><td>$2.0B</td><td>$2.9B</td><td style="color:var(--am-green)">+45%</td></tr>
+      <tr><td>Clientes</td><td>93M</td><td>114M</td><td>131M</td><td style="color:var(--am-green)">+15%</td></tr>
+      <tr><td>ARPAC</td><td>$9.3</td><td>$11.1</td><td>$15.0</td><td style="color:var(--am-green)">+35%</td></tr>
+      <tr><td>Depósitos</td><td>$20.6B</td><td>$32.5B</td><td>$41.9B</td><td style="color:var(--am-green)">+29%</td></tr>
+      <tr><td>Cartera crédito</td><td>$16B</td><td>$23.4B</td><td>$32.7B</td><td style="color:var(--am-green)">+40%</td></tr>
+      <tr><td>Total Assets</td><td>$37B</td><td>$51B</td><td>$68.4B</td><td style="color:var(--am-green)">+34%</td></tr>
+      <tr><td>Efficiency Ratio</td><td>~34%</td><td>~30%</td><td>28.3%</td><td style="color:var(--am-green)">Mejora</td></tr>
+      </tbody></table>
+    </div>
+  </div>`;
+
+  // TAB 2: Crecimiento
+  html += `<div class="tab-panel" id="nuTab2">
+    <div class="chart-grid"><div class="chart-card"><h4>Clientes por país (M) — Dic 2025</h4><canvas id="nu_custCountry"></canvas></div><div class="chart-card"><h4>Penetración de población adulta</h4><canvas id="nu_pen"></canvas></div></div>
+    <div class="chart-grid"><div class="chart-card"><h4>ARPAC por cohorte (USD/mes) — Fuente: NU IR Q4'25</h4><canvas id="nu_cohort"></canvas><p style="color:var(--am-gray);font-size:11px;margin-top:8px;text-align:center;">Un cliente de 8 años genera $30.2/mes ($362/año)</p></div><div class="chart-card"><h4>ARPAC trimestral vs Cost to Serve</h4><canvas id="nu_arpacCost"></canvas></div></div>
+    <div class="thesis-box" style="border-color: var(--am-blue);">
+      <h3 style="color:var(--am-blue);">Oportunidad en México y Colombia</h3>
+      <p><strong>México:</strong> ~14M clientes = 14% adultos. Líder en emisión de nuevas tarjetas. Depósitos +52% YoY.</p>
+      <p><strong>Colombia:</strong> ~4M clientes = 10% adultos. Depósitos +841% YoY (desde base chica). Fase muy temprana.</p>
+      <p style="color:var(--am-blue);margin-top:8px;"><strong>Clave:</strong> Si México y Colombia replican el ARPAC brasileño, el upside de revenue es masivo sin necesidad de adquirir un solo cliente nuevo en Brasil.</p>
+    </div>
+  </div>`;
+
+  // TAB 3: Valuación
+  html += `<div class="tab-panel" id="nuTab3">
+    <div class="card">
+      <h3>Price Target de analistas (21 analistas)</h3>
+      <div class="target-visual">
+        <div class="target-marker" style="left:0%;background:var(--am-red);"><div class="target-label-top" style="color:var(--am-red);">Low</div><div class="target-label-bottom" style="color:var(--am-red);">$15.30</div></div>
+        <div class="target-marker" style="left:1.5%;background:var(--am-black);width:4px;"><div class="target-label-top" style="color:var(--am-black);">Actual</div><div class="target-label-bottom" style="color:var(--am-black);">$15.40</div></div>
+        <div class="target-marker" style="left:69%;background:var(--am-yellow);"><div class="target-label-top" style="color:#9a8300;">Promedio</div><div class="target-label-bottom" style="color:#9a8300;">$19.97</div></div>
+        <div class="target-marker" style="left:100%;background:var(--am-green);"><div class="target-label-top" style="color:var(--am-green);">High</div><div class="target-label-bottom" style="color:var(--am-green);">$22.00</div></div>
+      </div>
+      <p style="text-align:center;color:var(--am-green);font-weight:700;margin-top:30px;">Upside al target promedio: +29.7%</p>
+    </div>
+    <div class="card-grid">
+      <div class="stat-card"><div class="stat-label">P/E TTM</div><div class="stat-value">22.9x</div><div class="stat-detail">vs Banks 11.2x</div><span class="stat-badge badge-yellow">Premium</span></div>
+      <div class="stat-card"><div class="stat-label">P/E Fwd 2026E</div><div class="stat-value">16.7x</div><div class="stat-detail">EPS $0.92</div><span class="stat-badge badge-green">Atractivo</span></div>
+      <div class="stat-card"><div class="stat-label">P/B Ratio</div><div class="stat-value">6.43x</div><div class="stat-detail">vs Banks 1.06x</div><span class="stat-badge badge-yellow">Premium</span></div>
+      <div class="stat-card"><div class="stat-label">PEG Ratio</div><div class="stat-value">&lt;0.5</div><div class="stat-detail">Crecimiento 35%+</div><span class="stat-badge badge-green">Atractivo</span></div>
+    </div>
+    <div class="chart-grid"><div class="chart-card"><h4>P/E — NU vs Peers</h4><canvas id="nu_peComp"></canvas></div><div class="chart-card"><h4>ROE vs P/B — NU vs Sector</h4><canvas id="nu_roePb"></canvas></div></div>
+  </div>`;
+
+  // TAB 4: Riesgos
+  html += `<div class="tab-panel" id="nuTab4">
+    <div class="risk-item high"><div class="risk-header"><span class="risk-level-tag tag-high">Alto</span><strong>Riesgo cambiario (FX)</strong></div><p style="color:var(--am-gray);font-size:13px;">~85% de ingresos en BRL. Depreciación del real impacta revenue y earnings en USD directamente. BRL explicó ~45% de la compresión de NIM reciente.</p></div>
+    <div class="risk-item medium"><div class="risk-header"><span class="risk-level-tag tag-medium">Medio</span><strong>Compresión de NIM</strong></div><p style="color:var(--am-gray);font-size:13px;">Risk-adjusted NIM bajó a 8.2% antes de recuperarse a 9.2% en Q2'25. Expansión en nuevos mercados puede presionar márgenes.</p></div>
+    <div class="risk-item medium"><div class="risk-header"><span class="risk-level-tag tag-medium">Medio</span><strong>Calidad crediticia</strong></div><p style="color:var(--am-gray);font-size:13px;">NPL 15-90: 4.7% (estacional). NPL 90+: 6.5% (mejorando). Underwriting basado en data science muestra resiliencia.</p></div>
+    <div class="risk-item medium"><div class="risk-header"><span class="risk-level-tag tag-medium">Medio</span><strong>Riesgo macro Brasil</strong></div><p style="color:var(--am-gray);font-size:13px;">Recesión aumentaría defaults. Selic alta presiona fondeo, aunque NU fondea a 87% de la interbancaria (ventaja).</p></div>
+    <div class="risk-item low"><div class="risk-header"><span class="risk-level-tag tag-low">Bajo</span><strong>Competencia</strong></div><p style="color:var(--am-gray);font-size:13px;">Mercado Pago, Itaú, Inter compiten, pero NU tiene escala, brand y costo operativo difícil de replicar.</p></div>
+    <div class="chart-grid" style="margin-top:16px;"><div class="chart-card"><h4>NPL Rates — Evolución</h4><canvas id="nu_npl"></canvas></div><div class="chart-card"><h4>Risk-Adjusted NIM — Evolución</h4><canvas id="nu_nim"></canvas></div></div>
+  </div>`;
+
+  // TAB 5: Modelo 2028
+  html += `<div class="tab-panel" id="nuTab5">
+    <div class="thesis-box" style="border-color: var(--am-yellow);">
+      <h3 style="color:#9a8300;">Modelo de valuación 2028 — Tesis @FacundoArg28</h3>
+      <p>Supuestos deliberadamente conservadores: no incluye expansión a EE.UU., ARPAC de $21 (vs $30+ de cohortes maduras). Conclusión: incluso siendo conservador, el fair value implícito es ~$140B vs $70B actuales.</p>
+    </div>
+    <div class="card" style="overflow-x:auto;">
+      <h3>Supuestos por país — Clientes 2028</h3>
+      <table class="data-table"><thead><tr><th>País</th><th>Pob. adulta</th><th>Hoy</th><th>% hoy</th><th>Target 2028</th><th>2028E</th><th>Crec./año nec.</th><th>Crec. actual</th></tr></thead><tbody>
+      <tr><td><strong>Brasil</strong></td><td>~182M</td><td>113M</td><td>62%</td><td>70%</td><td><strong>127M</strong></td><td>~4.8M</td><td>~11M <span class="stat-badge badge-green" style="font-size:10px;">Conservador</span></td></tr>
+      <tr><td><strong>México</strong></td><td>~95M</td><td>14M</td><td>14%</td><td>30%</td><td><strong>28M</strong></td><td>~4.6M</td><td>~4M <span class="stat-badge badge-green" style="font-size:10px;">Alcanzable</span></td></tr>
+      <tr><td><strong>Colombia</strong></td><td>~40M</td><td>4M</td><td>10%</td><td>25%</td><td><strong>10M</strong></td><td>~2M</td><td>~1.7M <span class="stat-badge badge-green" style="font-size:10px;">Alcanzable</span></td></tr>
+      <tr style="background:rgba(243,207,17,0.08);"><td><strong>TOTAL</strong></td><td></td><td><strong>131M</strong></td><td></td><td></td><td style="font-size:18px;color:var(--am-bordo);"><strong>165M</strong></td><td></td><td><span class="stat-badge badge-bordo">+26% en 3 años</span></td></tr>
+      </tbody></table>
+    </div>
+    <div class="chart-grid"><div class="chart-card"><h4>ARPAC por cohorte (USD/mes) — NU IR Q4'25</h4><canvas id="nu_cohort2"></canvas><p style="color:var(--am-gray);font-size:11px;margin-top:8px;text-align:center;">Cliente 96 meses → $30.2/mes. El modelo usa apenas $21/mes.</p></div><div class="chart-card"><h4>Revenue: actual → modelo 2028</h4><canvas id="nu_revPath"></canvas></div></div>
+    <div class="card" style="overflow-x:auto;">
+      <h3>Del revenue al fair value — paso a paso</h3>
+      <table class="data-table"><thead><tr><th>#</th><th>Concepto</th><th>Valor</th><th>Nota</th></tr></thead><tbody>
+      <tr><td>1</td><td>Clientes activos 2028E</td><td><strong>137M</strong></td><td>165M × 83% actividad</td></tr>
+      <tr><td>2</td><td>ARPAC mensual</td><td><strong>$21</strong></td><td>+40% en 3 años (conservador)</td></tr>
+      <tr><td>3</td><td>Revenue anual</td><td><strong>$34.5B</strong></td><td>137M × $21 × 12</td></tr>
+      <tr><td>4</td><td>Margen neto</td><td><strong>20%</strong></td><td>Conservador (actual ~18%)</td></tr>
+      <tr><td>5</td><td>Net Income 2028E</td><td style="color:var(--am-green);"><strong>$6.9B</strong></td><td>$34.5B × 20%</td></tr>
+      <tr><td>6</td><td>P/E asumido</td><td><strong>20x</strong></td><td>Conservador (hoy 22.9x)</td></tr>
+      <tr style="background:rgba(243,207,17,0.1);"><td>→</td><td style="color:var(--am-bordo);"><strong>Fair Value Market Cap</strong></td><td style="font-size:18px;color:var(--am-bordo);"><strong>$140B</strong></td><td>= +100% vs $70B actual (~$29/acción)</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card" style="overflow-x:auto;">
+      <h3>Sensibilidad — Market Cap (USD B) según ARPAC y P/E</h3>
+      <p style="color:var(--am-gray);font-size:12px;margin-bottom:10px;">Base: 137M activos, 20% margen neto. <span style="color:var(--am-green);font-weight:700;">Verde</span> = upside > 50% vs $70B.</p>
+      <table class="data-table" style="text-align:center;">
+      <thead><tr><th>ARPAC / P/E</th><th>15x</th><th>18x</th><th class="matrix-highlight">20x</th><th>22x</th><th>25x</th></tr></thead><tbody>
+      <tr><td><strong>$18</strong></td><td>$89B</td><td>$107B</td><td class="matrix-highlight">$119B</td><td>$130B</td><td style="color:var(--am-green);">$148B</td></tr>
+      <tr><td><strong>$21</strong></td><td>$104B</td><td style="color:var(--am-green);">$124B</td><td class="matrix-highlight" style="color:var(--am-bordo);font-size:15px;"><strong>$138B</strong></td><td style="color:var(--am-green);">$152B</td><td style="color:var(--am-green);">$173B</td></tr>
+      <tr><td><strong>$25</strong></td><td style="color:var(--am-green);">$123B</td><td style="color:var(--am-green);">$148B</td><td class="matrix-highlight" style="color:var(--am-green);">$164B</td><td style="color:var(--am-green);">$181B</td><td style="color:var(--am-green);">$205B</td></tr>
+      <tr><td><strong>$30</strong> <span class="stat-badge badge-blue" style="font-size:9px;">cohorte 96m</span></td><td style="color:var(--am-green);">$148B</td><td style="color:var(--am-green);">$177B</td><td class="matrix-highlight" style="color:var(--am-green);">$197B</td><td style="color:var(--am-green);">$217B</td><td style="color:var(--am-green);">$247B</td></tr>
+      </tbody></table>
+    </div>
+    <p style="color:var(--am-gray);font-size:11px;margin-top:12px;font-style:italic;">Fuente: Tesis @FacundoArg28 con datos de Nubank IR Q4'25. No constituye recomendación de inversión.</p>
+  </div>`;
+
+  container.innerHTML = html;
+  // Render first tab charts
+  setTimeout(() => renderNUCharts(0), 50);
+}
+
+// ================================================================
+// NU CHARTS
+// ================================================================
+function renderNUCharts(tabIdx) {
+  destroyCharts();
+  const bor = '#621044';
+  const yel = '#F3CF11';
+  const grn = '#27AE60';
+  const red = '#C0392B';
+  const blu = '#2980B9';
+  const gry = '#58585A';
+
+  Chart.defaults.color = '#666666';
+  Chart.defaults.borderColor = '#e8e8e8';
+  Chart.defaults.font.family = "'Fira Sans', Arial, sans-serif";
+
+  if (tabIdx === 0) { /* tesis - no charts */ }
+
+  if (tabIdx === 1) {
+    // Revenue Q
+    chartInstances.push(new Chart(document.getElementById('nu_revQ'), {
+      type:'bar', data:{ labels:['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+      datasets:[{label:'Revenue (B)',data:[2.4,2.8,3.3,3.0,3.4,3.8,4.2,4.9],backgroundColor:'rgba(98,16,68,0.55)',borderColor:bor,borderWidth:1,borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v+'B'}}}}
+    }));
+    // Net Income Q
+    chartInstances.push(new Chart(document.getElementById('nu_niQ'), {
+      type:'bar', data:{ labels:['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+      datasets:[{label:'Net Income (M)',data:[380,480,530,610,560,650,795,895],backgroundColor:'rgba(39,174,96,0.5)',borderColor:grn,borderWidth:1,borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v+'M'}}}}
+    }));
+    // Revenue Annual
+    chartInstances.push(new Chart(document.getElementById('nu_revA'), {
+      type:'bar', data:{ labels:['2021','2022','2023','2024','2025'],
+      datasets:[{label:'Revenue (B)',data:[1.7,4.8,7.7,11.5,15.8],backgroundColor:'rgba(98,16,68,0.5)',borderRadius:5,yAxisID:'y'},
+      {label:'YoY %',data:[null,182,60,49,37],type:'line',borderColor:yel,borderWidth:3,pointRadius:5,pointBackgroundColor:yel,yAxisID:'y1',tension:0.3}]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v+'B'}},y1:{position:'right',min:0,max:200,ticks:{callback:v=>v+'%'},grid:{display:false}}}}
+    }));
+    // Balance
+    chartInstances.push(new Chart(document.getElementById('nu_balance'), {
+      type:'doughnut', data:{ labels:['Depósitos','Crédito neto','Otros','Equity'],
+      datasets:[{data:[41.9,19.0,7.5,10.6],backgroundColor:[bor,grn,blu,yel],borderWidth:0,hoverOffset:8}]},
+      options:{responsive:true,cutout:'55%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.label+': $'+c.raw+'B'}}}}
+    }));
+  }
+
+  if (tabIdx === 2) {
+    // Customers by country
+    chartInstances.push(new Chart(document.getElementById('nu_custCountry'), {
+      type:'bar', data:{labels:['Brasil','México','Colombia'],datasets:[{label:'Clientes (M)',data:[113,14,4],backgroundColor:[bor,'#2980B9',grn],borderRadius:6,barPercentage:0.5}]},
+      options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v+'M'}}}}
+    }));
+    // Penetration
+    chartInstances.push(new Chart(document.getElementById('nu_pen'), {
+      type:'bar', data:{labels:['Brasil (62%)','México (14%)','Colombia (10%)'],
+      datasets:[{label:'Penetrados',data:[62,14,10],backgroundColor:[bor,'#2980B9',grn],borderRadius:5},{label:'Oportunidad',data:[38,86,90],backgroundColor:'rgba(0,0,0,0.04)',borderRadius:5}]},
+      options:{responsive:true,indexAxis:'y',scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%'}},y:{stacked:true}},plugins:{legend:{position:'top'}}}
+    }));
+    // ARPAC Cohort
+    chartInstances.push(new Chart(document.getElementById('nu_cohort'), {
+      type:'bar', data:{labels:['Mes 1','12','24','36','48','60','72','84','96'],
+      datasets:[{label:'ARPAC (USD/mes)',data:[0.8,4.8,7.4,9.8,12.3,14.8,17.7,24.7,30.2],
+      backgroundColor:['rgba(98,16,68,0.2)','rgba(98,16,68,0.3)','rgba(98,16,68,0.35)','rgba(98,16,68,0.4)','rgba(98,16,68,0.48)','rgba(98,16,68,0.55)','rgba(98,16,68,0.63)','rgba(98,16,68,0.75)','rgba(98,16,68,0.9)'],borderColor:bor,borderWidth:1,borderRadius:6}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v}}}}
+    }));
+    // ARPAC + Cost to Serve
+    chartInstances.push(new Chart(document.getElementById('nu_arpacCost'), {
+      type:'bar', data:{labels:['Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+      datasets:[{label:'ARPAC ($/mes)',data:[11.1,11.1,11.6,12.5,13.8,15.0],backgroundColor:'rgba(98,16,68,0.55)',borderRadius:5},
+      {label:'Cost to Serve',data:[0.7,0.8,0.7,0.8,0.9,0.8],backgroundColor:'rgba(41,128,185,0.4)',borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>'$'+v}}}}
+    }));
+  }
+
+  if (tabIdx === 3) {
+    // PE Comparison
+    chartInstances.push(new Chart(document.getElementById('nu_peComp'), {
+      type:'bar', data:{labels:['Nubank','SoFi','MercadoLibre','Itaú','Bradesco','Banks Avg'],
+      datasets:[{label:'P/E TTM',data:[22.9,28,42,8.5,7.2,11.2],
+      backgroundColor:[bor,blu,yel,'rgba(0,0,0,0.15)','rgba(0,0,0,0.1)','rgba(0,0,0,0.06)'],borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'x'}}}}
+    }));
+    // ROE vs PB
+    chartInstances.push(new Chart(document.getElementById('nu_roePb'), {
+      type:'bubble', data:{datasets:[
+        {label:'Nubank',data:[{x:33,y:6.43,r:18}],backgroundColor:'rgba(98,16,68,0.6)'},
+        {label:'SoFi',data:[{x:8,y:2.5,r:10}],backgroundColor:'rgba(41,128,185,0.4)'},
+        {label:'Itaú',data:[{x:20,y:1.8,r:14}],backgroundColor:'rgba(243,207,17,0.5)'},
+        {label:'Bradesco',data:[{x:12,y:1.1,r:12}],backgroundColor:'rgba(0,0,0,0.15)'},
+        {label:'Inter',data:[{x:15,y:2.0,r:8}],backgroundColor:'rgba(39,174,96,0.4)'}]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},
+        scales:{x:{title:{display:true,text:'ROE %'},ticks:{callback:v=>v+'%'}},y:{title:{display:true,text:'P/B'},ticks:{callback:v=>v+'x'}}}}
+    }));
+  }
+
+  if (tabIdx === 4) {
+    // NPL
+    chartInstances.push(new Chart(document.getElementById('nu_npl'), {
+      type:'line', data:{labels:['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+      datasets:[{label:'NPL 15-90',data:[4.5,4.4,4.2,4.1,4.5,4.4,4.3,4.7],borderColor:yel,borderWidth:2,tension:0.3,pointRadius:4},
+      {label:'NPL 90+',data:[6.3,6.5,6.8,7.0,6.8,6.7,6.6,6.5],borderColor:red,borderWidth:2,tension:0.3,pointRadius:4}]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>v+'%'}}}}
+    }));
+    // NIM
+    chartInstances.push(new Chart(document.getElementById('nu_nim'), {
+      type:'line', data:{labels:['Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25'],
+      datasets:[{label:'Risk-Adj NIM',data:[10.2,10.5,9.8,9.0,8.2,9.2,9.0,8.8],borderColor:bor,backgroundColor:'rgba(98,16,68,0.06)',borderWidth:3,fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:bor}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'%'}}}}
+    }));
+  }
+
+  if (tabIdx === 5) {
+    // Cohort again
+    chartInstances.push(new Chart(document.getElementById('nu_cohort2'), {
+      type:'bar', data:{labels:['Mes 1','12','24','36','48','60','72','84','96'],
+      datasets:[{label:'ARPAC (USD/mes)',data:[0.8,4.8,7.4,9.8,12.3,14.8,17.7,24.7,30.2],
+      backgroundColor:['rgba(98,16,68,0.2)','rgba(98,16,68,0.3)','rgba(98,16,68,0.35)','rgba(98,16,68,0.4)','rgba(98,16,68,0.48)','rgba(98,16,68,0.55)','rgba(98,16,68,0.63)','rgba(98,16,68,0.75)','rgba(98,16,68,0.9)'],borderColor:bor,borderWidth:1,borderRadius:6}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v}}}}
+    }));
+    // Revenue path
+    chartInstances.push(new Chart(document.getElementById('nu_revPath'), {
+      type:'line', data:{labels:['2022','2023','2024','2025','2026E','2027E','2028E'],
+      datasets:[{label:'Revenue real',data:[4.8,7.7,11.5,15.8,null,null,null],borderColor:bor,backgroundColor:'rgba(98,16,68,0.06)',borderWidth:3,fill:true,tension:0.3,pointRadius:6,pointBackgroundColor:bor},
+      {label:'Modelo 2028',data:[null,null,null,15.8,21,27,34.5],borderColor:yel,backgroundColor:'rgba(243,207,17,0.06)',borderWidth:3,borderDash:[8,4],fill:true,tension:0.3,pointRadius:6,pointBackgroundColor:yel}]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v+'B'}}}}
+    }));
+  }
+}
+
+// ================================================================
+// MSFT — FULL RENDER
+// ================================================================
+function renderMSFT(container, inst) {
+  let html = '<div class="tabs">';
+  inst.tabs.forEach((t, i) => {
+    html += `<button class="tab-btn ${i===0?'active':''}" onclick="switchTab(${i})">${t}</button>`;
+  });
+  html += '</div>';
+
+  // TAB 0: Tesis
+  html += `<div class="tab-panel active" id="msftTab0">
+    <div class="thesis-box">
+      <h3>Tesis de inversión</h3>
+      <p>Microsoft es la empresa mejor posicionada para monetizar la ola de AI a escala empresarial. Con Azure creciendo al 39%, una base instalada de 400M+ usuarios de Office 365, y Copilot alcanzando 100M MAU, tiene la distribución, la infraestructura y el ecosistema para capturar el mayor share del gasto corporativo en AI. El stock cayó ~24% del ATH por preocupación de capex — creando una oportunidad.</p>
+      <div class="thesis-point"><div class="num">1</div><div class="tp-text"><strong>Azure domina cloud + AI:</strong> Azure creció 39% en Q2 FY26 (vs AWS 19%, Google Cloud 30%). AI contribuye 13-16pp de ese crecimiento. Cloud revenue superó $50B trimestrales. Run rate de AI: $13B y apuntando a $25B para fin de FY26.</div></div>
+      <div class="thesis-point"><div class="num">2</div><div class="tp-text"><strong>Copilot = nueva capa de revenue:</strong> 100M+ MAU, a $30/usuario/mes en enterprise. Si penetra 10-20% de la base Office 365, son $5-10B en revenue recurrente incremental puro. La distribución ya existe.</div></div>
+      <div class="thesis-point"><div class="num">3</div><div class="tp-text"><strong>Valuation reset = oportunidad:</strong> P/E TTM de 23x — en línea con el S&P 500 (24.5x). Forward P/E de 19x para una empresa que crece revenue 17% y earnings 24%. Históricamente MSFT cotizó a 30x+. El descuento por capex-fear es excesivo.</div></div>
+      <div class="thesis-point"><div class="num">4</div><div class="tp-text"><strong>Máquina de cash flow:</strong> Incluso con $120B+ de capex anual, MSFT genera FCF masivo, tiene balance pristino, y mantiene buybacks + dividendos crecientes. Moat insuperable en enterprise software.</div></div>
+    </div>
+    <div class="card-grid">
+      <div class="stat-card"><div class="stat-label">Revenue FY25</div><div class="stat-value">$281.7B</div><div class="stat-detail">+15% YoY</div><span class="stat-badge badge-green">↑ 15%</span></div>
+      <div class="stat-card"><div class="stat-label">Net Income FY25</div><div class="stat-value">$101.8B</div><div class="stat-detail">+15.5% YoY</div><span class="stat-badge badge-green">↑ 15.5%</span></div>
+      <div class="stat-card"><div class="stat-label">Market Cap</div><div class="stat-value">$3.04T</div><div class="stat-detail">2da empresa más valiosa</div><span class="stat-badge badge-blue">Mega Cap</span></div>
+      <div class="stat-card"><div class="stat-label">Azure Growth</div><div class="stat-value">39%</div><div class="stat-detail">Q2 FY26 (38% CC)</div><span class="stat-badge badge-green">Acelerando</span></div>
+      <div class="stat-card"><div class="stat-label">AI Revenue Run Rate</div><div class="stat-value">$13B</div><div class="stat-detail">Target FY26: $25B</div><span class="stat-badge badge-yellow">En ramp</span></div>
+      <div class="stat-card"><div class="stat-label">Op. Margin</div><div class="stat-value">~42%</div><div class="stat-detail">Ligera compresión por AI capex</div><span class="stat-badge badge-yellow">Watch</span></div>
+      <div class="stat-card"><div class="stat-label">Copilot MAU</div><div class="stat-value">100M+</div><div class="stat-detail">Commercial + Consumer</div><span class="stat-badge badge-green">Milestone</span></div>
+      <div class="stat-card"><div class="stat-label">EPS TTM</div><div class="stat-value">$15.98</div><div class="stat-detail">FY26E: $16.92</div><span class="stat-badge badge-green">↑ 6%</span></div>
+    </div>
+  </div>`;
+
+  // TAB 1: Financieros
+  html += `<div class="tab-panel" id="msftTab1">
+    <div class="chart-grid"><div class="chart-card"><h4>Revenue trimestral (USD B)</h4><canvas id="msft_revQ"></canvas></div><div class="chart-card"><h4>Net Income trimestral (USD B)</h4><canvas id="msft_niQ"></canvas></div></div>
+    <div class="chart-grid"><div class="chart-card"><h4>Revenue anual & crecimiento</h4><canvas id="msft_revA"></canvas></div><div class="chart-card"><h4>EPS trimestral (USD)</h4><canvas id="msft_epsQ"></canvas></div></div>
+    <div class="card" style="overflow-x:auto;"><h3>Resumen financiero</h3>
+      <table class="data-table"><thead><tr><th>Métrica</th><th>FY23</th><th>FY24</th><th>FY25</th><th>FY26 H1</th></tr></thead><tbody>
+      <tr><td>Revenue</td><td>$211.9B</td><td>$245.1B</td><td>$281.7B</td><td>$159.0B</td></tr>
+      <tr><td>Net Income</td><td>$72.4B</td><td>$88.1B</td><td>$101.8B</td><td>~$61B</td></tr>
+      <tr><td>Op. Margin</td><td>41.2%</td><td>44.6%</td><td>~44%</td><td>~42%</td></tr>
+      <tr><td>EPS (diluted)</td><td>$9.68</td><td>$11.80</td><td>$13.69</td><td>$8.27</td></tr>
+      <tr><td>Azure Growth</td><td>27%</td><td>30%</td><td>33%</td><td>39-40%</td></tr>
+      <tr><td>Cloud Revenue</td><td>~$111B</td><td>~$135B</td><td>~$168B</td><td>$100B+</td></tr>
+      <tr><td>CapEx (qtr)</td><td>~$8B</td><td>~$14B</td><td>~$21B</td><td>~$37.5B</td></tr>
+      </tbody></table>
+    </div>
+  </div>`;
+
+  // TAB 2: Segmentos & AI
+  html += `<div class="tab-panel" id="msftTab2">
+    <div class="chart-grid"><div class="chart-card"><h4>Revenue por segmento — FY25</h4><canvas id="msft_segments"></canvas></div><div class="chart-card"><h4>Azure Growth Rate — Aceleración</h4><canvas id="msft_azureGrowth"></canvas></div></div>
+    <div class="chart-grid"><div class="chart-card"><h4>CapEx trimestral (USD B) — La apuesta por AI</h4><canvas id="msft_capex"></canvas></div><div class="chart-card"><h4>Cloud Revenue trimestral (USD B)</h4><canvas id="msft_cloudRev"></canvas></div></div>
+    <div class="thesis-box" style="border-color: var(--am-blue);">
+      <h3 style="color:var(--am-blue);">El ciclo AI de Microsoft — Los números</h3>
+      <p><strong>Azure AI run rate:</strong> $13B, el más alto entre hyperscalers. Apuntando a $25B para fin de FY26, y $40-50B para FY27.</p>
+      <p><strong>AI contribuye ~35-40% del crecimiento de Azure.</strong> Sin AI, Azure crecería ~23-26%. Con AI, crece 39%. Eso es $10B+ incremental por AI solo en cloud.</p>
+      <p><strong>Copilot M365:</strong> 100M+ MAU. A $30/user/mes, si penetra 50M empresariales = $18B/año en revenue recurrente. Hoy está en ramp temprano.</p>
+      <p><strong>CapEx masivo:</strong> $37.5B solo en Q2 FY26. ~$120B anualizado. El mercado teme overcapacity, pero la demanda de Azure está superando la oferta — el backlog de $625B en RPO lo confirma.</p>
+    </div>
+  </div>`;
+
+  // TAB 3: Valuación
+  html += `<div class="tab-panel" id="msftTab3">
+    <div class="card">
+      <h3>Price Target de analistas (54 analistas)</h3>
+      <div class="target-visual">
+        <div class="target-marker" style="left:0%;background:var(--am-red);"><div class="target-label-top" style="color:var(--am-red);">Low</div><div class="target-label-bottom" style="color:var(--am-red);">$392</div></div>
+        <div class="target-marker" style="left:8.4%;background:var(--am-black);width:4px;"><div class="target-label-top" style="color:var(--am-black);">Actual</div><div class="target-label-bottom" style="color:var(--am-black);">$420</div></div>
+        <div class="target-marker" style="left:57%;background:var(--am-yellow);"><div class="target-label-top" style="color:#9a8300;">Promedio</div><div class="target-label-bottom" style="color:#9a8300;">$585</div></div>
+        <div class="target-marker" style="left:100%;background:var(--am-green);"><div class="target-label-top" style="color:var(--am-green);">High</div><div class="target-label-bottom" style="color:var(--am-green);">$730</div></div>
+      </div>
+      <p style="text-align:center;color:var(--am-green);font-weight:700;margin-top:30px;">Upside al target promedio: +39.3%</p>
+    </div>
+    <div class="card-grid">
+      <div class="stat-card"><div class="stat-label">P/E TTM</div><div class="stat-value">23x</div><div class="stat-detail">vs S&P 500: 24.5x</div><span class="stat-badge badge-green">Descuento</span></div>
+      <div class="stat-card"><div class="stat-label">P/E Fwd FY26</div><div class="stat-value">~25x</div><div class="stat-detail">EPS est. $16.92</div><span class="stat-badge badge-green">Razonable</span></div>
+      <div class="stat-card"><div class="stat-label">Distancia al ATH</div><div class="stat-value">-24%</div><div class="stat-detail">ATH: $555.45</div><span class="stat-badge badge-yellow">Corrección</span></div>
+      <div class="stat-card"><div class="stat-label">Consenso</div><div class="stat-value">Strong Buy</div><div class="stat-detail">54 Buy · 3 Hold · 0 Sell</div><span class="stat-badge badge-green">Unanimidad</span></div>
+    </div>
+    <div class="chart-grid"><div class="chart-card"><h4>P/E — MSFT vs Peers</h4><canvas id="msft_peComp"></canvas></div><div class="chart-card"><h4>Revenue Growth vs P/E — MSFT es la mejor combinación</h4><canvas id="msft_growthPe"></canvas></div></div>
+    <div class="thesis-box" style="border-color: var(--am-yellow);">
+      <h3 style="color:#9a8300;">¿Por qué el stock cayó 24% y por qué es oportunidad?</h3>
+      <p>El mercado está penalizando el capex masivo (~$120B/año) destinado a infraestructura AI. La preocupación es que el ROI no justifique la inversión. Sin embargo:</p>
+      <p>→ Azure tiene backlog de <strong>$625B en RPO</strong> (incluyendo $250B de OpenAI). La demanda supera la oferta.</p>
+      <p>→ A P/E 23x, MSFT cotiza en línea con el S&P 500 pero crece revenue al 17% y earnings al 24%. Históricamente cotizó a 30x+.</p>
+      <p>→ Si el AI revenue llega a $25B y Copilot escala, los márgenes se recuperan. El capex de hoy es el moat de mañana.</p>
+    </div>
+    <div class="card" style="overflow-x:auto;">
+      <h3>Escenarios de valuación — FY26E</h3>
+      <table class="data-table"><thead><tr><th>Escenario</th><th>P/E</th><th>EPS FY26E</th><th>Fair Value</th><th>vs $420</th></tr></thead><tbody>
+      <tr><td>Bear (compresión por capex)</td><td>20x</td><td>$15.94</td><td style="color:var(--am-red);">$319</td><td style="color:var(--am-red);">-24%</td></tr>
+      <tr><td>Base (rerating gradual)</td><td>28x</td><td>$16.92</td><td style="color:var(--am-green);">$474</td><td style="color:var(--am-green);">+13%</td></tr>
+      <tr><td>Bull (AI monetiza + re-rate)</td><td>33x</td><td>$17.70</td><td style="color:var(--am-green);">$584</td><td style="color:var(--am-green);">+39%</td></tr>
+      </tbody></table>
+    </div>
+  </div>`;
+
+  // TAB 4: Riesgos
+  html += `<div class="tab-panel" id="msftTab4">
+    <div class="risk-item high"><div class="risk-header"><span class="risk-level-tag tag-high">Alto</span><strong>CapEx masivo y ROI de AI incierto</strong></div><p style="color:var(--am-gray);font-size:13px;">$37.5B de capex solo en Q2 FY26 (~$120B anualizado, +66% YoY). Si la demanda de AI se estanca o no monetiza al ritmo esperado, hay riesgo de overcapacity y compresión severa de márgenes. Este es EL riesgo principal y la razón de la caída del stock.</p></div>
+    <div class="risk-item medium"><div class="risk-header"><span class="risk-level-tag tag-medium">Medio</span><strong>Compresión de márgenes operativos</strong></div><p style="color:var(--am-gray);font-size:13px;">Op. margin bajó de ~44.6% (FY24) a ~42% (FY26). Los costos de correr workloads de AI y el gaming business (Xbox) de menor margen presionan. Si el capex no se traduce en revenue proporcionalmente, los márgenes pueden seguir cayendo.</p></div>
+    <div class="risk-item medium"><div class="risk-header"><span class="risk-level-tag tag-medium">Medio</span><strong>Dependencia de OpenAI</strong></div><p style="color:var(--am-gray);font-size:13px;">La alianza con OpenAI es clave para la estrategia AI, pero enfrenta escrutinio regulatorio. Amazon cerró un acuerdo de $50B con OpenAI que podría conflictuar con la exclusividad de Azure. Inestabilidad en el management de OpenAI es un riesgo adicional.</p></div>
+    <div class="risk-item medium"><div class="risk-header"><span class="risk-level-tag tag-medium">Medio</span><strong>Competencia cloud intensificándose</strong></div><p style="color:var(--am-gray);font-size:13px;">AWS (Amazon), Google Cloud, y Oracle están invirtiendo agresivamente en AI infrastructure. Si bien Azure lidera en crecimiento (39% vs AWS 19%), mantener esa ventaja requiere inversión continua. Google con Gemini y sus propios TPUs es un competidor serio.</p></div>
+    <div class="risk-item low"><div class="risk-header"><span class="risk-level-tag tag-low">Bajo</span><strong>Riesgo regulatorio/antimonopolio</strong></div><p style="color:var(--am-gray);font-size:13px;">Microsoft tiene posición dominante en productivity software (Office), OS (Windows), cloud (#2), y gaming. Reguladores en US y EU podrían imponer restricciones, especialmente en bundling de Copilot con M365.</p></div>
+    <div class="chart-grid" style="margin-top:16px;"><div class="chart-card"><h4>Operating Margin — Evolución</h4><canvas id="msft_margin"></canvas></div><div class="chart-card"><h4>CapEx vs Free Cash Flow (USD B/qtr)</h4><canvas id="msft_capexFcf"></canvas></div></div>
+  </div>`;
+
+  container.innerHTML = html;
+  setTimeout(() => renderMSFTCharts(0), 50);
+}
+
+// ================================================================
+// MSFT CHARTS
+// ================================================================
+function renderMSFTCharts(tabIdx) {
+  destroyCharts();
+  const bor = '#621044';
+  const yel = '#F3CF11';
+  const grn = '#27AE60';
+  const red = '#C0392B';
+  const blu = '#2980B9';
+
+  Chart.defaults.color = '#666666';
+  Chart.defaults.borderColor = '#e8e8e8';
+  Chart.defaults.font.family = "'Fira Sans', Arial, sans-serif";
+
+  if (tabIdx === 1) {
+    // Revenue Quarterly
+    chartInstances.push(new Chart(document.getElementById('msft_revQ'), {
+      type:'bar', data:{labels:['Q1 FY25','Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],
+      datasets:[{label:'Revenue (B)',data:[65.6,69.6,70.1,76.4,77.7,81.3],backgroundColor:'rgba(41,128,185,0.5)',borderColor:blu,borderWidth:1,borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,min:55,ticks:{callback:v=>'$'+v+'B'}}}}
+    }));
+    // Net Income Quarterly
+    chartInstances.push(new Chart(document.getElementById('msft_niQ'), {
+      type:'bar', data:{labels:['Q1 FY25','Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],
+      datasets:[{label:'Net Income (B)',data:[24.7,24.1,25.8,27.2,29.4,31.7],backgroundColor:'rgba(39,174,96,0.5)',borderColor:grn,borderWidth:1,borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,min:20,ticks:{callback:v=>'$'+v+'B'}}}}
+    }));
+    // Revenue Annual
+    chartInstances.push(new Chart(document.getElementById('msft_revA'), {
+      type:'bar', data:{labels:['FY21','FY22','FY23','FY24','FY25','FY26E'],
+      datasets:[{label:'Revenue (B)',data:[168.1,198.3,211.9,245.1,281.7,320],backgroundColor:'rgba(41,128,185,0.45)',borderRadius:5,yAxisID:'y'},
+      {label:'YoY %',data:[18,18,7,16,15,14],type:'line',borderColor:yel,borderWidth:3,pointRadius:5,pointBackgroundColor:yel,yAxisID:'y1',tension:0.3}]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v+'B'}},y1:{position:'right',min:0,max:25,ticks:{callback:v=>v+'%'},grid:{display:false}}}}
+    }));
+    // EPS Quarterly
+    chartInstances.push(new Chart(document.getElementById('msft_epsQ'), {
+      type:'line', data:{labels:['Q1 FY25','Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],
+      datasets:[{label:'EPS (USD)',data:[3.30,3.23,3.46,3.70,4.13,4.14],borderColor:bor,backgroundColor:'rgba(98,16,68,0.06)',borderWidth:3,fill:true,tension:0.3,pointRadius:6,pointBackgroundColor:bor}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$'+v}}}}
+    }));
+  }
+
+  if (tabIdx === 2) {
+    // Segments Donut
+    chartInstances.push(new Chart(document.getElementById('msft_segments'), {
+      type:'doughnut', data:{labels:['Intelligent Cloud','Productivity & BP','More Personal Computing'],
+      datasets:[{data:[107.8,130.0,43.9],backgroundColor:[blu,bor,yel],borderWidth:0,hoverOffset:8}]},
+      options:{responsive:true,cutout:'55%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.label+': $'+c.raw+'B ('+Math.round(c.raw/281.7*100)+'%)'}}}}
+    }));
+    // Azure Growth
+    chartInstances.push(new Chart(document.getElementById('msft_azureGrowth'), {
+      type:'line', data:{labels:['Q1 FY24','Q2 FY24','Q3 FY24','Q4 FY24','Q1 FY25','Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],
+      datasets:[{label:'Azure Growth %',data:[29,28,31,30,34,31,33,35,40,39],borderColor:blu,backgroundColor:'rgba(41,128,185,0.08)',borderWidth:3,fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:blu}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:20,max:45,ticks:{callback:v=>v+'%'}}}}
+    }));
+    // CapEx
+    chartInstances.push(new Chart(document.getElementById('msft_capex'), {
+      type:'bar', data:{labels:['Q1 FY25','Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],
+      datasets:[{label:'CapEx (B)',data:[14.9,16.8,21.4,22.6,22.6,37.5],
+      backgroundColor:['rgba(192,57,43,0.3)','rgba(192,57,43,0.35)','rgba(192,57,43,0.45)','rgba(192,57,43,0.5)','rgba(192,57,43,0.55)','rgba(192,57,43,0.8)'],
+      borderColor:red,borderWidth:1,borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v+'B'}}}}
+    }));
+    // Cloud Revenue
+    chartInstances.push(new Chart(document.getElementById('msft_cloudRev'), {
+      type:'bar', data:{labels:['Q1 FY25','Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],
+      datasets:[{label:'Cloud Rev (B)',data:[38.9,40.9,42.4,46.5,48.2,50.3],backgroundColor:'rgba(41,128,185,0.5)',borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,min:35,ticks:{callback:v=>'$'+v+'B'}}}}
+    }));
+  }
+
+  if (tabIdx === 3) {
+    // PE Comparison
+    chartInstances.push(new Chart(document.getElementById('msft_peComp'), {
+      type:'bar', data:{labels:['Microsoft','Apple','Google','Amazon','Meta','S&P 500'],
+      datasets:[{label:'P/E TTM',data:[23,31,20,35,24,24.5],
+      backgroundColor:[blu,'rgba(0,0,0,0.2)',grn,'rgba(243,207,17,0.5)',bor,'rgba(0,0,0,0.08)'],borderRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'x'}}}}
+    }));
+    // Growth vs PE bubble
+    chartInstances.push(new Chart(document.getElementById('msft_growthPe'), {
+      type:'bubble', data:{datasets:[
+        {label:'Microsoft',data:[{x:17,y:23,r:20}],backgroundColor:'rgba(41,128,185,0.6)'},
+        {label:'Apple',data:[{x:5,y:31,r:18}],backgroundColor:'rgba(0,0,0,0.15)'},
+        {label:'Google',data:[{x:14,y:20,r:16}],backgroundColor:'rgba(39,174,96,0.4)'},
+        {label:'Amazon',data:[{x:11,y:35,r:18}],backgroundColor:'rgba(243,207,17,0.5)'},
+        {label:'Meta',data:[{x:22,y:24,r:14}],backgroundColor:'rgba(98,16,68,0.4)'}]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},
+        scales:{x:{title:{display:true,text:'Revenue Growth %'},ticks:{callback:v=>v+'%'}},y:{title:{display:true,text:'P/E TTM'},ticks:{callback:v=>v+'x'}}}}
+    }));
+  }
+
+  if (tabIdx === 4) {
+    // Op Margin
+    chartInstances.push(new Chart(document.getElementById('msft_margin'), {
+      type:'line', data:{labels:['Q1 FY25','Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],
+      datasets:[{label:'Op. Margin %',data:[47.2,45.6,45.7,42.1,45.8,47.1],borderColor:bor,backgroundColor:'rgba(98,16,68,0.06)',borderWidth:3,fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:bor}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:38,max:50,ticks:{callback:v=>v+'%'}}}}
+    }));
+    // CapEx vs FCF
+    chartInstances.push(new Chart(document.getElementById('msft_capexFcf'), {
+      type:'bar', data:{labels:['Q1 FY25','Q2 FY25','Q3 FY25','Q4 FY25','Q1 FY26','Q2 FY26'],
+      datasets:[
+        {label:'CapEx',data:[14.9,16.8,21.4,22.6,22.6,37.5],backgroundColor:'rgba(192,57,43,0.4)',borderRadius:5},
+        {label:'Free Cash Flow',data:[19.3,18.1,20.3,23.3,18.5,16.8],backgroundColor:'rgba(39,174,96,0.4)',borderRadius:5}
+      ]},
+      options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>'$'+v+'B'}}}}
+    }));
+  }
+}
+
+// ================================================================
+// TRADINGVIEW WIDGETS
+// ================================================================
+function loadTVTickerWidget(symbol) {
+  const container = document.getElementById('tvPriceWidget');
+  if (!container) return;
+  container.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'tradingview-widget-container';
+  div.innerHTML = `<div class="tradingview-widget-container__widget"></div>`;
+  container.appendChild(div);
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js';
+  script.async = true;
+  script.textContent = JSON.stringify({
+    symbol: symbol,
+    width: "320",
+    isTransparent: true,
+    colorTheme: "light",
+    locale: "es"
+  });
+  div.appendChild(script);
+}
+
+function loadTVChart(containerId, symbol) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'tradingview-widget-container';
+  div.style.height = '100%';
+  div.innerHTML = `<div id="${containerId}_inner" style="height:100%;"></div>`;
+  container.appendChild(div);
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.async = true;
+  script.textContent = JSON.stringify({
+    autosize: true,
+    symbol: symbol,
+    interval: "D",
+    timezone: "America/Argentina/Buenos_Aires",
+    theme: "light",
+    style: "1",
+    locale: "es",
+    allow_symbol_change: false,
+    hide_top_toolbar: false,
+    hide_legend: false,
+    save_image: false,
+    calendar: false,
+    support_host: "https://www.tradingview.com"
+  });
+  div.appendChild(script);
+}
+
+// ================================================================
+// MOBILE MENU
+// ================================================================
+var menuLink = document.getElementById('mobileMenuLink');
+var closeLink = document.getElementById('sidebarCloseLink');
+if (menuLink) {
+  menuLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('sidebar').classList.add('open');
+  });
+  menuLink.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    document.getElementById('sidebar').classList.add('open');
+  });
+}
+if (closeLink) {
+  closeLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('sidebar').classList.remove('open');
+  });
+  closeLink.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    document.getElementById('sidebar').classList.remove('open');
+  });
+}
+
+// ================================================================
+// INIT
+// ================================================================
+buildSidebar();
+
+// Delegated touch handler for sidebar nav — fixes iOS Safari tap on <div>
+var sidebarNav = document.getElementById('sidebarNav');
+if (sidebarNav) {
+  sidebarNav.addEventListener('touchend', function(e) {
+    var item = e.target.closest('.instrument-item');
+    if (item) {
+      e.preventDefault();
+      var key = Object.keys(INSTRUMENTS).find(function(k) {
+        return INSTRUMENTS[k].ticker === item.dataset.ticker;
+      });
+      if (key) selectInstrument(key);
+      return;
+    }
+    var header = e.target.closest('.category-header');
+    if (header) {
+      e.preventDefault();
+      header.parentElement.classList.toggle('open');
+    }
+  }, { passive: false });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#231F20">
+<title>Amauta Research | Inversiones Financieras</title>
+<meta name="description" content="Research browser de Amauta Inversiones Financieras — análisis de instrumentos financieros.">
+<meta property="og:title" content="Amauta Research | Inversiones Financieras">
+<meta property="og:description" content="Análisis de instrumentos financieros — equities, renta fija y más. Por Amauta Inversiones Financieras (CNV 1029).">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://amauta-research.vercel.app">
+<meta property="og:image" content="https://amauta-research.vercel.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Amauta Research | Inversiones Financieras">
+<meta name="twitter:description" content="Análisis de instrumentos financieros por Amauta Inversiones Financieras (CNV 1029).">
+<link rel="canonical" href="https://amauta-research.vercel.app">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AMAVTA Research">
+<!-- Preconnect: reduces latency to critical origins -->
+<link rel="preconnect" href="https://ltfcqoutumlcaakmobew.supabase.co">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+<link rel="dns-prefetch" href="https://s3.tradingview.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="mobile-topbar" id="mobileTopbar">
+  <a href="javascript:void(0)" id="mobileMenuLink" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--am-yellow);">
+    <span style="font-size:22px;">☰</span>
+    <span style="font-weight:800;font-size:15px;letter-spacing:1px;">AMAVTA</span>
+  </a>
+  <span style="font-size:10px;color:var(--am-gray-dark);">Research</span>
+</div>
+
+<aside class="sidebar" id="sidebar">
+  <a href="javascript:void(0)" id="sidebarCloseLink" class="sidebar-close">✕</a>
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <svg width="38" height="38" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <polygon points="18,1 35,18 18,35 1,18" fill="#F3CF11"/>
+        <g stroke="#231F20" stroke-width="2" stroke-linecap="round">
+          <line x1="18" y1="9" x2="18" y2="27"/>
+          <line x1="25.8" y1="13.5" x2="10.2" y2="22.5"/>
+          <line x1="10.2" y1="13.5" x2="25.8" y2="22.5"/>
+        </g>
+      </svg>
+      <h1>AMAVTA<span>Research Browser</span></h1>
+    </div>
+    <div class="sidebar-search">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar instrumento...">
+    </div>
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+
+  <div id="sidebarAdminEntry" class="sidebar-admin-entry">
+    <span style="min-width:48px;font-weight:700;">⚙</span>
+    <span class="inst-name">Panel Admin</span>
+    <span class="admin-badge" style="display:inline-block;">ADMIN</span>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="admin-toggle">
+      <span class="lock-icon">🔒</span>
+      <span>Modo Admin</span>
+      <span class="admin-badge">ON</span>
+    </div>
+    <div id="sidebarInstrumentCount" style="margin-top:6px; font-size:10px; color:var(--am-gray-dark);"></div>
+    <div style="margin-top:4px; font-size:10px;">CNV Mat. 1029 · amautainversiones.com</div>
+  </div>
+</aside>
+
+<div class="main" id="mainArea">
+  <div class="topbar" id="topbar" style="display:none;"></div>
+
+  <div class="content-area" id="contentArea">
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-hero">
+        <span class="welcome-hero-icon">✦</span>
+        <h2>Amauta <span>Research</span></h2>
+        <p>Análisis institucional de instrumentos financieros — equities, renta fija y más. Tesis de inversión, financials, valuación y modelos propios.</p>
+        <div class="welcome-legend">
+          <div class="legend-item"><span class="status-dot ready" style="display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;"></span> Análisis completo</div>
+          <div class="legend-item"><span class="status-dot wip" style="display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;"></span> En desarrollo</div>
+          <div class="legend-item"><span class="status-dot empty" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.2);flex-shrink:0;"></span> Pendiente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    Este material es preparado por Amauta Inversiones Financieras (Matrícula CNV 1029) con fines informativos y no constituye una recomendación de inversión. La información proviene de fuentes consideradas confiables, sin garantizar su exactitud ni completitud. Las inversiones en mercados financieros implican riesgos, incluyendo la posible pérdida del capital invertido. Rentabilidades pasadas no garantizan resultados futuros.
+  </div>
+</div>
+
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <h3>🔐 Acceso Admin</h3>
+    <input type="email" id="adminEmail" placeholder="Email" autocomplete="email">
+    <input type="password" id="adminPass" placeholder="Contraseña" autocomplete="current-password">
+    <button class="modal-btn">Ingresar</button>
+    <div class="modal-error" id="adminError">Contraseña incorrecta</div>
+    <span class="modal-cancel">Cancelar</span>
+  </div>
+</div>
+
+<script type="module" src="/js/app.js"></script>
+<!-- Vercel Analytics + Speed Insights -->
+<script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+</body>
+</html>
