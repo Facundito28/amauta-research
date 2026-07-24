@@ -9,7 +9,15 @@
  * Server-only: usa FONDITOS_API_KEY (secreta). Nunca importar desde el cliente.
  */
 
-const MCP_URL = process.env.FONDITOS_MCP_URL || "https://mcp.fonditos.ar/mcp";
+// Endpoint por defecto: el Cloudflare Worker que fonditos habilitó para
+// server-to-server. El endpoint directo (mcp.fonditos.ar) queda detrás de Bot
+// Fight Mode y desafía a las IPs de datacenter de Vercel (403 "Just a moment"),
+// y su plan de Cloudflare no permite exceptuarlo por WAF. Este Worker evita esa
+// capa. Se puede override con FONDITOS_MCP_URL (p.ej. si migran a key
+// institucional, que sí pasa Cloudflare en el endpoint directo).
+const MCP_URL =
+  process.env.FONDITOS_MCP_URL ||
+  "https://fonditos-mcp.gonzagiardino.workers.dev/mcp";
 const API_KEY = process.env.FONDITOS_API_KEY;
 
 export class FonditosError extends Error {}
