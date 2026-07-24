@@ -135,7 +135,7 @@ export default async function FichaPage({
 
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="flex flex-wrap gap-[14px]">
           <HeroKpi label="VCP" value={fmtNumber(d.vcp, 2)} />
           <HeroKpi label="Patrimonio" value={compactArs(d.patrimonio)} />
           <HeroKpi label="TNA" value={pctOrDash(m.tna)} valueClass="text-amauta-yellow" />
@@ -312,10 +312,10 @@ function HeroKpi({
   valueClass?: string;
 }) {
   return (
-    <div className="relative bg-surface-raised border border-brand-border rounded-xl px-5 py-4 overflow-hidden">
-      {/* acento amarillo inset arriba (no toca los bordes) */}
-      <span className="absolute top-0 left-5 right-5 h-[2px] bg-amauta-yellow rounded-b-sm opacity-90" aria-hidden />
-      <p className="text-[10px] uppercase tracking-[0.13em] text-text-tertiary font-extrabold mb-2">{label}</p>
+    // Mismo recipe que las KPI de CEDEARs: borde superior amarillo 3px full-width,
+    // radio 14, flex que crece/acomoda (no grid rígido).
+    <div className="flex-[1_1_190px] min-w-[170px] bg-surface-raised border border-brand-border border-t-[3px] border-t-amauta-yellow rounded-[14px] px-5 py-4">
+      <p className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary font-extrabold mb-2">{label}</p>
       <p className={`text-2xl sm:text-[26px] font-extrabold leading-none tabular-nums ${valueClass}`}>
         {value}
       </p>

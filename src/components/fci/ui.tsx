@@ -21,7 +21,7 @@ export function Section({
 }) {
   return (
     <section
-      className={`bg-surface-raised border border-brand-border rounded-lg overflow-hidden ${className}`}
+      className={`bg-surface-raised border border-brand-border rounded-[14px] overflow-hidden ${className}`}
     >
       <header className="px-5 py-4 border-b border-brand-border flex flex-wrap items-center gap-x-3 gap-y-1">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -55,7 +55,7 @@ export function StatTile({
         ? "text-rose-400"
         : "text-text-primary";
   return (
-    <div className="bg-surface-raised rounded-lg border border-brand-border border-t-2 border-t-amauta-yellow px-4 py-3.5">
+    <div className="bg-surface-raised rounded-[14px] border border-brand-border border-t-[3px] border-t-amauta-yellow px-5 py-4">
       <p className="text-[10px] uppercase tracking-[0.12em] font-extrabold text-text-tertiary mb-1">
         {label}
       </p>
