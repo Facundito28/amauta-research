@@ -62,23 +62,13 @@ export async function fonditos<T = unknown>(
   });
 
   if (!res.ok) {
-    // Log diagnóstico server-side (no expone la key): status + snippet del
-    // cuerpo + si la env var está presente y su largo. Sirve para ver qué le
-    // responde fonditos a la función de Vercel (iad1) vs. lo que vemos localmente.
     let errBody = "";
     try {
       errBody = (await res.text()).slice(0, 200);
     } catch {
-      errBody = "(sin cuerpo)";
+      /* ignore */
     }
-    const cf = {
-      ray: res.headers.get("cf-ray"),
-      mitigated: res.headers.get("cf-mitigated"),
-      server: res.headers.get("server"),
-    };
-    console.error(
-      `[fonditos] ${tool} → HTTP ${res.status} | keyPresent=${!!API_KEY} keyLen=${API_KEY?.length ?? 0} | cf-ray=${cf.ray} cf-mitigated=${cf.mitigated} server=${cf.server} | body=${errBody}`,
-    );
+    console.error(`[fonditos] ${tool} → HTTP ${res.status} | ${errBody}`);
     throw new FonditosError(`${tool}: HTTP ${res.status}`);
   }
 
