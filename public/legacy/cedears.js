@@ -557,14 +557,14 @@
     const maxVol = vols.reduce((m, v) => (v != null && v > m ? v : m), 0);
 
     if (state.chart) { try { state.chart.destroy(); } catch (_) {} state.chart = null; }
-    const BORDO = '#621044', YELLOW = '#F3CF11';
+    const BORDO = '#621044', YELLOW = '#F3CF11', LINE = '#F5F2F0';
     state.chart = new Chart(canvas, {
       data: {
         labels,
         datasets: [
           {
             type: 'line', label: `Precio ${moneda}`, data: prices, yAxisID: 'y',
-            borderColor: BORDO, backgroundColor: 'rgba(98,16,68,0.08)',
+            borderColor: LINE, backgroundColor: 'rgba(245,242,240,0.06)',
             borderWidth: 2, pointRadius: 0, tension: 0.25, fill: true, order: 1, spanGaps: true,
           },
           {
