@@ -15,8 +15,12 @@ export default function EmbedFrame({
     <div
       className="embed-wrap"
       style={{
+        // Llenar el content-area (que YA descuenta el disclaimer del pie), no
+        // 100vh. Con 100vh el iframe se dibujaba toda la pantalla y su borde
+        // inferior — donde el CRM ancla su toast (bottom:24px) — quedaba
+        // clippeado detrás del disclaimer. height:100% lo hace calzar justo.
         width: '100%',
-        height: '100vh',
+        height: '100%',
         background: 'var(--surface-base, #1C1819)',
         borderRadius: 10,
         border: '1px solid var(--border, #3A3433)',
