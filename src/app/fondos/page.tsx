@@ -6,7 +6,7 @@ import Link from "next/link";
 import { fonditos } from "@/lib/fonditos";
 import { fmtNumber, fmtPercent, fmtReturn } from "@/lib/utils/format";
 import FciShell from "@/components/fci/FciShell";
-import { Section, ErrorBox, EmptyBox, Chip } from "@/components/fci/ui";
+import { Section, ErrorBox, EmptyBox, RankBadge, CategoryChip } from "@/components/fci/ui";
 import {
   PERIODOS,
   CATEGORIAS,
@@ -15,6 +15,16 @@ import {
   compactArs,
   titleCase,
 } from "@/lib/fci/constants";
+
+/** Etiqueta corta para el segmented control de período. */
+const PERIODO_CORTO: Record<string, string> = {
+  "1d": "1D",
+  "7d": "7D",
+  "30d": "30D",
+  "90d": "90D",
+  ytd: "YTD",
+  "1y": "1A",
+};
 import type { RankingFondos, BuscarFondos } from "@/lib/fci/types";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +66,8 @@ export default async function FondosPage({
 
   const rows = ranking?.rows ?? [];
   const best = rows[0];
+  // Máximo retorno positivo → escala de la barra de magnitud del ranking.
+  const maxRet = rows.reduce((m, r) => Math.max(m, r.return_pct ?? 0), 0) || 1;
 
   const buildHref = (ov: Partial<SP>) => {
     const merged: SP = { q, periodo, categoria, clase, ...ov };
@@ -74,14 +86,26 @@ export default async function FondosPage({
       title="Fondos Comunes de Inversión"
       subtitle="Buscá cualquier fondo o explorá los rankings de rendimiento por período, categoría y clase. Datos oficiales con actualización diaria."
       kpis={[
-        { label: "Período", value: periodoLabel(periodo) },
-        { label: "Fondos rankeados", value: ranking ? String(ranking.count) : "—" },
         {
           label: "Mejor del período",
           value: best ? fmtReturn(best.return_pct, 2).text : "—",
           sub: best?.fondo,
+          highlight: true,
         },
-        { label: "Categoría", value: categoria ? titleCase(categoria) : "Todas" },
+        {
+          label: "Fondos rankeados",
+          value: ranking ? String(ranking.count) : "—",
+          sub: categoria ? titleCase(categoria) : "todas las categorías",
+        },
+        {
+          label: "Período",
+          value: periodoLabel(periodo),
+          sub: ranking ? `${ranking.from} → ${ranking.to}` : undefined,
+        },
+        {
+          label: "Categoría",
+          value: categoria ? titleCase(categoria) : "Todas",
+        },
       ]}
     >
       {/* ── Buscador ──────────────────────────────────────────────────── */}
@@ -146,10 +170,10 @@ export default async function FondosPage({
                         key={r.fondo}
                         className={`border-b border-brand-border hover:bg-surface-overlay transition-colors ${i % 2 ? "bg-white/[0.02]" : ""}`}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-5 py-3">
                           <Link
                             href={`/fondo/${encodeURIComponent(r.fondo)}`}
-                            className="font-extrabold text-text-primary hover:text-amauta-yellow transition-colors"
+                            className="font-bold text-text-primary hover:text-amauta-yellow transition-colors"
                           >
                             {r.fondo}
                           </Link>
@@ -157,12 +181,12 @@ export default async function FondosPage({
                             {titleCase(r.categoria)} · {r.moneda}
                           </div>
                         </td>
-                        <td className="px-4 py-3 hidden sm:table-cell">
-                          <Chip tone="gray">{titleCase(r.categoria)}</Chip>
+                        <td className="px-5 py-3 hidden sm:table-cell">
+                          <CategoryChip categoria={r.categoria} />
                           <span className="ml-2 text-xs text-text-tertiary">{r.moneda}</span>
                         </td>
-                        <td className="px-4 py-3 text-right tabular-nums font-medium text-text-primary">{fmtNumber(r.vcp, 2)}</td>
-                        <td className="px-4 py-3 text-right tabular-nums font-medium text-text-primary">{compactArs(r.patrimonio)}</td>
+                        <td className="px-5 py-3 text-right tabular-nums font-medium text-text-primary">{fmtNumber(r.vcp, 2)}</td>
+                        <td className="px-5 py-3 text-right tabular-nums font-medium text-text-primary">{compactArs(r.patrimonio)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -174,50 +198,56 @@ export default async function FondosPage({
       )}
 
       {/* ── Filtros del ranking ───────────────────────────────────────── */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-tertiary mr-1">
-          Período
-        </span>
-        {PERIODOS.map((p) => (
-          <Link
-            key={p.value}
-            href={buildHref({ periodo: p.value })}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-colors ${
-              periodo === p.value
-                ? "bg-amauta-yellow text-amauta-dark border-amauta-yellow"
-                : "bg-surface-raised text-text-secondary border-brand-border hover:border-amauta-yellow hover:text-text-primary"
-            }`}
-          >
-            {p.label}
-          </Link>
-        ))}
-      </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+        {/* Período: segmented control */}
+        <div className="flex items-center gap-2.5">
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-text-tertiary">
+            Período
+          </span>
+          <div className="inline-flex bg-surface-raised border border-brand-border rounded-lg p-[3px] gap-[2px]">
+            {PERIODOS.map((p) => (
+              <Link
+                key={p.value}
+                href={buildHref({ periodo: p.value })}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold tabular-nums transition-colors ${
+                  periodo === p.value
+                    ? "bg-amauta-yellow text-amauta-dark"
+                    : "text-text-secondary hover:bg-surface-overlay hover:text-text-primary"
+                }`}
+              >
+                {PERIODO_CORTO[p.value] ?? p.label}
+              </Link>
+            ))}
+          </div>
+        </div>
 
-      <form method="get" action="/fondos" className="mb-5 flex flex-wrap items-end gap-3">
-        {q && <input type="hidden" name="q" value={q} />}
-        {periodo !== "30d" && <input type="hidden" name="periodo" value={periodo} />}
-        <FilterSelect id="categoria" label="Categoría" value={categoria} options={[...CATEGORIAS]} render={titleCase} />
-        <FilterSelect id="clase" label="Clase" value={clase} options={[...CLASES]} />
-        <button
-          type="submit"
-          className="rounded-sm bg-surface-overlay border border-brand-border text-text-primary font-extrabold uppercase tracking-wider text-xs px-5 py-2.5 hover:border-amauta-yellow transition-colors"
-        >
-          Aplicar
-        </button>
-        {(categoria || clase) && (
-          <Link
-            href={buildHref({ categoria: "", clase: "" })}
-            className="text-xs font-bold text-text-tertiary hover:text-amauta-yellow transition-colors py-2.5"
+        {/* Categoría / clase */}
+        <form method="get" action="/fondos" className="flex flex-wrap items-end gap-2.5">
+          {q && <input type="hidden" name="q" value={q} />}
+          {periodo !== "30d" && <input type="hidden" name="periodo" value={periodo} />}
+          <FilterSelect id="categoria" label="Categoría" value={categoria} options={[...CATEGORIAS]} render={titleCase} />
+          <FilterSelect id="clase" label="Clase" value={clase} options={[...CLASES]} />
+          <button
+            type="submit"
+            className="rounded-md bg-surface-overlay border border-brand-border text-text-primary font-extrabold uppercase tracking-wider text-xs px-4 py-2.5 hover:border-amauta-yellow transition-colors"
           >
-            Limpiar
-          </Link>
-        )}
-      </form>
+            Aplicar
+          </button>
+          {(categoria || clase) && (
+            <Link
+              href={buildHref({ categoria: "", clase: "" })}
+              className="text-xs font-bold text-text-tertiary hover:text-amauta-yellow transition-colors py-2.5"
+            >
+              Limpiar
+            </Link>
+          )}
+        </form>
+      </div>
 
       {/* ── Tabla de ranking ──────────────────────────────────────────── */}
       <Section
         title="Ranking por rendimiento"
-        subtitle={ranking ? `${periodoLabel(periodo)} · ${ranking.from} → ${ranking.to}` : undefined}
+        subtitle={ranking ? `${periodoLabel(periodo)} · ${ranking.count} fondos` : undefined}
       >
         {!ranking ? (
           <div className="p-4">
@@ -227,70 +257,57 @@ export default async function FondosPage({
           <EmptyBox icon="📊" title="Sin resultados" message="Probá con otra categoría o clase." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead className="text-text-tertiary border-b border-brand-border">
-                <tr>
-                  <Th className="text-left w-12">#</Th>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-brand-border/70">
+                  <Th className="text-left w-14">#</Th>
                   <Th className="text-left">Fondo</Th>
-                  <Th className="text-left hidden md:table-cell">Categoría</Th>
-                  <Th className="text-center hidden sm:table-cell">Clase</Th>
-                  <Th className="text-right">Retorno</Th>
-                  <Th className="text-right">TNA</Th>
+                  <Th className="text-right">Rendimiento</Th>
+                  <Th className="text-right hidden sm:table-cell">TNA</Th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => {
                   const ret = fmtReturn(r.return_pct, 2);
-                  const podium = i < 3;
-                  const rowBg =
-                    i === 0
-                      ? "bg-amauta-yellow/10"
-                      : i === 1
-                        ? "bg-white/[0.04]"
-                        : i === 2
-                          ? "bg-amber-500/[0.06]"
-                          : i % 2
-                            ? "bg-white/[0.02]"
-                            : "";
+                  const pos = (r.return_pct ?? 0) > 0;
+                  const barW = pos ? Math.max(4, Math.min(100, (r.return_pct / maxRet) * 100)) : 0;
                   return (
                     <tr
                       key={r.fondo}
-                      className={`border-b border-brand-border hover:bg-surface-overlay transition-colors ${rowBg}`}
+                      className="group border-b border-brand-border/60 hover:bg-surface-overlay transition-colors"
                     >
-                      <td className="px-4 py-3 align-top">
-                        {podium ? (
-                          <span className="text-base" aria-label={`Top ${i + 1}`}>
-                            {i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}
-                          </span>
-                        ) : (
-                          <span className="tabular-nums text-text-tertiary text-xs">{i + 1}</span>
-                        )}
+                      <td className="px-5 py-3.5">
+                        <RankBadge n={i + 1} />
                       </td>
-                      <td className="px-4 py-3 max-w-[24rem]">
+                      <td className="px-5 py-3.5 max-w-[26rem]">
                         <Link
                           href={`/fondo/${encodeURIComponent(r.fondo)}`}
-                          className="font-extrabold text-text-primary hover:text-amauta-yellow transition-colors leading-snug"
+                          className="font-bold text-text-primary group-hover:text-amauta-yellow transition-colors leading-snug"
                         >
                           {r.fondo}
                         </Link>
-                        <div className="mt-0.5 text-xs text-text-tertiary md:hidden">
-                          {titleCase(r.categoria)}
-                          {r.moneda ? ` · ${r.moneda}` : ""}
+                        <div className="flex items-center gap-2 mt-1">
+                          <CategoryChip categoria={r.categoria} />
+                          {r.moneda && (
+                            <span className="text-[11px] font-semibold text-text-tertiary">{r.moneda}</span>
+                          )}
+                          {r.clase && (
+                            <span className="text-[11px] text-text-tertiary">· Clase {r.clase}</span>
+                          )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell align-top">
-                        <Chip tone="gray">{titleCase(r.categoria)}</Chip>
-                        {r.moneda && (
-                          <span className="ml-2 text-xs text-text-tertiary">{r.moneda}</span>
+                      <td className="px-5 py-3.5 text-right">
+                        <div className={`text-[15px] tabular-nums ${ret.colorClass}`}>{ret.text}</div>
+                        {pos && (
+                          <div className="h-1 rounded-full bg-surface-overlay mt-1.5 ml-auto max-w-[120px] overflow-hidden">
+                            <span
+                              className="block h-full rounded-full bg-emerald-400/80"
+                              style={{ width: `${barW}%` }}
+                            />
+                          </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-center hidden sm:table-cell align-top tabular-nums font-medium text-text-secondary">
-                        {r.clase ?? "—"}
-                      </td>
-                      <td className={`px-4 py-3 text-right tabular-nums font-extrabold align-top ${ret.colorClass}`}>
-                        {ret.text}
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-xs font-bold text-text-secondary align-top">
+                      <td className="px-5 py-3.5 text-right hidden sm:table-cell tabular-nums text-xs font-bold text-text-secondary">
                         {fmtPercent(r.tna_pct, 1)}
                       </td>
                     </tr>
@@ -316,7 +333,7 @@ export default async function FondosPage({
 
 function Th({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <th className={`px-4 py-3 font-extrabold uppercase tracking-wider text-[10px] whitespace-nowrap ${className}`}>
+    <th className={`px-5 py-3 font-extrabold uppercase tracking-[0.11em] text-[10px] text-text-tertiary whitespace-nowrap ${className}`}>
       {children}
     </th>
   );

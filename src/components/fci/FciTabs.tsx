@@ -32,8 +32,8 @@ export default function FciTabs() {
             href={t.href}
             className={`whitespace-nowrap py-3 text-[13px] font-bold uppercase tracking-wider border-b-2 transition-colors ${
               active
-                ? "border-amauta-yellow text-amauta-yellow"
-                : "border-transparent text-text-secondary hover:text-text-primary"
+                ? "border-amauta-yellow text-text-primary"
+                : "border-transparent text-text-tertiary hover:text-text-secondary"
             }`}
           >
             {t.label}

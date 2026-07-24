@@ -3,6 +3,7 @@
  * Todos son server components sin estado.
  */
 import type { ReactNode } from "react";
+import { titleCase } from "@/lib/fci/constants";
 
 /** Tarjeta plana surface-raised con header de título + cuadradito bordó. */
 export function Section({
@@ -86,6 +87,46 @@ export function Chip({
       className={`inline-block text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-xs ${cls[tone]}`}
     >
       {children}
+    </span>
+  );
+}
+
+/** Badge de puesto para el ranking (#1 amarillo, #2/#3 sutiles). */
+export function RankBadge({ n }: { n: number }) {
+  const tone =
+    n === 1
+      ? "bg-amauta-yellow text-amauta-dark"
+      : n === 2
+        ? "bg-[#4A4446] text-text-primary"
+        : n === 3
+          ? "bg-[#3A2F34] text-[#C77DA6]"
+          : "bg-surface-overlay text-text-secondary";
+  return (
+    <span
+      className={`inline-grid place-items-center w-7 h-7 rounded-full text-xs font-extrabold tabular-nums ${tone}`}
+    >
+      {n}
+    </span>
+  );
+}
+
+/** Chip de categoría con color por tipo (para escaneo rápido del ranking). */
+export function CategoryChip({ categoria }: { categoria: string | null | undefined }) {
+  const c = (categoria ?? "").toUpperCase();
+  const tone = c.includes("MERCADO DE DINERO")
+    ? "bg-[rgba(47,191,113,0.13)] text-[#43C77E]"
+    : c.includes("RENTA FIJA")
+      ? "bg-[rgba(90,140,220,0.14)] text-[#8FB4EC]"
+      : c.includes("RENTA VARIABLE")
+        ? "bg-[rgba(198,125,166,0.16)] text-[#C77DA6]"
+        : c.includes("RENTA MIXTA") || c.includes("RETORNO TOTAL")
+          ? "bg-[rgba(232,181,74,0.14)] text-[#E8B54A]"
+          : "bg-surface-overlay text-text-secondary";
+  return (
+    <span
+      className={`inline-block text-[10.5px] font-extrabold uppercase tracking-[0.04em] px-2 py-[3px] rounded-[5px] ${tone}`}
+    >
+      {titleCase(c)}
     </span>
   );
 }
