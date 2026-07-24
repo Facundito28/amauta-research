@@ -138,7 +138,7 @@ export default async function FichaPage({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <HeroKpi label="VCP" value={fmtNumber(d.vcp, 2)} />
           <HeroKpi label="Patrimonio" value={compactArs(d.patrimonio)} />
-          <HeroKpi label="TNA" value={pctOrDash(m.tna)} />
+          <HeroKpi label="TNA" value={pctOrDash(m.tna)} valueClass="text-amauta-yellow" />
           <HeroKpi label="Sharpe" value={m.sharpe != null ? fmtNumber(m.sharpe, 2) : "—"} />
         </div>
 
@@ -148,19 +148,15 @@ export default async function FichaPage({
 
         {/* ── Contenido ──────────────────────────────────────────────── */}
         <div className="space-y-6">
-        {/* Rendimientos */}
+        {/* Rendimientos — una banda limpia de 6 celdas con divisores */}
         <Section title="Rendimientos" subtitle={`Historial: ${m.dias_historico ?? "—"} días · desde ${m.fecha_inicio ?? "—"}`}>
-          <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <ReturnTile label="7 días" v={m.rend_7d} />
-            <ReturnTile label="30 días" v={m.rend_30d} />
-            <ReturnTile label="90 días" v={m.rend_90d} />
-            <ReturnTile label="YTD" v={m.rend_ytd} />
-            <ReturnTile label="1 año" v={m.rend_1y} />
-          </div>
-          <div className="px-4 sm:px-5 pb-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <StatTile label="TNA" value={pctOrDash(m.tna)} />
-            <StatTile label="Volatilidad" value={pctOrDash(m.volatilidad)} />
-            <StatTile label="Sharpe" value={m.sharpe != null ? fmtNumber(m.sharpe, 2) : "—"} />
+          <div className="grid grid-cols-2 md:grid-cols-6">
+            <RendCell label="7 días" v={m.rend_7d} />
+            <RendCell label="30 días" v={m.rend_30d} />
+            <RendCell label="90 días" v={m.rend_90d} />
+            <RendCell label="YTD" v={m.rend_ytd} />
+            <RendCell label="1 año" v={m.rend_1y} />
+            <RendCell label="Volatilidad" v={m.volatilidad} neutral />
           </div>
         </Section>
 
@@ -306,21 +302,46 @@ function ChipDark({ children }: { children: React.ReactNode }) {
   );
 }
 
-function HeroKpi({ label, value }: { label: string; value: string }) {
+function HeroKpi({
+  label,
+  value,
+  valueClass = "text-text-primary",
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
   return (
-    <div className="bg-surface-raised border border-brand-border border-t-2 border-t-amauta-yellow rounded-lg px-5 py-4">
-      <p className="text-[10px] uppercase tracking-[0.14em] text-text-tertiary font-extrabold mb-1.5">{label}</p>
-      <p className="text-xl sm:text-2xl font-extrabold text-text-primary leading-none tabular-nums">
+    <div className="relative bg-surface-raised border border-brand-border rounded-xl px-5 py-4 overflow-hidden">
+      {/* acento amarillo inset arriba (no toca los bordes) */}
+      <span className="absolute top-0 left-5 right-5 h-[2px] bg-amauta-yellow rounded-b-sm opacity-90" aria-hidden />
+      <p className="text-[10px] uppercase tracking-[0.13em] text-text-tertiary font-extrabold mb-2">{label}</p>
+      <p className={`text-2xl sm:text-[26px] font-extrabold leading-none tabular-nums ${valueClass}`}>
         {value}
       </p>
     </div>
   );
 }
 
-function ReturnTile({ label, v }: { label: string; v: number | null | undefined }) {
+/** Celda de rendimiento dentro de la banda (una sola fila, divisores finos). */
+function RendCell({
+  label,
+  v,
+  neutral,
+}: {
+  label: string;
+  v: number | null | undefined;
+  neutral?: boolean;
+}) {
   const r = fmtReturn(v ?? null, 2);
-  const tone = v == null ? "default" : v > 0 ? "pos" : v < 0 ? "neg" : "default";
-  return <StatTile label={label} value={r.text} tone={tone} />;
+  const text = neutral ? pctOrDash(v) : r.text;
+  const cls = neutral ? "text-text-primary" : r.colorClass;
+  return (
+    <div className="px-5 py-4 border-brand-border/60 border-l [&:nth-child(odd)]:border-l-0 [&:nth-child(n+3)]:border-t md:border-t-0 md:border-l md:[&:nth-child(6n+1)]:border-l-0">
+      <p className="text-[10px] uppercase tracking-[0.1em] text-text-tertiary font-extrabold mb-2.5">{label}</p>
+      <p className={`text-[22px] font-extrabold leading-none tabular-nums ${cls}`}>{text}</p>
+    </div>
+  );
 }
 
 function Info({ label, value }: { label: string; value: string | null | undefined }) {
