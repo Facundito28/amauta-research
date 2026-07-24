@@ -22,11 +22,12 @@ export default function EmbedFrame({
         width: '100%',
         height: '100%',
         background: 'var(--surface-base, #1C1819)',
-        borderRadius: 10,
-        border: '1px solid var(--border, #3A3433)',
+        borderRadius: 0,
+        border: 'none',
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'stretch',
+        position: 'relative',
       }}
     >
       {!loaded && (

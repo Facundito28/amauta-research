@@ -1413,6 +1413,12 @@ body.authed .login-view { display: none; }
 body.embedding .content-area { padding: 0; overflow: hidden; display: flex; }
 .embed-wrap { flex: 1; display: flex; min-height: 0; width: 100%; }
 .embed-frame { flex: 1; width: 100%; height: 100%; border: 0; display: block; background: var(--am-white); }
+/* Las herramientas embebidas ocupan toda la pantalla y traen su propio pie /
+   branding, así que el disclaimer del portal sobra (y comía espacio / tapaba
+   toasts). Se oculta solo en modo embedding; las vistas nativas de cara al
+   cliente (CEDEARs, FCIs) lo conservan. */
+body.embedding .disclaimer { display: none; }
+body.embedding .main { height: 100vh; }
 
 .soon-badge {
   display: inline-block; padding: 4px 12px; border-radius: 6px;
