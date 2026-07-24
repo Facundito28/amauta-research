@@ -898,6 +898,26 @@ function rebuildClientesIndex(){
     Object.keys(rosterByAsesor).forEach(asesor=>{ CLIENTES_POR_ASESOR[asesor] = rosterByAsesor[asesor]; });
   }
   Object.keys(CLIENTES_POR_ASESOR).forEach(k=>CLIENTES_POR_ASESOR[k].sort((a,b)=>a.localeCompare(b)));
+
+  // —— Acceso total: FL ve el listado COMPLETO de clientes de Amauta ——
+  // (toda la hoja CLIENTES, no solo su cartera). Se arma la unión de todas las
+  // carteras, dedup por nombre normalizado, y se le asigna a FL. Corre en cada
+  // rebuild, así que incluye lo que se haya sincronizado desde el Drive. El
+  // resto de los asesores no se toca; CLIENT_ASESOR (dueño real de cada cliente)
+  // tampoco cambia — FL solo gana acceso para registrar actividad.
+  const FULL_ACCESS_ASESORES = ['FL'];
+  const _seenFA = new Set(), _allCli = [];
+  const _collect = (nombre)=>{ const nk = normalizeName(nombre); if(!_seenFA.has(nk)){ _seenFA.add(nk); _allCli.push(nombre); } };
+  Object.keys(CLIENTES_POR_ASESOR).forEach(asesor=>{
+    if(FULL_ACCESS_ASESORES.includes(asesor)) return;   // FL se agrega después
+    CLIENTES_POR_ASESOR[asesor].forEach(_collect);
+  });
+  FULL_ACCESS_ASESORES.forEach(asesor=>{ (CLIENTES_POR_ASESOR[asesor]||[]).forEach(_collect); });
+  // Además, todos los de la hoja CLIENTES sincronizada — incluso sin asesor
+  // asignado — para que FL tenga el listado COMPLETO de verdad.
+  Object.keys(CLIENTES_AUM).forEach(k=>{ const c = CLIENTES_AUM[k]; _collect((c && c.nombre) ? c.nombre : k); });
+  _allCli.sort((a,b)=>a.localeCompare(b));
+  FULL_ACCESS_ASESORES.forEach(asesor=>{ CLIENTES_POR_ASESOR[asesor] = _allCli.slice(); });
 }
 rebuildClientesIndex();
 
