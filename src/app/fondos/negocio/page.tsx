@@ -7,7 +7,7 @@ import FciShell from "@/components/fci/FciShell";
 import { Section, ErrorBox, EmptyBox, Chip } from "@/components/fci/ui";
 import SeriesChart from "@/components/fci/charts/SeriesChart";
 import { compactArs } from "@/lib/fci/constants";
-import type { RankingFacturacion, SerieAum } from "@/lib/fci/types";
+import type { RankingFacturacion, SerieAum, FlujoPorGestora } from "@/lib/fci/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -33,14 +33,19 @@ export default async function NegocioPage({
   const sp = await searchParams;
   const period = PERIODS.some((p) => p.value === sp.period) ? sp.period! : "30d";
 
-  const [fact, aum] = await Promise.all([
+  const [fact, aum, flujo] = await Promise.all([
     fonditos<RankingFacturacion>("ranking_facturacion", { period }).catch(() => null),
     fonditos<SerieAum>("serie_aum", { compresion: "mensual" }).catch(() => null),
+    fonditos<FlujoPorGestora>("flujo_por_gestora", { tipo: "neto" }).catch(() => null),
   ]);
 
   const rows = fact?.rows ?? [];
   const maxFact = Math.max(1, ...rows.map((r) => r.facturacion_periodo));
   const topManager = rows[0];
+
+  // Flujos netos por gestora (suscripciones − rescates), ordenados de mayor a menor.
+  const flujoRows = flujo?.rows ?? [];
+  const maxAbsFlujo = Math.max(1, ...flujoRows.map((r) => Math.abs(r.flujo_ars)));
 
   // AUM total de la industria por bucket = suma de todas las gestoras.
   const aumSeries =
@@ -76,6 +81,68 @@ export default async function NegocioPage({
           ) : (
             <div className="p-4 sm:p-5">
               <SeriesChart data={aumSeries} currency color="#F3CF11" gradientId="aumArea" height={320} />
+            </div>
+          )}
+        </Section>
+
+        {/* Flujos netos por gestora — quién capta y quién pierde plata */}
+        <Section
+          title="Flujos netos por gestora"
+          subtitle={flujo ? `${flujoRows.length} gestoras · suscripciones − rescates` : undefined}
+        >
+          {!flujo ? (
+            <div className="p-4">
+              <ErrorBox message="Los flujos por gestora no están disponibles." />
+            </div>
+          ) : flujoRows.length === 0 ? (
+            <EmptyBox icon="💸" title="Sin datos de flujos" />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[560px]">
+                <thead className="text-text-tertiary border-b border-brand-border">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-extrabold uppercase tracking-wider text-[10px] w-10">#</th>
+                    <th className="px-4 py-3 text-left font-extrabold uppercase tracking-wider text-[10px]">Gestora</th>
+                    <th className="px-3 py-3 text-center font-extrabold uppercase tracking-wider text-[10px] hidden sm:table-cell">Tipo</th>
+                    <th className="px-3 py-3 text-right font-extrabold uppercase tracking-wider text-[10px] hidden md:table-cell">Fondos</th>
+                    <th className="px-4 py-3 text-right font-extrabold uppercase tracking-wider text-[10px]">Flujo neto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flujoRows.map((r, i) => {
+                    const pos = r.flujo_ars >= 0;
+                    const w = (Math.abs(r.flujo_ars) / maxAbsFlujo) * 100;
+                    return (
+                      <tr key={r.manager} className={`border-b border-brand-border hover:bg-surface-overlay transition-colors ${i % 2 ? "bg-white/[0.02]" : ""}`}>
+                        <td className="px-4 py-3 text-xs tabular-nums text-text-tertiary">{i + 1}</td>
+                        <td className="px-4 py-3 font-extrabold text-text-primary">{r.manager}</td>
+                        <td className="px-3 py-3 text-center hidden sm:table-cell">
+                          <Chip tone={r.type === "BANK" ? "blue" : "gray"}>
+                            {r.type === "BANK" ? "Banco" : "Indep."}
+                          </Chip>
+                        </td>
+                        <td className="px-3 py-3 text-right tabular-nums hidden md:table-cell text-text-secondary">
+                          {r.n_fondos}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className={`tabular-nums font-bold ${pos ? "text-emerald-400" : "text-rose-400"}`}>
+                              {pos ? "+" : ""}
+                              {compactArs(r.flujo_ars)}
+                            </span>
+                            <span className="hidden md:block w-24 h-2 bg-surface-overlay rounded-xs overflow-hidden">
+                              <span
+                                className={`block h-full ${pos ? "bg-emerald-400" : "bg-rose-400"}`}
+                                style={{ width: `${w}%` }}
+                              />
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </Section>
