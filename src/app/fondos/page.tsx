@@ -53,17 +53,40 @@ export default async function FondosPage({
   const q = (sp.q ?? "").trim();
   const periodo = PERIODOS.some((p) => p.value === sp.periodo) ? sp.periodo! : "30d";
   const categoria = (sp.categoria ?? "").trim();
-  const clase = (sp.clase ?? "").trim();
+  // Clase B por defecto: deduplica las clases (A/B/C/E) del mismo fondo, así el
+  // ranking muestra ~un fondo por fila y entra prácticamente todo el universo.
+  // "todas" = ver todas las clases.
+  const claseRaw = (sp.clase ?? "B").trim();
+  const clase = claseRaw === "todas" ? "" : claseRaw;
   const moneda = (sp.moneda ?? "").trim();
   const subcategoria = (sp.subcategoria ?? "").trim();
 
-  // Traemos más filas porque moneda/subcategoría se filtran del lado del cliente.
-  const rankingArgs: Record<string, unknown> = { periodo, limite: 150 };
-  if (categoria) rankingArgs.categoria = categoria;
-  if (clase) rankingArgs.clase = clase;
+  // ranking_fondos está capeado en 200 filas por consulta (límite de fonditos).
+  // Para cubrir el universo con "Todas", pedimos el ranking de cada categoría en
+  // paralelo y los unimos (hasta ~200 por categoría). Con una categoría puntual,
+  // una sola consulta alcanza. Cacheamos 1h para no quemar la cuota de la key.
+  const baseArgs: Record<string, unknown> = { periodo, limite: 200 };
+  if (clase) baseArgs.clase = clase;
+
+  const rankingP: Promise<RankingFondos | null> = categoria
+    ? fonditos<RankingFondos>("ranking_fondos", { ...baseArgs, categoria }, { revalidate: 3600 }).catch(() => null)
+    : Promise.all(
+        CATEGORIAS.map((cat) =>
+          fonditos<RankingFondos>("ranking_fondos", { ...baseArgs, categoria: cat }, { revalidate: 3600 }).catch(
+            () => null,
+          ),
+        ),
+      ).then((parts) => {
+        const ok = parts.filter(Boolean) as RankingFondos[];
+        if (ok.length === 0) return null;
+        const merged = ok
+          .flatMap((p) => p.rows)
+          .sort((a, b) => (b.return_pct ?? -1e9) - (a.return_pct ?? -1e9));
+        return { ...ok[0], rows: merged, count: merged.length, category: "TODOS" } as RankingFondos;
+      });
 
   const [ranking, search] = await Promise.all([
-    fonditos<RankingFondos>("ranking_fondos", rankingArgs).catch(() => null),
+    rankingP,
     q
       ? fonditos<BuscarFondos>("buscar_fondos", { q, limite: 12 }).catch(() => null)
       : Promise.resolve(null),
@@ -85,12 +108,13 @@ export default async function FondosPage({
   const maxRet = rows.reduce((m, r) => Math.max(m, r.return_pct ?? 0), 0) || 1;
 
   const buildHref = (ov: Partial<SP>) => {
-    const merged: SP = { q, periodo, categoria, clase, moneda, subcategoria, ...ov };
+    const merged: SP = { q, periodo, categoria, clase: claseRaw, moneda, subcategoria, ...ov };
     const p = new URLSearchParams();
     if (merged.q) p.set("q", merged.q);
     if (merged.periodo && merged.periodo !== "30d") p.set("periodo", merged.periodo);
     if (merged.categoria) p.set("categoria", merged.categoria);
-    if (merged.clase) p.set("clase", merged.clase);
+    // "B" es el default → no ensuciamos la URL; sí persistimos A/C/todas.
+    if (merged.clase && merged.clase !== "B") p.set("clase", merged.clase);
     if (merged.moneda) p.set("moneda", merged.moneda);
     if (merged.subcategoria) p.set("subcategoria", merged.subcategoria);
     const qs = p.toString();
@@ -283,16 +307,36 @@ export default async function FondosPage({
           {subcatsDisponibles.length > 0 && (
             <FilterSelect id="subcategoria" label="Subcategoría" value={subcategoria} options={subcatsDisponibles} render={titleCase} />
           )}
-          <FilterSelect id="clase" label="Clase" value={clase} options={[...CLASES]} />
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="clase"
+              className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-text-tertiary"
+            >
+              Clase
+            </label>
+            <select
+              id="clase"
+              name="clase"
+              defaultValue={claseRaw}
+              className="rounded-sm border border-brand-border bg-surface-overlay text-text-primary px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amauta-yellow focus:ring-2 focus:ring-amauta-yellow/30 transition-colors min-w-[9rem] [color-scheme:dark]"
+            >
+              {CLASES.map((c) => (
+                <option key={c} value={c}>
+                  Clase {c}
+                </option>
+              ))}
+              <option value="todas">Todas las clases</option>
+            </select>
+          </div>
           <button
             type="submit"
             className="rounded-md bg-surface-overlay border border-brand-border text-text-primary font-extrabold uppercase tracking-wider text-xs px-4 py-2.5 hover:border-amauta-yellow transition-colors"
           >
             Aplicar
           </button>
-          {(categoria || clase || subcategoria || moneda) && (
+          {(categoria || subcategoria || moneda || claseRaw !== "B") && (
             <Link
-              href={buildHref({ categoria: "", clase: "", subcategoria: "", moneda: "" })}
+              href={buildHref({ categoria: "", clase: "B", subcategoria: "", moneda: "" })}
               className="text-xs font-bold text-text-tertiary hover:text-amauta-yellow transition-colors py-2.5"
             >
               Limpiar
@@ -328,7 +372,7 @@ export default async function FondosPage({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => {
+                {rows.slice(0, 300).map((r, i) => {
                   const ret = fmtReturn(r.return_pct, 2);
                   const pos = (r.return_pct ?? 0) > 0;
                   const barW = pos ? Math.max(4, Math.min(100, (r.return_pct / maxRet) * 100)) : 0;
@@ -397,6 +441,13 @@ export default async function FondosPage({
                 })}
               </tbody>
             </table>
+            {rows.length > 300 && (
+              <p className="px-5 py-3.5 border-t border-brand-border/60 text-xs text-text-tertiary">
+                Mostrando los primeros <strong className="text-text-secondary">300</strong> de{" "}
+                <strong className="text-text-secondary">{rows.length}</strong> fondos (ordenados por
+                rendimiento). Usá los filtros de categoría, subcategoría o moneda para acotar.
+              </p>
+            )}
           </div>
         )}
       </Section>
