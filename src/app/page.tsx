@@ -3,10 +3,9 @@ import Link from "next/link";
 const TOOLS = [
   { href: "/cedears", title: "Monitor CEDEARs", sub: "Cotizaciones y fundamentals en vivo", icon: "📈" },
   { href: "/fondos", title: "Monitor FCIs", sub: "Fondos Comunes · CAFCI", icon: "📊" },
-  { href: "/chat", title: "Chat Financiero", sub: "Asistente financiero con IA", icon: "💬" },
+  { href: "/chat", title: "Chat + Noticias", sub: "Asistente IA + noticias de Argentina", icon: "💬" },
   { href: "/simulador", title: "Simulador", sub: "Comparador CPD · Banco vs Mercado", icon: "🧮" },
   { href: "/informes", title: "Generador de Informes", sub: "Informes de rendimiento para clientes", icon: "📄" },
-  { href: "/noticias", title: "Noticias", sub: "Reuters · universo CEDEARs", icon: "📰" },
 ];
 
 export default function Home() {
@@ -32,7 +31,7 @@ export default function Home() {
         </div>
         <p>
           Todas las herramientas de Amauta en un solo lugar: monitor de CEDEARs, fondos comunes, simulador,
-          chat financiero y noticias del mercado.
+          generador de informes, CRM y un chat financiero con noticias de Argentina.
         </p>
       </div>
       <div className="hub-title">Herramientas</div>
