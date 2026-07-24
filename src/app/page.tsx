@@ -5,6 +5,7 @@ const TOOLS = [
   { href: "/fondos", title: "Monitor FCIs", sub: "Fondos Comunes · CAFCI", icon: "📊" },
   { href: "/chat", title: "Chat Financiero", sub: "Asistente financiero con IA", icon: "💬" },
   { href: "/simulador", title: "Simulador", sub: "Comparador CPD · Banco vs Mercado", icon: "🧮" },
+  { href: "/informes", title: "Generador de Informes", sub: "Informes de rendimiento para clientes", icon: "📄" },
   { href: "/noticias", title: "Noticias", sub: "Reuters · universo CEDEARs", icon: "📰" },
 ];
 

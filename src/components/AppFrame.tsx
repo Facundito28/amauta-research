@@ -19,6 +19,7 @@ const TOOLS = [
   { href: "/fondos", title: "Monitor FCIs", sub: "Fondos Comunes · CAFCI", icon: "📊", short: "FCIs" },
   { href: "/chat", title: "Chat Financiero", sub: "Asistente financiero con IA", icon: "💬", short: "Chat" },
   { href: "/simulador", title: "Simulador", sub: "Comparador CPD · Banco vs Mercado", icon: "🧮", short: "Simulador" },
+  { href: "/informes", title: "Generador de Informes", sub: "Informes de rendimiento para clientes", icon: "📄", short: "Informes" },
   { href: "/noticias", title: "Noticias", sub: "Reuters · universo CEDEARs", icon: "📰", short: "Noticias" },
   { href: "/crm", title: "CRM", sub: "Gestión comercial y clientes", icon: "🤝", short: "CRM" },
 ];

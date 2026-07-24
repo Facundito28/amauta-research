@@ -1,0 +1,2056 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Informes de Rendimiento &middot; Amauta</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --surface-base:#1C1819; --surface-raised:#231F20; --surface-overlay:#2C2728;
+    --border:#3A3433;
+    --text-primary:#F5F2F0; --text-secondary:#B8B2B3; --text-tertiary:#8A8487;
+    --accent:#F3CF11; --on-accent:#231F20; --brand-bordo:#621044;
+    --success:#2FBF71; --warning:#E8B54A; --danger:#D8434E; --azul:#4A41C9;
+    --font:'Fira Sans',Helvetica,Arial,sans-serif;
+    --r-sm:6px; --r-md:10px; --r-lg:14px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--surface-base);color:var(--text-primary);
+    font-size:15px;line-height:1.5;font-weight:400;-webkit-font-smoothing:antialiased}
+  .app{display:grid;grid-template-columns:460px 1fr;height:100vh;overflow:hidden}
+  @media(max-width:900px){.app{grid-template-columns:1fr;height:auto;overflow:visible}}
+
+  /* ---------- FORM PANEL ---------- */
+  .form-panel{background:var(--surface-base);border-right:1px solid var(--border);
+    overflow-y:auto;padding:24px 22px 80px}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .brand .dot{width:30px;height:30px;border-radius:8px;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;color:var(--on-accent);
+    font-weight:800;font-size:17px;flex-shrink:0}
+  .brand h1{font-size:17px;font-weight:600;letter-spacing:.01em}
+  .brand p{font-size:12px;color:var(--text-tertiary);margin-top:1px}
+  .lead{font-size:13px;color:var(--text-secondary);margin:14px 0 16px;line-height:1.55}
+
+  details.step{background:var(--surface-raised);border:1px solid var(--border);
+    border-radius:var(--r-lg);margin-bottom:12px;overflow:hidden}
+  details.step>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;
+    align-items:center;gap:12px;user-select:none}
+  details.step>summary::-webkit-details-marker{display:none}
+  .step-n{width:22px;height:22px;border-radius:6px;background:var(--surface-overlay);
+    color:var(--accent);font-weight:800;font-size:12px;display:flex;align-items:center;
+    justify-content:center;flex-shrink:0;border:1px solid var(--border)}
+  .step-t{font-size:14px;font-weight:600;flex:1}
+  .step-sub{font-size:12px;color:var(--text-tertiary);font-weight:400}
+  .chev{color:var(--text-tertiary);transition:transform .18s}
+  details[open] .chev{transform:rotate(90deg)}
+  .step-body{padding:2px 16px 18px}
+
+  label.fld{display:block;margin-bottom:12px}
+  label.fld>span{display:block;font-size:12px;color:var(--text-secondary);
+    margin-bottom:5px;letter-spacing:.02em}
+  input[type=text],input[type=date],input[type=number],textarea,select{
+    width:100%;background:var(--surface-base);border:1px solid var(--border);
+    border-radius:var(--r-sm);color:var(--text-primary);font-family:var(--font);
+    font-size:14px;padding:9px 11px;outline:none;transition:border-color .15s}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:64px;line-height:1.5}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .hint{font-size:11.5px;color:var(--text-tertiary);margin-top:-6px;margin-bottom:12px;line-height:1.45}
+  .hint.calc{color:var(--accent)}
+
+  .seg{display:inline-flex;background:var(--surface-base);border:1px solid var(--border);
+    border-radius:var(--r-sm);padding:3px;gap:3px;flex-wrap:wrap}
+  .seg button{border:none;background:transparent;color:var(--text-secondary);
+    font-family:var(--font);font-size:13px;font-weight:600;padding:7px 14px;
+    border-radius:4px;cursor:pointer}
+  .seg button.on{background:var(--accent);color:var(--on-accent)}
+
+  .check{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;
+    background:var(--surface-base);border:1px solid var(--border);border-radius:var(--r-sm);
+    margin-bottom:10px;cursor:pointer}
+  .check input{margin-top:2px;width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+  .check .ct{font-size:13px;font-weight:600}
+  .check .cs{font-size:11.5px;color:var(--text-tertiary)}
+
+  .card{background:var(--surface-base);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:12px;margin-bottom:10px;position:relative}
+  .card .del{position:absolute;top:8px;right:8px;background:transparent;border:none;
+    color:var(--text-tertiary);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;border-radius:4px}
+  .card .del:hover{color:var(--danger);background:rgba(216,67,78,.12)}
+
+  .btn{font-family:var(--font);font-weight:600;font-size:13px;border-radius:var(--r-sm);
+    cursor:pointer;border:1px solid var(--border);background:var(--surface-overlay);
+    color:var(--text-primary);padding:9px 14px;transition:all .15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.add{width:100%;color:var(--accent);border-style:dashed}
+  .btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+  .btn.primary:hover{filter:brightness(1.05)}
+  .btn.ghost{background:transparent}
+  .btn.sm{font-size:12px;padding:6px 10px}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+
+  .file-drop{border:1px dashed var(--border);border-radius:var(--r-sm);padding:12px;
+    text-align:center;color:var(--text-tertiary);font-size:12.5px;cursor:pointer;
+    background:var(--surface-base);display:block}
+  .file-drop:hover{border-color:var(--accent);color:var(--text-secondary)}
+  .file-drop input{display:none}
+  .file-pill{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary);
+    background:var(--surface-overlay);border:1px solid var(--border);border-radius:var(--r-sm);
+    padding:6px 10px;margin-top:8px}
+  .file-pill .x{margin-left:auto;cursor:pointer;color:var(--text-tertiary)}
+  .file-pill .x:hover{color:var(--danger)}
+
+  /* checklist */
+  .checklist{background:var(--surface-raised);border:1px solid var(--border);
+    border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px}
+  .checklist h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--text-tertiary);font-weight:800;margin-bottom:8px}
+  .chk{display:flex;gap:8px;font-size:12.5px;line-height:1.45;margin-bottom:6px;align-items:flex-start}
+  .chk:last-child{margin-bottom:0}
+  .chk .m{flex-shrink:0;font-weight:800;width:14px}
+  .chk.ok{color:var(--text-tertiary)} .chk.ok .m{color:var(--success)}
+  .chk.warn{color:var(--text-secondary)} .chk.warn .m{color:var(--warning)}
+  .chk.err{color:var(--text-primary)} .chk.err .m{color:var(--danger)}
+
+  .pos-head{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--text-tertiary);font-weight:800;margin:14px 0 8px}
+  .pos-head .btn{margin-left:auto}
+  .pos-row{display:grid;grid-template-columns:1fr 96px;gap:8px;align-items:center;
+    padding:7px 9px;background:var(--surface-base);border:1px solid var(--border);
+    border-radius:var(--r-sm);margin-bottom:6px}
+  .pos-row .nm{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pos-row .mt{font-size:11px;color:var(--text-tertiary)}
+  .pos-row select{font-size:11.5px;padding:5px 6px;grid-column:1/-1}
+  .pos-row .pc{font-size:12px;color:var(--accent);font-weight:800;text-align:right}
+  input.ocr,textarea.ocr{border-color:var(--warning);background:rgba(232,181,74,.06)}
+  .ocr-warn{background:rgba(232,181,74,.10);border:1px solid var(--warning);border-radius:var(--r-sm);
+    padding:9px 11px;margin:8px 0;font-size:12.5px;line-height:1.5}
+  .mov-tot{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:12.5px;
+    background:var(--surface-base);border:1px solid var(--border);border-radius:var(--r-sm);
+    padding:10px 12px;margin-bottom:10px}
+  .mov-tot b{color:var(--accent)}
+  .flu-row{display:grid;grid-template-columns:78px 1fr 96px 22px;gap:6px;align-items:center;
+    padding:6px 8px;background:var(--surface-base);border:1px solid var(--border);
+    border-radius:var(--r-sm);margin-bottom:6px}
+  .flu-row input{font-size:11.5px;padding:5px 6px}
+  .flu-row .rm{background:none;border:none;color:var(--text-tertiary);cursor:pointer}
+  .dietz{background:rgba(243,207,17,.08);border:1px solid var(--accent);border-radius:var(--r-sm);
+    padding:11px 13px;font-size:12.5px;line-height:1.5;margin-top:10px}
+  .dietz b{font-size:18px;color:var(--accent)}
+  .restore{background:rgba(243,207,17,.08);border:1px solid var(--accent);
+    border-radius:var(--r-sm);padding:10px 12px;margin-bottom:12px;font-size:12.5px;
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+  /* ---------- PREVIEW PANEL ---------- */
+  .preview-panel{display:flex;flex-direction:column;overflow:hidden;background:#141012}
+  @media(max-width:900px){.preview-panel{height:80vh}}
+  .actionbar{display:flex;align-items:center;gap:10px;padding:12px 20px;
+    border-bottom:1px solid var(--border);background:var(--surface-raised);flex-shrink:0}
+  .actionbar .title{font-size:13px;color:var(--text-tertiary);margin-right:auto}
+  .actionbar .title b{color:var(--text-primary);font-weight:600}
+  #preview{flex:1;border:none;width:100%;background:#211C22}
+  .zoomwrap{flex:1;overflow:auto;display:flex;justify-content:center;padding:22px}
+  .frame-shell{width:960px;flex-shrink:0;box-shadow:0 20px 50px rgba(0,0,0,.5);border-radius:6px;overflow:hidden}
+  .frame-shell iframe{width:960px;height:1360px;border:none;display:block;background:#211C22}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ FORM ============ -->
+  <aside class="form-panel">
+    <div class="brand">
+      <div class="dot">A</div>
+      <div><h1>Generador de Informes de Rendimiento</h1><p>Amauta Inversiones Financieras</p></div>
+    </div>
+    <p class="lead">Cargá los datos paso a paso. La vista previa se actualiza en vivo. El borrador se guarda solo en este navegador; ningún dato del cliente sale de tu equipo.</p>
+
+    <div id="restoreBar"></div>
+    <div class="checklist"><h3>Checklist antes de enviar</h3><div id="chkList"></div></div>
+
+    <!-- 1. Configuración -->
+    <details class="step" open>
+      <summary><span class="step-n">1</span><span class="step-t">Configuraci&oacute;n<br><span class="step-sub">Moneda, ALyC y fecha</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <label class="fld"><span>Moneda del informe</span></label>
+        <div class="seg" id="seg-moneda" style="margin-bottom:14px">
+          <button data-m="pesos" class="on">Pesos ($)</button>
+          <button data-m="usd">D&oacute;lares (USD)</button>
+        </div>
+        <label class="fld"><span>ALyC / fuente de datos</span>
+          <input type="text" id="fuente" list="alycList" placeholder="Portfolio Personal Inversiones (PPI)">
+          <datalist id="alycList">
+            <option value="Portfolio Personal Inversiones (PPI)"></option>
+            <option value="Balanz"></option>
+            <option value="ONE618"></option>
+          </datalist></label>
+        <label class="fld"><span>Fecha del informe &middot; se completa con la fecha de hoy</span>
+          <input type="date" id="fechaInforme"></label>
+      </div>
+    </details>
+
+    <!-- 2. Cliente -->
+    <details class="step" open>
+      <summary><span class="step-n">2</span><span class="step-t">Cliente<br><span class="step-sub">Nombre y comitente</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <label class="fld"><span>Nombre del cliente</span>
+          <input type="text" id="cliente" list="clienteList" placeholder="Ej: Expreso Bisonte S.R.L.">
+          <datalist id="clienteList"></datalist></label>
+        <label class="fld"><span>N.&ordm; de comitente</span>
+          <input type="text" id="comitente" placeholder="Ej: 254355"></label>
+        <p class="hint">Los clientes que vas cargando quedan sugeridos en este navegador para la pr&oacute;xima vez.</p>
+      </div>
+    </details>
+
+    <!-- 3. Período -->
+    <details class="step" open>
+      <summary><span class="step-n">3</span><span class="step-t">Per&iacute;odo<br><span class="step-sub">Fecha inicio &#8594; fecha fin</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <div class="row2">
+          <label class="fld"><span>Fecha inicio</span><input type="date" id="fInicio"></label>
+          <label class="fld"><span>Fecha fin</span><input type="date" id="fFin"></label>
+        </div>
+        <p class="hint calc" id="diasNote"></p>
+      </div>
+    </details>
+
+    <!-- 4. Rendimiento -->
+    <details class="step" open>
+      <summary><span class="step-n">4</span><span class="step-t">Rendimiento (TWR)<br><span class="step-sub">TWR del per&iacute;odo y anualizado</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <label class="fld"><span>Origen del TWR</span></label>
+        <div class="seg" id="seg-origen" style="margin-bottom:14px">
+          <button data-o="alyc" class="on">Informado por la ALyC</button>
+          <button data-o="amauta">C&aacute;lculo Amauta</button>
+        </div>
+        <p class="hint" id="origenNote"></p>
+        <label class="fld"><span>TWR del per&iacute;odo (%)</span>
+          <input type="text" id="twr" placeholder="Ej: 16,21"></label>
+        <p class="hint">Ojo: el <b>&ldquo;Cambio en el Valor de la Cuenta (%)&rdquo;</b> de Balanz y PPI no es un TWR &mdash; incluye el efecto de aportes y retiros. Si hubo movimientos en el per&iacute;odo, carg&aacute; las fechas en el paso 5.</p>
+        <div class="row2">
+          <label class="fld"><span>TEA &middot; anualizado compuesto</span><input type="text" id="anual" placeholder="se calcula solo"></label>
+          <label class="fld"><span>TNA equivalente &middot; lineal</span><input type="text" id="tnaOut" readonly placeholder="se calcula solo"></label>
+        </div>
+        <p class="hint calc" id="anualNote"></p>
+        <label class="check"><input type="checkbox" id="anualKpi">
+          <span><span class="ct">Mostrar el anualizado en los KPIs de portada</span><br><span class="cs">Se activa solo cuando el per&iacute;odo llega a 12 meses</span></span></label>
+      </div>
+    </details>
+
+    <!-- 5. Evolución de cuenta -->
+    <details class="step" open>
+      <summary><span class="step-n">5</span><span class="step-t">Evoluci&oacute;n de cuenta<br><span class="step-sub">Como la informa la ALyC</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <p class="hint" style="margin-top:0">Peg&aacute; el panel de evoluci&oacute;n de cuenta &mdash;como texto o como captura, con Ctrl+V en cualquier parte&mdash; y se completa todo solo. Entiende el formato de Balanz y el de PPI. Si lo carg&aacute;s a mano, los egresos van con signo menos.</p>
+        <label class="fld"><span>Pegar panel de evoluci&oacute;n de cuenta</span>
+          <textarea id="evoText" rows="3" placeholder="Valor Inicial	3,788,537.70&#10;Depositos/Suscripciones	8,316.01&#10;Resultado por Tenencia	474,624.94&#10;Valor Final	4,164,240.04"></textarea></label>
+        <button class="btn add" id="btnEvo" style="margin-bottom:10px">Completar desde el panel pegado</button>
+        <label class="file-drop">&hellip; o sub&iacute; / peg&aacute; una captura del panel (se lee con OCR)
+          <input type="file" id="evoImg" accept="image/*"></label>
+        <div id="evoImgPrev"></div>
+        <div class="row2">
+          <label class="fld"><span>Valor inicial</span><input type="text" id="saldoIni" placeholder="3.788.537,70"></label>
+          <label class="fld"><span>Valor final</span><input type="text" id="saldoFin" placeholder="4.164.240,04"></label>
+        </div>
+        <div class="pos-head" style="margin-top:4px">Flujos de capital</div>
+        <div class="row2">
+          <label class="fld"><span>Dep&oacute;sitos / suscripciones</span><input type="text" id="depositos" placeholder="8.316,01"></label>
+          <label class="fld"><span>Extracciones / rescates</span><input type="text" id="extracciones" placeholder="-148.946,20"></label>
+        </div>
+        <div class="row2">
+          <label class="fld"><span>T&iacute;tulos recibidos</span><input type="text" id="titRec" placeholder="0,00"></label>
+          <label class="fld"><span>T&iacute;tulos enviados</span><input type="text" id="titEnv" placeholder="-70.438,90"></label>
+        </div>
+        <div class="pos-head">Componentes del resultado</div>
+        <div class="row2">
+          <label class="fld"><span>Resultado por tenencia</span><input type="text" id="tenencia" placeholder="474.624,94"></label>
+          <label class="fld"><span>Cupones y dividendos</span><input type="text" id="cupones" placeholder="124.607,55"></label>
+        </div>
+        <div class="row2">
+          <label class="fld"><span>Gastos, comisiones e impuestos</span><input type="text" id="gastos" placeholder="-9.178,28"></label>
+          <label class="fld"><span>Ajustes</span><input type="text" id="ajustes" placeholder="-3.282,77"></label>
+        </div>
+        <p class="hint calc" id="concNote"></p>
+        <p class="hint" id="concCheck"></p>
+        <div class="pos-head">Fechas de los flujos &middot; opcional</div>
+        <p class="hint" style="margin-top:0">Si hubo aportes o retiros, el TWR necesita saber <b>cu&aacute;ndo</b> ocurrieron. Carg&aacute;los a mano o sub&iacute; el archivo de movimientos de la ALyC y se toman de ah&iacute;.</p>
+        <label class="file-drop">Archivo de movimientos (.xlsx o .csv)
+          <input type="file" id="movFile" accept=".xlsx,.xls,.csv"></label>
+        <div id="movPrev"></div>
+        <div id="flujosBox"></div>
+        <button class="btn add" id="addFlujo" style="display:none">+ Agregar flujo</button>
+        <div id="dietzBox"></div>
+      </div>
+    </details>
+
+    <!-- 6. Cuentas -->
+    <details class="step">
+      <summary><span class="step-n">6</span><span class="step-t">Cuentas &middot; opcional<br><span class="step-sub">Consolidar varias ALyC</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <p class="hint" style="margin-top:0">Us&aacute; esta secci&oacute;n solo si el cliente opera en m&aacute;s de una ALyC. El TWR consolidado se pondera por AUM inicial (si falta, por AUM final).</p>
+        <div id="cuentasRows"></div>
+        <button class="btn add" id="addCta">+ Agregar cuenta</button>
+        <p class="hint calc" id="ctaNote" style="margin-top:10px"></p>
+        <button class="btn sm" id="usarPond" style="width:100%;display:none">Usar el TWR ponderado como TWR de cartera</button>
+      </div>
+    </details>
+
+    <!-- 7. Benchmark -->
+    <details class="step" open>
+      <summary><span class="step-n">7</span><span class="step-t">Benchmarks<br><span class="step-sub">Inflaci&oacute;n, TC y otros</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <label class="check"><input type="checkbox" id="bkInf">
+          <span><span class="ct">Inflaci&oacute;n</span><br><span class="cs" id="bkInfSrc">INDEC &middot; IPC</span></span></label>
+        <div id="bkInfBox" style="display:none;margin:-4px 0 12px 0">
+          <div class="row2">
+            <label class="fld"><span>Acumulado del per&iacute;odo (%)</span><input type="text" id="bkInfVal" placeholder="se calcula solo"></label>
+            <label class="fld"><span>Fuente</span><input type="text" id="bkInfFuente"></label>
+          </div>
+          <p class="hint calc" id="bkInfNote" style="margin-top:-4px"></p>
+        </div>
+
+        <label class="check"><input type="checkbox" id="bkTc">
+          <span><span class="ct">Tipo de cambio</span><br><span class="cs">BCRA &middot; TC mayorista</span></span></label>
+        <div id="bkTcBox" style="display:none;margin:-4px 0 12px 0">
+          <div class="row2">
+            <label class="fld"><span>TC inicio</span><input type="text" id="tcIni" placeholder="1.032,50"></label>
+            <label class="fld"><span>TC fin</span><input type="text" id="tcFin" placeholder="1.516,99"></label>
+          </div>
+          <div class="row2">
+            <label class="fld"><span>Variaci&oacute;n acumulada (%)</span><input type="text" id="bkTcVal" placeholder="se calcula solo"></label>
+            <label class="fld"><span>Fuente</span><input type="text" id="bkTcFuente" value="BCRA &middot; TC mayorista"></label>
+          </div>
+          <p class="hint calc" id="bkTcNote" style="margin-top:-4px"></p>
+        </div>
+
+        <div id="bkCustom"></div>
+        <div class="btnrow" id="bkPresets"></div>
+        <button class="btn add" id="addBk">+ Benchmark personalizado</button>
+      </div>
+    </details>
+
+    <!-- 8. Cartera -->
+    <details class="step">
+      <summary><span class="step-n">8</span><span class="step-t">Cartera<br><span class="step-sub">Composici&oacute;n al cierre</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <label class="fld"><span>Nivel de detalle</span></label>
+        <div class="seg" id="seg-agrupar" style="margin-bottom:14px">
+          <button data-g="clase" class="on">Por clase de activo</button>
+          <button data-g="instrumento">Instrumento por instrumento</button>
+        </div>
+        <label class="fld"><span>Formato en el informe</span></label>
+        <div class="seg" id="seg-vista" style="margin-bottom:14px">
+          <button data-v="tabla" class="on">Tabla</button>
+          <button data-v="grid">Cards por categor&iacute;a</button>
+        </div>
+        <div class="row2">
+          <label class="fld"><span>Moneda de los importes</span>
+            <select id="carteraMoneda"><option value="pesos">Pesos ($)</option><option value="usd">D&oacute;lares (USD)</option></select></label>
+          <label class="fld" id="tcCartFld"><span>Tipo de cambio para convertir</span>
+            <input type="text" id="carteraTC" placeholder="1.516,99"></label>
+        </div>
+        <p class="hint calc" id="tcCartNote"></p>
+        <label class="file-drop">Sub&iacute; el PDF del consolidado (Balanz, PPI)
+          <input type="file" id="pdfConsol" accept="application/pdf"></label>
+        <div id="pdfConsolPrev" style="margin-bottom:12px"></div>
+        <label class="fld"><span>&hellip; o peg&aacute; las columnas desde Excel (activo, valor, %)</span>
+          <textarea id="consolText" rows="4" placeholder="FCI&#9;3.528.200,00&#9;59,4%&#10;AL30&#9;1.204.500,00&#9;20,3%"></textarea></label>
+        <button class="btn add" id="btnParse" style="margin-bottom:10px">Cargar posiciones desde el texto</button>
+        <div id="posicionesBox"></div>
+        <div id="carteraRows"></div>
+        <button class="btn add" id="addCart">+ Agregar posici&oacute;n</button>
+        <label class="fld" style="margin-top:14px"><span>Valor total &middot; opcional (si se deja vac&iacute;o, se suma solo)</span>
+          <input type="text" id="carteraTotal" placeholder="Ej: $3.528.200,00"></label>
+      </div>
+    </details>
+
+    <!-- 9. Lectura -->
+    <details class="step">
+      <summary><span class="step-n">9</span><span class="step-t">Lectura del resultado<br><span class="step-sub">Explicaci&oacute;n en lenguaje simple</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <p class="hint" style="margin-top:0">Se genera sola con los datos cargados. Si la edit&aacute;s, deja de regenerarse hasta que uses el bot&oacute;n.</p>
+        <button class="btn ghost" id="btnRegenLect" style="width:100%;margin-bottom:10px">&#10227; Regenerar la lectura autom&aacute;tica</button>
+        <div id="lecturaRows"></div>
+        <button class="btn add" id="addLect">+ Agregar tarjeta</button>
+      </div>
+    </details>
+
+    <!-- 10. Factsheets -->
+    <details class="step">
+      <summary><span class="step-n">10</span><span class="step-t">Factsheets<br><span class="step-sub">Si se incluye alg&uacute;n fondo</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <label class="file-drop">Sub&iacute; factsheets (PDF, uno o varios)
+          <input type="file" id="factsheets" accept="application/pdf" multiple></label>
+        <div id="factsheetsPrev"></div>
+        <p class="hint calc" id="fsNote"></p>
+      </div>
+    </details>
+
+    <!-- 11. Ajustes -->
+    <details class="step">
+      <summary><span class="step-n">11</span><span class="step-t">Ajustes del informe<br><span class="step-sub">T&iacute;tulos, matr&iacute;cula y disclaimer</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <label class="fld"><span>T&iacute;tulo de portada (l&iacute;nea 1)</span><input type="text" id="titulo1" placeholder="RENDIMIENTO"></label>
+        <label class="fld"><span>T&iacute;tulo de portada (l&iacute;nea 2, amarillo)</span><input type="text" id="titulo2" placeholder="DE CARTERA"></label>
+        <label class="fld"><span>Registro / matr&iacute;cula para el pie legal</span><input type="text" id="matricula"></label>
+        <p class="hint">Corrobor&aacute; este dato una vez: sale en el pie de todos los informes.</p>
+        <label class="fld"><span>Disclaimer &middot; se autogenera; edit&aacute; si hace falta</span>
+          <textarea id="disclaimer" rows="6"></textarea></label>
+      </div>
+    </details>
+
+    <!-- 12. Datos y automatización -->
+    <details class="step">
+      <summary><span class="step-n">12</span><span class="step-t">Datos y automatizaci&oacute;n<br><span class="step-sub">Borradores, JSON e IPC</span></span><span class="chev">&#9656;</span></summary>
+      <div class="step-body">
+        <div class="btnrow">
+          <button class="btn sm" id="btnSaveDraft">Guardar borrador (.json)</button>
+          <button class="btn sm" id="btnLoadDraft">Cargar borrador</button>
+          <button class="btn sm" id="btnExportSkill">Exportar JSON para la skill</button>
+        </div>
+        <p class="hint">El borrador guarda todo el estado y se puede volver a abrir ac&aacute;. El JSON de skill sale en el formato que consume <b>amauta-propuesta</b> (<code>sections[]</code>), para renderizar el mismo informe desde Claude.</p>
+        <input type="file" id="draftFile" accept="application/json" style="display:none">
+        <label class="fld" style="margin-top:6px"><span>Serie IPC mensual &middot; una l&iacute;nea por mes: <code>2026-07: 2,1</code></span>
+          <textarea id="ipcEdit" rows="4" placeholder="2026-07: 2,1"></textarea></label>
+        <div class="btnrow">
+          <button class="btn sm" id="btnIpcSave">Guardar serie IPC en este navegador</button>
+          <button class="btn sm ghost" id="btnIpcReset">Volver a la serie por defecto</button>
+        </div>
+        <p class="hint calc" id="ipcNote"></p>
+        <p class="hint">En la intranet, el generador intenta leer <code>./data/ipc.json</code> y <code>./data/clientes.json</code> al abrir. Si esos archivos existen, pisan estos valores y actualiz&aacute;s el IPC una sola vez para todo el equipo.</p>
+      </div>
+    </details>
+  </aside>
+
+  <!-- ============ PREVIEW ============ -->
+  <section class="preview-panel">
+    <div class="actionbar">
+      <div class="title">Vista previa &middot; <b id="pvName">Nuevo informe</b></div>
+      <button class="btn ghost" id="btnReset">Nuevo informe</button>
+      <button class="btn ghost" id="btnPrint">Imprimir / PDF</button>
+      <button class="btn primary" id="btnDownload">Descargar informe</button>
+    </div>
+    <div class="zoomwrap">
+      <div class="frame-shell"><iframe id="preview" title="Vista previa del informe"></iframe></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ================= LOGO OFICIAL ================= */
+const LOGO = "data:image/png;base64,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";
+
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function num2(x){
+  if(x==null||x==='') return NaN;
+  let s=String(x).trim().replace(/\s/g,'').replace(/%/g,'').replace(/p\.p\./gi,'');
+  s=s.replace(/[^0-9,.\-]/g,'');
+  if(s.indexOf(',')>-1){ s=s.replace(/\./g,'').replace(',','.'); }
+  else if(/^-?\d{1,3}(\.\d{3})+$/.test(s)){ s=s.replace(/\./g,''); }
+  return parseFloat(s);
+}
+function fmtNum(n,dec){ dec=(dec==null?2:dec);
+  return n.toLocaleString('es-AR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function pct(v){ if(v==null||isNaN(v)) return '&mdash;'; return (v>0?'+':'')+fmtNum(v)+'%'; }
+function pp(v){ if(v==null||isNaN(v)) return '&mdash;'; return (v>0?'+':'')+fmtNum(v)+' p.p.'; }
+function hasLetters(s){ return /[a-zA-Z]/.test(String(s).replace(/usd/ig,'').replace(/ars/ig,'')); }
+function money(x){
+  if(x==null||String(x).trim()==='') return '';
+  if(hasLetters(x)) return esc(String(x).trim());
+  const n=num2(x); if(isNaN(n)) return esc(String(x).trim());
+  return mon(n);
+}
+function sim(){ return S.moneda==='usd'?'USD ':'$'; }
+function mon(n){ if(n==null||isNaN(n)) return '&mdash;'; return (n<0?'-':'')+sim()+fmtNum(Math.abs(n)); }
+function numAuto(x){
+  if(x==null||x==='') return NaN;
+  let s=String(x).trim().replace(/[^\d,.\-]/g,'');
+  if(!s||!/\d/.test(s)) return NaN;
+  const lc=s.lastIndexOf(','), ld=s.lastIndexOf('.');
+  if(lc>-1&&ld>-1){ s = lc>ld ? s.replace(/\./g,'').replace(',','.') : s.replace(/,/g,''); }
+  else if(lc>-1){ s = /^-?\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g,'') : s.replace(',','.'); }
+  else if(ld>-1){ if(/^-?\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,''); }
+  return parseFloat(s);
+}
+function ddmmaaaa(iso){ if(!iso) return ''; const p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function monLbl(){ return S.moneda==='usd'?'d&oacute;lares':'pesos'; }
+function monTxt(){ return S.moneda==='usd'?'dólares':'pesos'; }
+function hoyISO(){ const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+/* ================= ESTADO ================= */
+const DEFAULTS = {
+  moneda:'pesos', fuente:'Portfolio Personal Inversiones (PPI)', fechaInforme:hoyISO(),
+  cliente:'', comitente:'', fInicio:'', fFin:'',
+  twrOrigen:'alyc', twr:'', anual:'', anualKpi:false,
+  saldoIni:'', saldoFin:'', flujos:'',
+  depositos:'', extracciones:'', titRec:'', titEnv:'',
+  tenencia:'', cupones:'', gastos:'', ajustes:'',
+  flujosDet:[], movTot:null,
+  cuentas:[],
+  bkInf:false, bkInfVal:'', bkInfFuente:'INDEC · IPC',
+  bkTc:false, tcIni:'', tcFin:'', bkTcVal:'', bkTcFuente:'BCRA · TC mayorista',
+  bkCustom:[],
+  cartera:[{pct:'',nombre:'',detalle:'',monto:''}], carteraTotal:'', carteraVista:'tabla',
+  posiciones:[], agrupar:true, carteraMoneda:'pesos', carteraTC:'',
+  lectura:[], factsheets:[],
+  titulo1:'', titulo2:'', matricula:'Matrícula CNV 1029', disclaimer:'', lecturaAuto:true
+};
+let S = JSON.parse(JSON.stringify(DEFAULTS));
+const touched = {};   // campos que el usuario pisó a mano
+
+/* ================= IPC ================= */
+const IPC_BASE = {
+ '2024-01':20.6,'2024-02':13.2,'2024-03':11.0,'2024-04':8.8,'2024-05':4.2,'2024-06':4.6,
+ '2024-07':4.0,'2024-08':4.2,'2024-09':3.5,'2024-10':2.7,'2024-11':2.4,'2024-12':2.7,
+ '2025-01':2.2,'2025-02':2.4,'2025-03':3.7,'2025-04':2.8,'2025-05':1.5,'2025-06':1.6,
+ '2025-07':1.9,'2025-08':1.9,'2025-09':2.1,'2025-10':2.3,'2025-11':2.5,'2025-12':2.8,
+ '2026-01':2.9,'2026-02':2.9,'2026-03':3.4,'2026-04':2.6,'2026-05':2.1,'2026-06':1.9
+};
+let IPC = Object.assign({}, IPC_BASE);
+let IPC_ORIGEN = 'serie local';
+const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function mesLbl(k){ const p=k.split('-'); return MESES[+p[1]-1]+"'"+p[0].slice(2); }
+function ipcUltimo(){ const ks=Object.keys(IPC).sort(); return ks.length?ks[ks.length-1]:null; }
+function ipcToText(){ return Object.keys(IPC).sort().map(k=>k+': '+String(IPC[k]).replace('.',',')).join('\n'); }
+function ipcFromText(t){
+  const o={};
+  (t||'').split(/\r?\n/).forEach(l=>{
+    const m=l.match(/(\d{4})\s*-\s*(\d{1,2})\s*[:=;\t ]\s*(-?[\d.,]+)/);
+    if(m){ const v=num2(m[3]); if(!isNaN(v)) o[m[1]+'-'+String(+m[2]).padStart(2,'0')]=v; }
+  });
+  return o;
+}
+
+/* ================= DATOS EXTERNOS (intranet) ================= */
+async function cargarDatosExternos(){
+  if(location.protocol!=='http:'&&location.protocol!=='https:'){ renderClientes(); refreshIpcBox(); return; }
+  try{
+    const r=await fetch('./data/ipc.json',{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); const serie=j.serie||j;
+      IPC=Object.assign({}, IPC_BASE, serie); IPC_ORIGEN='data/ipc.json'; }
+  }catch(e){}
+  try{
+    const r=await fetch('./data/clientes.json',{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); if(Array.isArray(j)) j.forEach(c=>{ if(c && c.nombre) CLIENTES[c.nombre]={comitente:c.comitente||'',fuente:c.alyc||c.fuente||''}; }); }
+  }catch(e){}
+  renderClientes(); refreshIpcBox(); recalc(); render();
+}
+
+/* ================= CLIENTES (autocompletado local) ================= */
+let CLIENTES = {};
+function loadClientes(){ try{ CLIENTES=JSON.parse(localStorage.getItem('amauta_clientes')||'{}'); }catch(e){ CLIENTES={}; } }
+function saveCliente(){
+  if(!S.cliente.trim()) return;
+  CLIENTES[S.cliente.trim()]={comitente:S.comitente,fuente:S.fuente};
+  try{ localStorage.setItem('amauta_clientes',JSON.stringify(CLIENTES)); }catch(e){}
+}
+function renderClientes(){
+  $('clienteList').innerHTML=Object.keys(CLIENTES).sort().map(n=>'<option value="'+esc(n)+'"></option>').join('');
+}
+
+/* ================= CÁLCULOS ================= */
+function dias(){
+  if(!S.fInicio||!S.fFin) return null;
+  const d1=Date.parse(S.fInicio+'T00:00:00'), d2=Date.parse(S.fFin+'T00:00:00');
+  if(isNaN(d1)||isNaN(d2)) return null;
+  const d=(d2-d1)/86400000; return d>0?d:null;
+}
+function tea(){
+  const t=num2(S.twr), d=dias();
+  if(isNaN(t)||!d) return null;
+  const base=1+t/100; if(base<=0) return null;
+  return (Math.pow(base,365/d)-1)*100;
+}
+function tna(){ const t=num2(S.twr), d=dias(); if(isNaN(t)||!d) return null; return t*365/d; }
+function anualVal(){ const v=num2(S.anual); return isNaN(v)?null:v; }
+
+function periodMonths(fi,ff){
+  if(!fi||!ff) return null;
+  const a=fi.split('-').map(Number), b=ff.split('-').map(Number);
+  let sy=a[0], sm=a[1];
+  if(a[2]>5){ sm++; if(sm>12){sm=1;sy++;} }            // arranca a mitad de mes: ese mes no cuenta
+  const lastDay=new Date(b[0],b[1],0).getDate();
+  let ey=b[0], em=b[1];
+  if(b[2]<lastDay-2){ em--; if(em===0){em=12;ey--;} }  // cierra a mitad de mes: ese mes no cuenta
+  if(ey<sy||(ey===sy&&em<sm)) return [];
+  const out=[]; let y=sy,m=sm,g=0;
+  while((y<ey||(y===ey&&m<=em))&&g<600){ out.push(y+'-'+String(m).padStart(2,'0')); m++; if(m>12){m=1;y++;} g++; }
+  return out;
+}
+function computeInflacion(){
+  const ms=periodMonths(S.fInicio,S.fFin); if(!ms||!ms.length) return null;
+  let f=1; const missing=[];
+  ms.forEach(k=>{ if(IPC[k]==null) missing.push(k); else f*=(1+IPC[k]/100); });
+  return {val:(f-1)*100, months:ms, missing:missing, first:ms[0], last:ms[ms.length-1]};
+}
+function twrPonderado(){
+  const rows=S.cuentas.filter(c=>!isNaN(num2(c.twr)));
+  if(rows.length<2) return null;
+  let base=rows.map(c=>num2(c.aumIni)), origen='AUM inicial';
+  if(base.some(isNaN)){ base=rows.map(c=>num2(c.aumFin)); origen='AUM final'; }
+  if(base.some(isNaN)) return null;
+  const tot=base.reduce((x,y)=>x+y,0); if(!(tot>0)) return null;
+  const v=rows.reduce((acc,c,i)=>acc+num2(c.twr)*base[i]/tot,0);
+  return {val:v, origen:origen, n:rows.length, total:tot};
+}
+function flujosActivos(){ return S.flujosDet.filter(f=>f.usar!==false&&!isNaN(num2(f.importe))); }
+function flujosDerivados(){
+  const fl=flujosActivos(); if(!fl.length) return null;
+  let dep=0, ext=0;
+  fl.forEach(f=>{ const v=num2(f.importe); if(v>=0) dep+=v; else ext+=v; });
+  return {dep:dep, ext:ext, total:dep+ext, n:fl.length};
+}
+function flujosNetos(){
+  const v=['depositos','extracciones','titRec','titEnv'].map(k=>num2(S[k])).filter(x=>!isNaN(x));
+  if(v.length) return v.reduce((a,b)=>a+b,0);
+  const d=flujosDerivados(); if(d) return d.total;
+  const fl=num2(S.flujos); return isNaN(fl)?null:fl;
+}
+function conciliacion(){
+  const ini=num2(S.saldoIni), fin=num2(S.saldoFin);
+  if(isNaN(ini)||isNaN(fin)) return null;
+  const fn=flujosNetos(), flujos=(fn==null?0:fn);
+  const resultado=fin-ini-flujos;
+  const comp={ten:num2(S.tenencia),cup:num2(S.cupones),gas:num2(S.gastos),aju:num2(S.ajustes)};
+  const cv=[comp.ten,comp.cup,comp.gas,comp.aju].filter(x=>!isNaN(x));
+  const compSum=cv.length?cv.reduce((a,b)=>a+b,0):null;
+  let dep=num2(S.depositos), ext=num2(S.extracciones), derivado=false;
+  if(isNaN(dep)&&isNaN(ext)&&isNaN(num2(S.titRec))&&isNaN(num2(S.titEnv))){
+    const d=flujosDerivados();
+    if(d){ dep=(d.dep!==0?d.dep:NaN); ext=(d.ext!==0?d.ext:NaN); derivado=true; }
+  }
+  return {ini:ini, fin:fin, flujos:flujos, resultado:resultado, derivado:derivado,
+    dep:dep, ext:ext, tr:num2(S.titRec), te:num2(S.titEnv),
+    comp:comp, compSum:compSum, desvio:(compSum==null?null:resultado-compSum),
+    varPct:ini!==0?((fin/ini-1)*100):null, sinFlujos:(fn==null)};
+}
+function modifiedDietz(){
+  const V0=num2(S.saldoIni), V1=num2(S.saldoFin), T=dias();
+  if(isNaN(V0)||isNaN(V1)||!T||!(V0>0)) return null;
+  const fl=flujosActivos().filter(f=>f.fecha);
+  let F=0,W=0;
+  fl.forEach(f=>{
+    const v=num2(f.importe);
+    let t=(Date.parse(f.fecha+'T00:00:00')-Date.parse(S.fInicio+'T00:00:00'))/86400000;
+    t=Math.max(0,Math.min(T,t));
+    F+=v; W+=v*((T-t)/T);
+  });
+  const den=V0+W; if(!(den>0)) return null;
+  const fn=flujosNetos();
+  return {twr:(V1-V0-F)/den*100, F:F, den:den, n:fl.length, T:T,
+    difFlujos:(fn==null?null:fn-F), simple:(V1-V0)/V0*100};
+}
+
+/* ================= CLASES DE ACTIVO ================= */
+const ASSET_CLASSES=['Liquidez','Renta fija soberana ARS','Renta fija soberana USD',
+  'Obligaciones negociables','Fondos de renta fija','Pagarés y cheques',
+  'Renta variable local','CEDEARs','Dólares','Otros'];
+const ACC_LOCALES=['GGAL','YPFD','PAMP','BMA','TXAR','ALUA','CEPU','LOMA','TGSU2','TGNO4','COME','SUPV','BBAR','EDN','TRAN','CRES','VALO','MIRG','AGRO','BYMA','TECO2','HARG','IRSA','CVH','DGCU2','METR','CADO','AUSO','BOLT','CGPA2','FERR','GARO','INTR','LEDE','MOLI','OEST','PATA','RIGO','SAMI','SEMI'];
+const CEDEARS=['SPY','QQQ','DIA','IWM','EEM','XLE','XLF','XLP','XLV','XLK','ARKK','AAPL','MSFT','NVDA','TSLA','AMZN','GOOGL','META','MELI','KO','PEP','JNJ','PG','WMT','DISN','BABA','NIO','VIST','BRKB','JPM','BAC','V','MA','NFLX','AMD','INTC','PFE','XOM','CVX','GLD','SLV','TSM','SHOP','SBUX','MCD','NKE','ORCL','CRM','ADBE','PYPL','UBER','COIN','MU','QCOM','TXN','GE','BA','CAT','MMM','HD','LOW','T','VZ','C','GS','MS','WFC','SCHW','BLK','ABBV','LLY','MRK','UNH','TMO','ABT','DHR','BMY','AMGN','GILD','CVS'];
+const RE_SOB_USD=/\b(al\s?2[9]|al\s?3[05]|al\s?41|gd\s?2[9]|gd\s?3[05]|gd\s?38|gd\s?41|gd\s?46|ae\s?38|al30|al35|al41|gd29|gd30|gd35|gd38|gd41|gd46|ae38)[dc]?\b/i;
+const RE_SOB_ARS=/\b(s\d{2}[a-z]\d|t\d{1,2}[a-z]\d|t[xz]x?[a-z]?\d{1,2}|tt[a-z]\d{2}|to\d{2}|tv\d{2}|td[a-z]\d{2}|pr\d{2}|par[a-z]?\b|disc[a-z]?\b|boncap|boncer|lecap|lede[s]?|lecer|dual|tj\d{2})\b/i;
+const RE_ON=/\b(on|o\.n\.)\b|obligaci[oó]n|obligaciones negociables|corporativ|\b(mgc|npc|ymc|yca|ypcu|pnd|csj|cs3|tlc|irc|rcc|gnc|vsc|luc|mrc|gem|dnc|cpc|ancap|arc[a-z])[a-z0-9]{0,3}[odc]?\b/i;
+const RE_BOPREAL=/bopreal|\bbp[a-z]?\d|\b(bpoa|bpob|bpoc|bpod|bpj|bpy)\w*\b/i;
+
+function clasificar(nombre, detalle){
+  const t=((nombre||'')+' '+(detalle||'')).trim();
+  const l=t.toLowerCase();
+  const tk=t.toUpperCase().replace(/[^A-Z0-9 .]/g,' ').split(/\s+/).filter(Boolean);
+  if(/money market|mercado de dinero|\bmm\b|liquidez|cauci[oó]n|cuenta corriente|disponible|saldo en pesos|plazo fijo|\bpf\b|remunerada/.test(l)) return 'Liquidez';
+  if(/pagar[eé]|cheque|echeq|\bfce\b|aval|descuento de valores|sgr/.test(l)) return 'Pagarés y cheques';
+  if(RE_BOPREAL.test(l)) return 'Renta fija soberana USD';
+  if(RE_SOB_USD.test(l)||/bonar|global(es)?\b/.test(l)) return 'Renta fija soberana USD';
+  const dlk=/vinculad|linked|link\b/.test(l);
+  const hardUsd=!dlk && /\busd\b|u\$s|d[oó]lar(es)?\b/.test(l);
+  const sober=/bono|letra|tesoro nacional|rep\.? argentina|rep argentina/.test(l);
+  if(sober&&hardUsd) return 'Renta fija soberana USD';
+  if(RE_SOB_ARS.test(l)||/letra|bono del tesoro|tesoro nacional|cer\b|badlar|dual/.test(l)) return 'Renta fija soberana ARS';
+  if(RE_ON.test(l)) return 'Obligaciones negociables';
+  if(/cedear/.test(l)||tk.some(x=>CEDEARS.indexOf(x)>-1)) return 'CEDEARs';
+  if(/acci[oó]n|merval|panel l[ií]der/.test(l)||tk.some(x=>ACC_LOCALES.indexOf(x)>-1)) return 'Renta variable local';
+  if(/\bfci\b|fondo|f\.c\.i/.test(l)) return 'Fondos de renta fija';
+  if(/d[oó]lar|\busd\b|\bmep\b|\bccl\b|billete|divisa/.test(l)) return 'Dólares';
+  return 'Otros';
+}
+const CLASE_TXT={'Liquidez':'liquidez','Renta fija soberana ARS':'renta fija soberana en pesos',
+ 'Renta fija soberana USD':'renta fija soberana en dólares','Obligaciones negociables':'obligaciones negociables',
+ 'Fondos de renta fija':'fondos de renta fija','Pagarés y cheques':'pagarés y cheques',
+ 'Renta variable local':'renta variable local','CEDEARs':'CEDEARs','Dólares':'dólares','Otros':'otros activos'};
+function claseTxt(n){ return CLASE_TXT[n]||String(n||'').toLowerCase(); }
+function convMonto(m){
+  const n=num2(m); if(isNaN(n)) return NaN;
+  if(S.carteraMoneda===S.moneda) return n;
+  const tc=num2(S.carteraTC); if(isNaN(tc)||tc<=0) return n;
+  return S.carteraMoneda==='pesos' ? n/tc : n*tc;
+}
+function agruparPosiciones(pos){
+  const map=new Map();
+  pos.forEach(p=>{
+    const k=p.clase||'Otros';
+    if(!map.has(k)) map.set(k,{nombre:k,items:[],monto:0,pct:0,hasMonto:true,hasPct:true});
+    const g=map.get(k), m=convMonto(p.monto), q=num2(p.pct);
+    if(isNaN(m)) g.hasMonto=false; else g.monto+=m;
+    if(isNaN(q)) g.hasPct=false; else g.pct+=q;
+    if((p.nombre||'').trim()) g.items.push(p.nombre.trim());
+  });
+  const arr=[...map.values()];
+  const totM=arr.reduce((a,g)=>a+(g.hasMonto?g.monto:0),0);
+  const allM=arr.length&&arr.every(g=>g.hasMonto)&&totM>0;
+  arr.sort((a,b)=> allM ? b.monto-a.monto : b.pct-a.pct);
+  return arr.map(g=>({
+    nombre:g.nombre,
+    detalle:g.items.slice(0,4).join(', ')+(g.items.length>4?' y '+(g.items.length-4)+' más':''),
+    monto:g.hasMonto?fmtNum(g.monto):'',
+    pct:(allM?fmtNum(g.monto/totM*100,1):(g.hasPct?fmtNum(g.pct,1):''))+'%'
+  }));
+}
+function aplicarPosiciones(){
+  if(!S.posiciones.length) return;
+  S.cartera = S.agrupar ? agruparPosiciones(S.posiciones)
+    : S.posiciones.map(p=>{ const v=convMonto(p.monto);
+        return {nombre:p.nombre,detalle:'',monto:isNaN(v)?p.monto:fmtNum(v),pct:p.pct}; });
+  renderCartera(); renderPosiciones(); update();
+}
+
+/* ================= BENCHMARKS ================= */
+function benchmarks(){
+  const out=[];
+  if(S.bkInf) out.push({label:'INFLACIÓN', fuente:S.bkInfFuente, val:num2(S.bkInfVal),
+    color:'#2EB87A', pillBg:'var(--green-bg)', pillColor:'#2EB87A'});
+  if(S.bkTc) out.push({label:'TIPO DE CAMBIO', fuente:S.bkTcFuente, val:num2(S.bkTcVal),
+    color:'#4A41C9', pillBg:'var(--azul-bg)', pillColor:'#8C8AF0'});
+  S.bkCustom.forEach(b=>out.push({label:(b.label||'BENCHMARK').toUpperCase(), fuente:b.fuente, val:num2(b.val),
+    color:b.color||'#8C1278', pillBg:'var(--bordo-bg)', pillColor:'#E27BC9'}));
+  return out.filter(b=>!isNaN(b.val));
+}
+const PRESETS=[
+  {label:'Plazo fijo', fuente:'BCRA · TNA plazo fijo minorista'},
+  {label:'MERVAL', fuente:'BYMA · índice MERVAL'},
+  {label:'Dólar CCL', fuente:'Contado con liquidación'},
+  {label:'Inflación EE.UU.', fuente:'BLS · CPI-U'},
+  {label:'Objetivo interno', fuente:'Amauta · objetivo mensual compuesto'}
+];
+
+/* ================= REFRESCOS DE FORMULARIO ================= */
+function recalc(){
+  const d=dias();
+  $('diasNote').textContent = d ? (d+' días de período'+(d>=365?' · el anualizado es directo':' · el anualizado es un equivalente, no una proyección')) : '';
+
+  // origen del TWR
+  $('origenNote').textContent = S.twrOrigen==='alyc'
+    ? 'El disclaimer va a decir que el TWR fue informado por la ALyC. Cargá el número tal cual te lo da el estado de cuenta.'
+    : 'El disclaimer va a citar el cálculo propio de Amauta con metodología Modified Dietz.';
+
+  // anualizado
+  const t=tea(), n=tna();
+  $('tnaOut').value = n==null?'':fmtNum(n);
+  if(!touched.anual){ S.anual = t==null?'':fmtNum(t); $('anual').value = S.anual; }
+  let an='';
+  if(t!=null){
+    an='TEA '+pctTxt(t)+' · TNA equivalente '+pctTxt(n)+' · sobre '+d+' días';
+    if(d<365) an+=' · período menor a 12 meses: es una equivalencia anual, no una proyección';
+  } else if(!isNaN(num2(S.twr)) && !d){ an='Cargá fecha de inicio y fin (paso 3) para calcular el anualizado.'; }
+  $('anualNote').textContent=an;
+  if(!touched.anualKpi){ S.anualKpi = !!(d && d>=365); $('anualKpi').checked = S.anualKpi; }
+
+  // conciliación
+  const c=conciliacion();
+  $('concNote').textContent = c
+    ? ((c.derivado?'Flujos tomados de los movimientos · ':'')+'Flujos netos: '+mon(c.flujos)+' · resultado del período: '+mon(c.resultado)+
+       ' · variación del saldo '+(c.varPct==null?'—':pctTxt(c.varPct))+
+       (c.sinFlujos?' · sin flujos cargados, se asume 0':''))
+    : 'Cargá valor inicial y final para armar la conciliación.';
+  let chk='';
+  if(c&&c.compSum!=null){
+    const tol=Math.max(1,Math.abs(c.resultado)*0.000002);
+    chk = Math.abs(c.desvio)<=tol
+      ? '✓ Los componentes cierran exactamente con el resultado del período.'
+      : 'Los componentes suman '+mon(c.compSum)+' y el resultado del período da '+mon(c.resultado)+'. La diferencia de '+mon(c.desvio)+' va a salir en el informe como "Otros movimientos".';
+  }
+  $('concCheck').textContent=chk;
+  renderDietz();
+
+  // inflación
+  const inf=computeInflacion();
+  if(S.bkInf){
+    if(!inf){ $('bkInfNote').textContent='Cargá fecha de inicio y fin (paso 3) para calcular el acumulado.'; }
+    else {
+      if(!touched.bkInfVal){ S.bkInfVal=fmtNum(inf.val); $('bkInfVal').value=S.bkInfVal; }
+      let t2='Acumulado '+mesLbl(inf.first)+'–'+mesLbl(inf.last)+' ('+inf.months.length+' meses): '+pctTxt(inf.val);
+      t2 += inf.missing.length ? ' · faltan datos de '+inf.missing.map(mesLbl).join(', ')+', cargalos en el paso 12' : ' · corroborá';
+      $('bkInfNote').textContent=t2;
+    }
+  } else { $('bkInfNote').textContent=''; }
+
+  // tipo de cambio
+  if(S.bkTc){
+    const ini=num2(S.tcIni), fin=num2(S.tcFin);
+    if(!isNaN(ini)&&!isNaN(fin)&&ini>0){
+      const v=(fin/ini-1)*100;
+      if(!touched.bkTcVal){ S.bkTcVal=fmtNum(v); $('bkTcVal').value=S.bkTcVal; }
+      $('bkTcNote').textContent='Variación '+S.tcIni+' → '+S.tcFin+': '+pctTxt(v)+' · corroborá';
+    } else { $('bkTcNote').textContent='Cargá TC inicio y TC fin para calcular la variación.'; }
+  } else { $('bkTcNote').textContent=''; }
+
+  // cuentas
+  const w=twrPonderado();
+  $('ctaNote').textContent = w
+    ? ('TWR consolidado de '+w.n+' cuentas, ponderado por '+w.origen+': '+pctTxt(w.val))
+    : (S.cuentas.length?'Cargá TWR y AUM de al menos dos cuentas para consolidar.':'');
+  $('usarPond').style.display = w?'block':'none';
+
+  // conversión de cartera
+  const distinta = S.carteraMoneda!==S.moneda;
+  $('tcCartFld').style.display = distinta?'block':'none';
+  if(distinta){
+    const tc=num2(S.carteraTC);
+    $('tcCartNote').textContent = (isNaN(tc)||tc<=0)
+      ? 'El consolidado está en '+(S.carteraMoneda==='pesos'?'pesos':'dólares')+' y el informe en '+(S.moneda==='usd'?'dólares':'pesos')+': cargá el tipo de cambio o los valores van a salir en la moneda equivocada.'
+      : 'Importes convertidos '+(S.carteraMoneda==='pesos'?'de pesos a dólares dividiendo':'de dólares a pesos multiplicando')+' por '+fmtNum(tc)+'. Los porcentajes no cambian.';
+  } else { $('tcCartNote').textContent=''; }
+
+  // factsheets
+  const bytes=S.factsheets.reduce((a,f)=>a+Math.round((f.data||'').length*0.75),0);
+  $('fsNote').textContent = S.factsheets.length
+    ? ('Peso agregado al informe: '+(bytes/1048576).toFixed(1)+' MB'+(bytes>4194304?' · pesado para mandar por mail, considerá enviarlos aparte':''))
+    : '';
+
+  refreshChecklist();
+}
+function pctTxt(v){ if(v==null||isNaN(v)) return '—'; return (v>0?'+':'')+fmtNum(v)+'%'; }
+
+function refreshChecklist(){
+  const it=[]; const d=dias(); const bks=benchmarks(); const inf=computeInflacion();
+  const cc=conciliacion(); const cart=S.cartera.filter(c=>(c.nombre||'').trim());
+  const add=(lvl,txt)=>it.push({lvl:lvl,txt:txt});
+
+  S.cliente.trim()?add('ok','Cliente cargado'):add('err','Falta el nombre del cliente');
+  d?add('ok','Período de '+d+' días'):add('err','Falta el período (fecha inicio y fin)');
+  isNaN(num2(S.twr))?add('err','Falta el TWR del período'):add('ok','TWR '+pctTxt(num2(S.twr))+' · '+(S.twrOrigen==='alyc'?'informado por la ALyC':'cálculo Amauta'));
+  bks.length?add('ok',bks.length+' benchmark(s) con valor cargado'):add('warn','Sin benchmark: el resultado queda sin referencia');
+  if(S.bkInf&&inf&&inf.missing.length) add('err','Faltan meses de IPC: '+inf.missing.map(mesLbl).join(', '));
+  if(S.bkInf&&inf&&!inf.missing.length){ const u=ipcUltimo(); add('warn','IPC según '+IPC_ORIGEN+', último mes cargado '+(u?mesLbl(u):'—')+' · verificá que esté al día'); }
+
+  if(!cc) add('warn','Sin valor inicial y final: el informe no explica la variación del capital');
+  else {
+    add('ok','Conciliación del período completa');
+    if(cc.compSum!=null){ const tol=Math.max(1,Math.abs(cc.resultado)*0.000002);
+      Math.abs(cc.desvio)<=tol?add('ok','Los componentes del resultado cierran con la evolución de cuenta')
+        :add('warn','Los componentes del resultado no cierran: diferencia de '+mon(cc.desvio)); }
+    const md=modifiedDietz(), tw=num2(S.twr);
+    if(md&&!isNaN(tw)&&Math.abs(md.twr-tw)>0.5)
+      add('warn','El TWR cargado ('+pctTxt(tw)+') difiere del Modified Dietz calculado ('+pctTxt(md.twr)+'): si el número de la ALyC es el cambio en el valor de la cuenta, no es un TWR');
+  }
+
+  if(cart.length){
+    const ps=cart.map(c=>num2(c.pct)).filter(x=>!isNaN(x));
+    if(ps.length){ const sum=ps.reduce((a,b)=>a+b,0);
+      const det=S.posiciones.length&&S.agrupar?(' desde '+S.posiciones.length+' instrumentos'):'';
+      Math.abs(sum-100)<1?add('ok','Cartera: '+cart.length+(S.agrupar&&S.posiciones.length?' clases de activo':' posiciones')+det+', suma '+fmtNum(sum,1)+'%')
+                         :add('warn','Los porcentajes de cartera suman '+fmtNum(sum,1)+'%, no 100%'); }
+    else add('warn','Cartera cargada sin porcentajes');
+    if(S.carteraMoneda!==S.moneda){ const tc=num2(S.carteraTC);
+      (isNaN(tc)||tc<=0)?add('err','El consolidado está en otra moneda que el informe y falta el tipo de cambio')
+                        :add('ok','Importes convertidos a '+(S.moneda==='usd'?'dólares':'pesos')+' con TC '+fmtNum(tc)); }
+    if(S.posiciones.length&&S.posiciones.some(p=>p.clase==='Otros'))
+      add('warn','Hay instrumentos sin clasificar (quedaron en Otros): asignales la clase en el paso 8');
+    if(cc&&cc.fin>0){
+      let sc=0, ok2=true;
+      cart.forEach(x=>{ const n=num2(x.monto); if(isNaN(n)) ok2=false; else sc+=n; });
+      if(ok2&&sc>0){ const d2=(sc/cc.fin-1)*100;
+        if(Math.abs(d2)>2) add('warn','El total de cartera ('+mon(sc)+') difiere '+fmtNum(d2,1)+'% del valor final de la cuenta ('+mon(cc.fin)+'): revisá el tipo de cambio o si falta alguna tenencia'); }
+    }
+  } else add('warn','Sin detalle de cartera');
+
+  if(document.querySelector('input.ocr')) add('err','Hay valores leídos de una imagen sin verificar (campos en ámbar): confirmalos contra la pantalla de la ALyC');
+  if(S.flujosDet.some(f=>f.aprox)) add('warn','Hay flujos convertidos con un único tipo de cambio: si tenés el importe exacto del panel de evolución, pisalo');
+  const dups=S.flujosDet.filter(f=>f.dup).length;
+  if(dups) add('warn',dups+' flujo(s) repetido(s) excluido(s) del cálculo: verificá que sean el mismo movimiento y no dos distintos');
+  if(d&&d<365&&S.anualKpi) add('warn','Anualizado en portada con período menor a 12 meses: revisá que quede claro que es una equivalencia');
+
+  $('chkList').innerHTML=it.map(x=>'<div class="chk '+x.lvl+'"><span class="m">'+(x.lvl==='ok'?'✓':x.lvl==='warn'?'!':'×')+'</span><span>'+esc(x.txt)+'</span></div>').join('');
+}
+function refreshIpcBox(){
+  if(!touched.ipc) $('ipcEdit').value=ipcToText();
+  const u=ipcUltimo();
+  $('ipcNote').textContent='Serie activa: '+IPC_ORIGEN+' · último mes '+(u?mesLbl(u):'—')+' · '+Object.keys(IPC).length+' meses';
+}
+
+/* ================= LECTURA AUTOMÁTICA ================= */
+function benchNombre(label){
+  const l=(label||'').toLowerCase();
+  if(l.indexOf('inflaci')>-1) return 'la inflación';
+  if(l.indexOf('cambio')>-1||l.indexOf('dólar')>-1||l.indexOf('ccl')>-1) return 'la variación del tipo de cambio';
+  return label.toLowerCase();
+}
+function ppMag(v){ return fmtNum(Math.abs(v))+' p.p.'; }
+function autoLectura(){
+  const twrN=num2(S.twr), bks=benchmarks(), out=[], d=dias();
+  if(!isNaN(twrN)){
+    let t='En el período analizado la cartera obtuvo un rendimiento (TWR) de '+pctTxt(twrN)+' en '+monTxt()+'.';
+    if(bks.length){
+      const b0=bks[0], ex=twrN-b0.val, nb=benchNombre(b0.label);
+      if(ex>=0){
+        t+=' Se ubicó '+ppMag(ex)+' por encima de '+nb+' ('+pctTxt(b0.val)+')';
+        if(nb.indexOf('inflaci')>-1) t+=', es decir un rendimiento real positivo: la cartera no solo mantuvo sino que amplió el poder adquisitivo del capital.';
+        else if(nb.indexOf('cambio')>-1) t+=', lo que significa que la cartera le ganó al dólar en el tramo, sumando cobertura además de renta.';
+        else t+=', batiendo a su referencia.';
+      } else {
+        t+=' Quedó '+ppMag(ex)+' por debajo de '+nb+' ('+pctTxt(b0.val)+')';
+        t+= nb.indexOf('inflaci')>-1 ? ', un rendimiento real negativo que seguimos de cerca en los próximos meses.' : ', diferencia que monitoreamos de cerca.';
+      }
+      if(bks.length>1){ const b1=bks[1], ex1=twrN-b1.val;
+        t+=' Frente a '+benchNombre(b1.label)+' ('+pctTxt(b1.val)+'), la diferencia fue de '+(ex1>=0?'+':'-')+ppMag(ex1)+'.'; }
+    } else {
+      t+=' Para dimensionar el resultado conviene compararlo contra un benchmark (inflación o tipo de cambio); activalo en el paso 7.';
+    }
+    t+=' El TWR '+(S.twrOrigen==='alyc'?('es el informado por '+S.fuente):'fue calculado por Amauta con metodología Modified Dietz')+' y aísla el efecto de los aportes y retiros del período.';
+    out.push({titulo:'Rendimiento vs. benchmark', texto:t});
+  }
+  const c=conciliacion();
+  if(c){
+    const signo=c.flujos<0?'retiros netos':'aportes netos';
+    let t='El capital pasó de '+mon(c.ini)+' a '+mon(c.fin)+'.';
+    if(c.flujos!==0) t+=' En el medio hubo '+signo+' por '+mon(Math.abs(c.flujos))+', por eso la variación del saldo ('+pctTxt(c.varPct)+') no coincide con el rendimiento de la cartera.';
+    t+=' El resultado generado por las inversiones en el período fue de '+mon(c.resultado);
+    if(c.compSum!=null){
+      const partes=[];
+      if(!isNaN(c.comp.ten)) partes.push(mon(c.comp.ten)+' de valorización de los activos');
+      if(!isNaN(c.comp.cup)&&c.comp.cup!==0) partes.push(mon(c.comp.cup)+' de cupones y dividendos cobrados');
+      if(!isNaN(c.comp.gas)&&c.comp.gas!==0) partes.push(mon(c.comp.gas)+' de gastos, comisiones e impuestos');
+      if(!isNaN(c.comp.aju)&&c.comp.aju!==0) partes.push(mon(c.comp.aju)+' de ajustes');
+      if(partes.length>1) t+=', que surge de '+partes.slice(0,-1).join(', ')+' y '+partes[partes.length-1];
+    }
+    t+='.';
+    out.push({titulo:'De dónde a dónde fue el capital', texto:t});
+  }
+  const cart=S.cartera.filter(c2=>(c2.nombre||'').trim()&&!isNaN(num2(c2.pct)));
+  if(cart.length){
+    const sorted=cart.slice().sort((a,b)=>num2(b.pct)-num2(a.pct));
+    const top=sorted[0], top2=sorted[1];
+    const esClase=S.agrupar&&S.posiciones.length>0;
+    let t='Al cierre, la cartera está posicionada principalmente en '+(esClase?claseTxt(top.nombre.trim()):top.nombre.trim())+' ('+top.pct.trim()+')';
+    if(top2 && num2(top2.pct)>0) t+=', seguida por '+(esClase?claseTxt(top2.nombre.trim()):top2.nombre.trim())+' ('+top2.pct.trim()+')';
+    t+='. ';
+    if(num2(top.pct)>=60) t+='Es una cartera concentrada en '+(esClase?'esa clase de activo':'ese activo')+': buena parte del resultado depende de su comportamiento, algo a tener presente en la gestión del riesgo. ';
+    else t+='La exposición se reparte entre varios instrumentos, lo que aporta diversificación y suaviza la volatilidad. ';
+    const neg=cart.filter(c3=>num2(c3.pct)<0);
+    if(neg.length) t+='Se observa además '+neg.map(c4=>claseTxt(c4.nombre.trim())).join(' y ')+', que opera como financiación y conviene monitorear. ';
+    t+='El posicionamiento se mantiene alineado al perfil del cliente y a los objetivos definidos junto a Amauta.';
+    out.push({titulo:'Cómo está posicionada la cartera', texto:t});
+  }
+  if(!out.length) out.push({titulo:'Lectura del resultado', texto:''});
+  return out;
+}
+
+/* ================= DISCLAIMER ================= */
+function autoDisclaimer(){
+  const bks=benchmarks(); const d=dias();
+  let bkTxt='';
+  if(bks.length){
+    const parts=bks.map(b=>b.label.charAt(0)+b.label.slice(1).toLowerCase()+' según '+String(b.fuente||'').replace(/&middot;/g,'·'));
+    bkTxt=' Los benchmarks de referencia corresponden a: '+parts.join('; ')+', para el período informado.';
+  }
+  const metodo = S.twrOrigen==='alyc'
+    ? ' y al Time-Weighted Return informado por '+(S.fuente||'la ALyC')
+    : ' y al cálculo de Time-Weighted Return (metodología Modified Dietz) realizado por Amauta';
+  let anualTxt='';
+  if(S.anualKpi && d && d<365) anualTxt=' El rendimiento anualizado expresa el equivalente anual del período informado y no constituye una proyección de resultados futuros.';
+  return 'El presente informe fue elaborado con fines informativos para '+(S.cliente||'el cliente')+
+    (S.comitente?' (cuenta comitente N.º '+S.comitente+')':'')+
+    ', en base al estado de cuenta de '+(S.fuente||'la ALyC')+
+    (S.fFin?' al '+ddmmaaaa(S.fFin):'')+metodo+
+    (S.fInicio&&S.fFin?' del período '+ddmmaaaa(S.fInicio)+' al '+ddmmaaaa(S.fFin):'')+
+    ', expresado en '+monTxt()+'.'+bkTxt+anualTxt+
+    ' Las rentabilidades pasadas no garantizan resultados futuros. Este documento no constituye asesoramiento de inversión vinculante ni una oferta de compra o venta de instrumentos financieros; la decisión final queda sujeta a la evaluación del cliente. Amauta Inversiones Financieras · '+(S.matricula||'')+'.';
+}
+
+/* ================= PANEL DE EVOLUCIÓN DE CUENTA ================= */
+const EVO_MAP=[
+  [/rendimiento\s*time.?weighted|time.?weighted|\btwr\b/i,'__twr',null],
+  [/anualizado/i,'__anual',null],
+  [/rendimiento\s*neto|resultado\s*neto/i,'__neto',null],
+  [/valor\s*inicial|saldo.*inicio/i,'saldoIni','+'],
+  [/valor\s*final|saldo.*fina/i,'saldoFin','+'],
+  [/dep[oó]sitos?|suscripci/i,'depositos','+'],
+  [/extraccion|rescate|retiros?/i,'extracciones','-'],
+  [/t[ií]tulos.*recibidos?/i,'titRec','+'],
+  [/t[ií]tulos.*enviados?/i,'titEnv','-'],
+  [/resultado\s*por\s*tenencia|tenencia/i,'tenencia',null],
+  [/cupones/i,'cupones',null],
+  [/dividendos/i,'__div',null],
+  [/gastos|comisiones/i,'gastos','-'],
+  [/ajustes/i,'ajustes',null]
+];
+const NUM_FIN=/(-?\d[\d.,]*(?:[ \u00a0]\d{3}[\d.,]*)*)\s*%?\s*$/;
+function esSoloNumero(l){ return /^[-+]?\s*(usd|u\$s|ars|\$)?\s*\d[\d.,]*\s*%?$/i.test(String(l).trim()); }
+function parseEvolucion(txt){
+  const raw=(txt||'').split(/\r?\n/).map(l=>l.replace(/\u00a0/g,' ').trim());
+  const out={}; let div=NaN;
+  for(let i=0;i<raw.length;i++){
+    const line=raw[i];
+    if(!line||esSoloNumero(line)) continue;
+    if(/cambio\s*en\s*el\s*valor/i.test(line)) continue;
+    let valor=NaN, etiqueta=line;
+    const m=line.match(NUM_FIN);
+    if(m&&line.slice(0,line.length-m[0].length).replace(/[\s:|.\-]/g,'')){
+      valor=numAuto(m[1]); etiqueta=line.slice(0,line.length-m[0].length);
+    } else {
+      for(let j=i+1;j<Math.min(i+4,raw.length);j++){
+        if(!raw[j]) continue;
+        if(esSoloNumero(raw[j])) valor=numAuto(raw[j]);
+        break;
+      }
+    }
+    if(isNaN(valor)) continue;
+    for(let k=0;k<EVO_MAP.length;k++){
+      const re=EVO_MAP[k][0], campo=EVO_MAP[k][1], signo=EVO_MAP[k][2];
+      if(!re.test(etiqueta)) continue;
+      let v=valor;
+      if(v!==0){ if(signo==='+') v=Math.abs(v); if(signo==='-') v=-Math.abs(v); }
+      if(campo==='__div') div=v;
+      else if(out[campo]==null) out[campo]=v;
+      break;
+    }
+  }
+  if(!isNaN(div)) out.cupones=(out.cupones==null?0:out.cupones)+div;
+  return Object.keys(out).length?out:null;
+}
+async function cargarOCR(){
+  if(window.Tesseract) return true;
+  return new Promise(res=>{
+    const sc=document.createElement('script');
+    sc.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js';
+    sc.onload=()=>res(true); sc.onerror=()=>res(false);
+    document.head.appendChild(sc);
+  });
+}
+async function preprocesarImagen(file){
+  const url=URL.createObjectURL(file);
+  const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('no pude abrir la imagen')); i.src=url; });
+  const k=Math.max(1,Math.min(4,1400/Math.max(1,img.width)));
+  const c=document.createElement('canvas');
+  c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+  const ctx=c.getContext('2d');
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(img,0,0,c.width,c.height);
+  try{
+    const d=ctx.getImageData(0,0,c.width,c.height);
+    for(let i=0;i<d.data.length;i+=4){
+      const g=0.299*d.data[i]+0.587*d.data[i+1]+0.114*d.data[i+2];
+      d.data[i]=d.data[i+1]=d.data[i+2]=g;
+    }
+    ctx.putImageData(d,0,0);
+  }catch(e){}
+  URL.revokeObjectURL(url);
+  return c;
+}
+async function ocrPanel(canvas,onProg){
+  const log=m=>{ if(m&&m.status==='recognizing text'&&onProg) onProg(m.progress||0); };
+  if(Tesseract.createWorker){
+    let w=null;
+    try{
+      w=await Tesseract.createWorker('eng',1,{logger:log});
+      if(w.setParameters) await w.setParameters({tessedit_pageseg_mode:'6'});
+      const r=await w.recognize(canvas);
+      await w.terminate();
+      return (r&&r.data&&r.data.text)||'';
+    }catch(err){ if(w&&w.terminate){ try{ await w.terminate(); }catch(e){} } }
+  }
+  const r=await Tesseract.recognize(canvas,'eng',{logger:log});
+  return (r&&r.data&&r.data.text)||'';
+}
+function marcarOCR(campos){
+  campos.forEach(k=>{ const el=$(k); if(el){ el.classList.add('ocr');
+    el.addEventListener('input',()=>el.classList.remove('ocr'),{once:true}); } });
+}
+function aplicarEvolucion(o){
+  const campos=['saldoIni','saldoFin','depositos','extracciones','titRec','titEnv','tenencia','cupones','gastos','ajustes'];
+  const puestos=[]; 
+  campos.forEach(k=>{ if(o[k]!=null&&!isNaN(o[k])){ S[k]=fmtNum(o[k]); if($(k)) $(k).value=S[k]; puestos.push(k); } });
+  if(o.__twr!=null&&!isNaN(o.__twr)){
+    S.twr=fmtNum(o.__twr); if($('twr')) $('twr').value=S.twr;
+    touched.anual=0; puestos.push('twr');
+    S.twrOrigen='alyc';
+    if($('seg-origen')) [...$('seg-origen').children].forEach(x=>x.classList.toggle('on',x.dataset.o==='alyc'));
+  }
+  return puestos;
+}
+
+/* ================= MOVIMIENTOS ================= */
+const MOV_CATS=['Flujo externo','Renta','Gastos e impuestos','Operación interna'];
+function catMovimiento(tipo,desc){
+  const l=((tipo||'')+' '+(desc||'')).toLowerCase();
+  if(/boleto|liquidaci[oó]n fondo|suscripci[oó]n desde|rescate a |canje|colocaci[oó]n|caucion|cauci[oó]n/.test(l)) return 'Operación interna';
+  if(/cup[oó]n|renta|dividendo|amortizaci[oó]n/.test(l)) return 'Renta';
+  if(/n\/d|iigg|impuesto|comisi[oó]n|arancel|derecho de mercado|\biva\b|percepci[oó]n|retenci[oó]n|gasto/.test(l)) return 'Gastos e impuestos';
+  if(/tesorer|transferencia|comprobante de pago|dep[oó]sito|extracci[oó]n|retiro|acreditaci[oó]n|orden de pago|ingreso de fondos|egreso/.test(l)) return 'Flujo externo';
+  return 'Operación interna';
+}
+function isoFecha(v){
+  if(v==null||v==='') return '';
+  if(v instanceof Date) return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+  const t=String(v).trim();
+  let m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  m=t.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(m){ let y=m[3]; if(y.length===2) y='20'+y; return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); }
+  return '';
+}
+function colIdx(hdr,re){ for(let i=0;i<hdr.length;i++){ if(re.test(String(hdr[i]||'').toLowerCase())) return i; } return -1; }
+function procesarMovimientos(matriz){
+  if(!matriz||matriz.length<2) return null;
+  let hi=0;
+  for(let i=0;i<Math.min(8,matriz.length);i++){
+    const row=matriz[i].map(x=>String(x||'').toLowerCase()).join(' ');
+    if(/importe|monto/.test(row)&&/tipo|descrip|concepto/.test(row)){ hi=i; break; }
+  }
+  const hdr=matriz[hi].map(x=>String(x||''));
+  const iF=colIdx(hdr,/concertaci|fecha/), iT=colIdx(hdr,/tipo/), iD=colIdx(hdr,/descripci|detalle|concepto/),
+        iM=colIdx(hdr,/moneda/), iI=colIdx(hdr,/importe|monto|neto/);
+  if(iI<0) return null;
+  const movs=[];
+  for(let r=hi+1;r<matriz.length;r++){
+    const row=matriz[r]; if(!row||!row.length) continue;
+    const imp=num2(row[iI]); if(isNaN(imp)) continue;
+    const tipo=iT>=0?String(row[iT]||'').trim():'';
+    const desc=iD>=0?String(row[iD]||'').trim():'';
+    if(!tipo&&!desc) continue;
+    movs.push({fecha:isoFecha(iF>=0?row[iF]:''), tipo:tipo, desc:desc,
+      moneda:iM>=0?String(row[iM]||'').trim():'', importe:imp, cat:catMovimiento(tipo,desc)});
+  }
+  if(!movs.length) return null;
+  const tot={};
+  movs.forEach(m=>{
+    const k=m.cat+'|'+(m.moneda||'—');
+    tot[k]=(tot[k]||0)+m.importe;
+  });
+  const fechas=movs.map(m=>m.fecha).filter(Boolean).sort();
+  return {movs:movs, tot:tot, n:movs.length, desde:fechas[0]||'', hasta:fechas[fechas.length-1]||''};
+}
+function monedaCoincide(m){
+  const l=(m||'').toLowerCase();
+  if(S.moneda==='usd') return /d[oó]lar|usd|u\$s/.test(l);
+  return /peso|ars|\$/.test(l)||l==='';
+}
+function flujosDesdeMovimientos(){
+  if(!S.movTot) return;
+  const tc=num2(S.carteraTC);
+  S.flujosDet=S.movTot.movs.filter(m=>m.cat==='Flujo externo').map(m=>{
+    let imp=m.importe, aprox=false;
+    if(!monedaCoincide(m.moneda)&&!isNaN(tc)&&tc>0){
+      imp=S.moneda==='usd'?m.importe/tc:m.importe*tc; aprox=true;
+    } else if(!monedaCoincide(m.moneda)){ aprox=true; }
+    return {fecha:m.fecha, desc:(m.desc||m.tipo).slice(0,60), importe:fmtNum(imp), aprox:aprox, usar:true};
+  });
+  marcarDuplicados();
+}
+function marcarDuplicados(){
+  S.flujosDet.forEach(f=>{ f.dup=false; });
+  for(let i=0;i<S.flujosDet.length;i++){
+    for(let j=i+1;j<S.flujosDet.length;j++){
+      const a=S.flujosDet[i], b=S.flujosDet[j];
+      if(a.dup||b.dup) continue;
+      const va=num2(a.importe), vb=num2(b.importe);
+      if(isNaN(va)||isNaN(vb)||Math.abs(va)<1) continue;
+      if(Math.abs(va-vb)>Math.max(1,Math.abs(va)*0.0001)) continue;
+      const da=Date.parse(a.fecha+'T00:00:00'), db=Date.parse(b.fecha+'T00:00:00');
+      if(isNaN(da)||isNaN(db)||Math.abs(db-da)>10*86400000) continue;
+      b.dup=true; b.usar=false;
+    }
+  }
+}
+
+/* ================= PARSERS ================= */
+function isNumTok(t){ return /\d/.test(t) && /^[-+]?\$?\s?[\d.,]+\s?%?$/.test(t.replace(/\s/g,'')); }
+
+/* --- consolidado con secciones tipo Balanz/PPI --- */
+const SEC_MAP=[
+  [/^bonos?$/i,'Bonos'],[/^letras?$/i,'Letras'],[/^corporativos?$/i,'Corporativos'],
+  [/^fondos?$/i,'Fondos'],[/^cheques?\s*[-–]\s*pagar|^pagar|^cheques/i,'Cheques'],
+  [/^acciones$/i,'Acciones'],[/^cedears?$/i,'Cedears'],[/^plazos? fijos?$/i,'PlazoFijo'],
+  [/^opciones$/i,'Otros'],[/^monedas?$/i,'Monedas']
+];
+const SKIP_RE=/balanz capital|www\.|especie\s+descripci|posici[oó]n consolidada|la informaci[oó]n detallada|^total\b|tipo de cambio|informaci[oó]n de cuenta|informaci[oó]n de titulares|n[°º]\s*comitente|n[°º]\s*cuotapartista|fecha resumen|fecha de emisi|nombre\s+relaci|titular|autorizado|evoluci[oó]n de cartera|mes en curso|distribuci[oó]n por tipo|instrumentos$|full investment|^cuenta\b|^monedas?$|^pesos\b|^d[oó]lares\b|cuit|igj\b|ante la cnv|sociedad gerente|s\.a\.u|piso\b|^corrientes|c1043|reproducci|jurisdicci/i;
+function claseDeSeccion(sec, linea){
+  const l=(linea||'').toLowerCase();
+  const dlk=/vinculad|linked|link\b/.test(l);
+  const usd=!dlk && /\busd\b|u\$s|d[oó]lar(es)?\b/.test(l);
+  switch(sec){
+    case 'Bonos': case 'Letras':
+      if(/bopreal/.test(l)||usd) return 'Renta fija soberana USD';
+      return 'Renta fija soberana ARS';
+    case 'Corporativos': return 'Obligaciones negociables';
+    case 'Cheques': return 'Pagarés y cheques';
+    case 'PlazoFijo': return 'Liquidez';
+    case 'Fondos':
+      if(/money market|mercado de dinero/.test(l)) return 'Liquidez';
+      if(/crecimiento|acciones|equity|renta variable/.test(l)) return 'Renta variable local';
+      return 'Fondos de renta fija';
+    case 'Acciones': return 'Renta variable local';
+    case 'Cedears': return 'CEDEARs';
+    default: return null;
+  }
+}
+function parseConsolidadoSecciones(text){
+  const lines=(text||'').split(/\r?\n/);
+  let sec=null, sub=0; const out=[]; const meta={total:NaN, tcMep:NaN, tcOficial:NaN, cashArs:NaN, cashUsd:NaN, secciones:{}};
+  lines.forEach(raw=>{
+    const line=raw.replace(/\u00a0/g,' ').trim();
+    if(!line) return;
+    let m=line.match(/^total\s*\$?\s*([\d.,]+)/i); if(m&&isNaN(meta.total)) meta.total=num2(m[1]);
+    m=line.match(/mep\s*\$?\s*([\d.,]+)/i); if(m) meta.tcMep=num2(m[1]);
+    m=line.match(/us\s*dollar\s+\$\s*([\d.,]+)/i); if(m) meta.tcOficial=num2(m[1]);
+    m=line.match(/pesos\s*\$\s*(-?[\d.,]+)/i); if(m&&isNaN(meta.cashArs)) meta.cashArs=num2(m[1]);
+    m=line.match(/d[oó]lares\s*(?:usd|u\$s)\s*(-?[\d.,]+)/i); if(m) meta.cashUsd=(isNaN(meta.cashUsd)?0:meta.cashUsd)+num2(m[1]);
+    m=line.match(/us\s*dollar\s*\(cable\)\s*(?:usd|u\$s)\s*(-?[\d.,]+)/i); if(m) meta.cashUsd=(isNaN(meta.cashUsd)?0:meta.cashUsd)+num2(m[1]);
+    const toks=line.split(/\s+/);
+    const nums=toks.filter(isNumTok);
+    if(/especie\s+descripci/i.test(line)){ sub++; return; }
+    if(!nums.length){
+      for(const sm of SEC_MAP){ if(sm[0].test(line)){ sec=sm[1]; sub=0; return; } }
+    }
+    if(SKIP_RE.test(line)||line.length>150) return;
+    if(!sec||sec==='Monedas') return;
+    if(nums.length<3) return;
+    const valor=nums[nums.length-1];
+    const ticker=toks[0].replace(/^[#%]/,'');
+    if(!ticker) return;
+    let corte=toks.length; for(let i=1;i<toks.length;i++){ if(isNumTok(toks[i])){ corte=i; break; } }
+    const desc=toks.slice(1,corte).join(' ');
+    if(isNumTok(ticker)&&corte<3) return;
+    const clase=claseDeSeccion(sec,line);
+    if(!clase) return;
+    const tcConv=!isNaN(meta.tcMep)?meta.tcMep:meta.tcOficial;
+    let mostrar=valor, nombre=ticker+(desc?' '+desc:'');
+    if(sub>=2&&!isNaN(tcConv)){   // sub-bloque en moneda extranjera dentro de la misma sección
+      mostrar=fmtNum(num2(valor)*tcConv);
+      nombre+=' · USD '+valor;
+    }
+    meta.secciones[sec]=(meta.secciones[sec]||0)+num2(mostrar);
+    out.push({nombre:nombre, monto:mostrar, pct:'', clase:clase});
+  });
+  if(out.length){
+    const tc=!isNaN(meta.tcMep)?meta.tcMep:meta.tcOficial;
+    if(!isNaN(meta.cashArs)&&Math.abs(meta.cashArs)>0.5)
+      out.push({nombre:'Saldo en pesos', monto:fmtNum(meta.cashArs), pct:'', clase:'Liquidez'});
+    if(!isNaN(meta.cashUsd)&&Math.abs(meta.cashUsd)>0.5&&!isNaN(tc))
+      out.push({nombre:'Saldo en dólares (USD '+fmtNum(meta.cashUsd)+')', monto:fmtNum(meta.cashUsd*tc), pct:'', clase:'Liquidez'});
+  }
+  return out.length?{rows:out, meta:meta}:null;
+}
+function parseTabla(text){
+  const rows=[];
+  (text||'').split(/\r?\n/).forEach(raw=>{
+    if(rows.length>=40) return;
+    const line=raw.replace(/\u00a0/g,' ').trim();
+    if(line.length<2) return;
+    let cells = line.indexOf('\t')>-1 ? line.split('\t') : line.split(/\s{2,}/);
+    cells = cells.map(c=>c.trim()).filter(c=>c!=='');
+    if(cells.length<2){ cells = line.split(/\s+/); }
+    if(cells.length<2) return;
+    const nums=[], words=[];
+    cells.forEach(c=>{ (isNumTok(c)?nums:words).push(c); });
+    if(!nums.length||!words.length) return;
+    let nombre=words.join(' ').replace(/^(usd|ars|\$)\s*/i,'').replace(/[|:;·]+$/,'').trim();
+    if(!nombre) return;
+    if(/^(total|totales)/i.test(nombre)) return;
+    let p='', monto='';
+    const conPct=nums.filter(n=>n.indexOf('%')>-1);
+    if(conPct.length){ p=conPct[conPct.length-1].replace(/\s/g,''); }
+    else if(nums.length>1){ p=nums[nums.length-1]; }
+    const resto=nums.filter(n=>n!==p);
+    if(resto.length){ monto=resto[resto.length-1]; }
+    if(p && p.indexOf('%')===-1) p=p+'%';
+    rows.push({nombre:nombre, detalle:'', monto:monto, pct:p});
+  });
+  return rows;
+}
+async function readPdfText(file){
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+  let out='';
+  for(let p=1;p<=pdf.numPages;p++){
+    const pg=await pdf.getPage(p), tc=await pg.getTextContent(), lines={};
+    tc.items.forEach(it=>{ const y=Math.round(it.transform[5]); (lines[y]=lines[y]||[]).push({x:it.transform[4],s:it.str}); });
+    Object.keys(lines).map(Number).sort((a,b)=>b-a).forEach(y=>{
+      const ln=lines[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join('  ').replace(/\s{3,}/g,'  ').trim();
+      if(ln) out+=ln+'\n';
+    });
+  }
+  return out;
+}
+
+/* ================= CONSTRUCCIÓN DEL INFORME ================= */
+function buildSections(){
+  const bks=benchmarks(), twrN=num2(S.twr), d=dias(), c=conciliacion(), sec=[];
+
+  /* --- KPIs --- */
+  const kpis=[];
+  kpis.push({l:'Cartera (TWR)', v:pct(twrN), u:'Time-Weighted Return en '+monLbl()});
+  if(bks.length) kpis.push({l:'Exceso vs. '+bks[0].label.toLowerCase(), v:pp(twrN-bks[0].val),
+    u:'Diferencia contra '+String(bks[0].fuente||'').replace(/&middot;/g,'·'), c:(twrN-bks[0].val)>=0?'var(--green)':'var(--red)'});
+  if(S.anualKpi && anualVal()!=null) kpis.push({l:'Anualizado (TEA)', v:pct(anualVal()),
+    u:(d&&d<365)?'Equivalente anual del período':'Tasa efectiva anual', c:'var(--green)'});
+  if(c){
+    const ten=!isNaN(c.comp.ten);
+    kpis.push({l:ten?'Resultado por tenencia':'Resultado del período',
+      v:mon(ten?c.comp.ten:c.resultado),
+      u:ten?'Valorizaci&oacute;n de los activos':'Generado por las inversiones'});
+  }
+  else { if(S.saldoIni!=='') kpis.push({l:'Saldo al inicio', v:money(S.saldoIni), u:ddmmaaaa(S.fInicio)});
+         if(S.saldoFin!=='') kpis.push({l:'Saldo al final', v:money(S.saldoFin), u:ddmmaaaa(S.fFin)}); }
+  const kpiHtml=kpis.slice(0,4).map(k=>'\n      <div class="kpi-item">\n        <div class="kpi-label">'+k.l+'</div>\n        <div class="kpi-value"'+(k.c?' style="color:'+k.c+';"':'')+'>'+k.v+'</div>\n        <div class="kpi-unit">'+k.u+'</div>\n      </div>').join('');
+  let nota='';
+  if(d){
+    nota='Per&iacute;odo de '+d+' d&iacute;as';
+    if(anualVal()!=null && !S.anualKpi) nota+=' &middot; equivalente anual (TEA) '+pct(anualVal())+', no constituye una proyecci&oacute;n';
+    if(S.twrOrigen==='alyc') nota+=' &middot; TWR informado por '+esc(S.fuente);
+    else nota+=' &middot; TWR calculado por Amauta (Modified Dietz)';
+  }
+  sec.push({title:'Resumen del Rendimiento', body:'<div class="kpi-strip">'+kpiHtml+'\n    </div>'+(nota?'<div class="kpi-note">'+nota+'</div>':'')});
+
+  /* --- comparativa --- */
+  if(bks.length && !isNaN(twrN)){
+    const maxAbs=Math.max(Math.abs(twrN), ...bks.map(b=>Math.abs(b.val)))||1;
+    let rows='\n        <tr>\n          <td><span class="on-pill" style="background:rgba(243,207,17,0.20);color:#F3CF11;">CARTERA</span></td>'+
+      '\n          <td style="color:var(--color-text-tertiary);font-size:13px;">Amauta &middot; TWR en '+monLbl()+'</td>'+
+      '\n          <td class="num" style="font-weight:800;color:var(--yellow);">'+pct(twrN)+'</td>'+
+      '\n          <td class="num" style="color:var(--color-text-tertiary);">&mdash;</td>'+
+      '\n          <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:'+(Math.abs(twrN)/maxAbs*100).toFixed(1)+'%;background:#F3CF11;"></div></div><span class="bar-pct">'+pct(twrN)+'</span></div></td>\n        </tr>';
+    bks.forEach(b=>{
+      const diff=twrN-b.val, dc=diff>=0?'#2EB87A':'#E5484D';
+      rows+='\n        <tr>\n          <td><span class="on-pill" style="background:'+b.pillBg+';color:'+b.pillColor+';">'+esc(b.label)+'</span></td>'+
+        '\n          <td style="color:var(--color-text-tertiary);font-size:13px;">'+esc(b.fuente)+'</td>'+
+        '\n          <td class="num" style="font-weight:800;">'+pct(b.val)+'</td>'+
+        '\n          <td class="num" style="font-weight:800;color:'+dc+';">'+pp(diff)+'</td>'+
+        '\n          <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:'+(Math.abs(b.val)/maxAbs*100).toFixed(1)+'%;background:'+b.color+';"></div></div><span class="bar-pct">'+pct(b.val)+'</span></div></td>\n        </tr>';
+    });
+    sec.push({title:'Cartera vs. Benchmark'+(bks.length>1?'s':''), body:
+      '\n    <table class="comp-table">\n      <thead><tr><th>Indicador</th><th>Fuente</th><th>Variaci&oacute;n acumulada</th><th>Diferencia vs. cartera</th><th>Comparaci&oacute;n visual</th></tr></thead>\n      <tbody>'+rows+'\n      </tbody>\n    </table>'});
+  }
+
+  /* --- conciliación --- */
+  if(c){
+    const fila=(lbl,val,color)=>'\n        <tr><td>'+lbl+'</td><td class="num right" style="text-align:right;'+(color?'color:'+color+';font-weight:800;':'')+'">'+mon(val)+'</td></tr>';
+    let filas=fila('Valor inicial &middot; '+ddmmaaaa(S.fInicio), c.ini);
+    const hayDet=[c.dep,c.ext,c.tr,c.te].some(x=>!isNaN(x));
+    if(hayDet){
+      if(!isNaN(c.dep)&&c.dep!==0) filas+=fila('Dep&oacute;sitos y suscripciones', c.dep, '#2EB87A');
+      if(!isNaN(c.ext)&&c.ext!==0) filas+=fila('Extracciones y rescates', c.ext, '#E5484D');
+      if(!isNaN(c.tr)&&c.tr!==0) filas+=fila('T&iacute;tulos transferidos recibidos', c.tr, '#2EB87A');
+      if(!isNaN(c.te)&&c.te!==0) filas+=fila('T&iacute;tulos transferidos enviados', c.te, '#E5484D');
+    } else if(c.flujos!==0){
+      filas+=fila((c.flujos<0?'Retiros netos':'Aportes netos')+' del per&iacute;odo', c.flujos, c.flujos<0?'#E5484D':'#2EB87A');
+    }
+    if(c.compSum!=null){
+      if(!isNaN(c.comp.ten)) filas+=fila('Resultado por tenencia', c.comp.ten, c.comp.ten>=0?'#2EB87A':'#E5484D');
+      if(!isNaN(c.comp.cup)) filas+=fila('Cupones y dividendos', c.comp.cup, '#2EB87A');
+      if(!isNaN(c.comp.gas)) filas+=fila('Gastos, comisiones e impuestos', c.comp.gas, '#E5484D');
+      if(!isNaN(c.comp.aju)) filas+=fila('Ajustes', c.comp.aju, c.comp.aju>=0?'#2EB87A':'#E5484D');
+      if(Math.abs(c.desvio)>Math.max(1,Math.abs(c.resultado)*0.000002)) filas+=fila('Otros movimientos', c.desvio);
+    } else {
+      filas+=fila('Resultado generado por las inversiones', c.resultado, c.resultado>=0?'#2EB87A':'#E5484D');
+    }
+    let nota='La variaci&oacute;n del saldo fue de '+pct(c.varPct)+', distinta del rendimiento de la cartera ('+pct(twrN)+') porque el TWR a&iacute;sla el efecto de los aportes y retiros del per&iacute;odo.';
+    if(c.compSum!=null) nota+=' El resultado total generado por las inversiones fue de '+mon(c.resultado)+'.';
+    sec.push({title:'Conciliaci&oacute;n del Per&iacute;odo', body:
+      '\n    <table class="comp-table">\n      <thead><tr><th>Concepto</th><th class="right" style="text-align:right;">Importe</th></tr></thead>\n      <tbody>'+filas+
+      '\n        <tr class="total-row"><td>VALOR FINAL &middot; '+ddmmaaaa(S.fFin)+'</td><td class="num right" style="text-align:right;color:var(--yellow);">'+mon(c.fin)+'</td></tr>'+
+      '\n      </tbody>\n    </table>\n    <div class="kpi-note">'+nota+'</div>'});
+  }
+
+  /* --- cuentas --- */
+  const ctas=S.cuentas.filter(x=>(x.alyc||'').trim()||!isNaN(num2(x.twr)));
+  if(ctas.length){
+    const w=twrPonderado();
+    const rows=ctas.map(x=>'\n        <tr><td><b>'+esc(x.alyc||'—')+'</b></td><td style="color:var(--color-text-tertiary);">'+esc(x.comitente||'')+'</td><td class="num">'+(x.aumFin?money(x.aumFin):'&mdash;')+'</td><td class="num right" style="text-align:right;font-weight:800;">'+pct(num2(x.twr))+'</td></tr>').join('');
+    sec.push({title:'Rendimiento por Cuenta', body:
+      '\n    <table class="comp-table">\n      <thead><tr><th>ALyC</th><th>Comitente</th><th>AUM al cierre</th><th class="right" style="text-align:right;">TWR</th></tr></thead>\n      <tbody>'+rows+
+      (w?'\n        <tr class="total-row"><td colspan="2">CONSOLIDADO</td><td class="num" style="color:var(--yellow);">'+mon(w.total)+'</td><td class="num right" style="text-align:right;color:var(--yellow);">'+pct(w.val)+'</td></tr>':'')+
+      '\n      </tbody>\n    </table>'+(w?'\n    <div class="kpi-note">TWR consolidado ponderado por '+w.origen+' de cada cuenta.</div>':'')});
+  }
+
+  /* --- lectura --- */
+  const lects=S.lectura.filter(l=>(l.titulo||'').trim()||(l.texto||'').trim());
+  if(lects.length) sec.push({title:'Lectura del Resultado', body:
+    '\n    <div class="rat-grid">\n      '+lects.map(l=>'<div class="rat-card"><h4>'+esc(l.titulo)+'</h4><p>'+esc(l.texto)+'</p></div>').join('')+'\n    </div>'});
+
+  /* --- cartera --- */
+  const cart=S.cartera.filter(x=>(x.pct||'').trim()||(x.nombre||'').trim()||(x.monto||'').trim());
+  if(cart.length){
+    let totalValor='&mdash;';
+    if(S.carteraTotal.trim()){ totalValor=money(S.carteraTotal); }
+    else { let ok=true,sum=0,any=false;
+      for(let i=0;i<cart.length;i++){ const m=(cart[i].monto||'').trim(); if(!m) continue; any=true;
+        if(hasLetters(m)){ ok=false;break; } const n=num2(m); if(isNaN(n)){ ok=false;break; } sum+=n; }
+      if(ok&&any) totalValor=mon(sum); }
+    const ps=cart.map(x=>num2(x.pct)).filter(x=>!isNaN(x));
+    const pctSum=ps.length?ps.reduce((a,b)=>a+b,0):null;
+    const totalPct=pctSum==null?'&mdash;':(Math.abs(pctSum-100)<1?'100%':fmtNum(pctSum,1)+'%');
+    const porClase = S.agrupar && S.posiciones.length>0;
+    const titulo=(porClase?'Composici&oacute;n por Clase de Activo':'Cartera Consolidada')+(S.fFin?' al Cierre ('+ddmmaaaa(S.fFin)+')':'');
+    if(S.carteraVista==='grid'){
+      const cols=['var(--yellow)','var(--azul)','var(--green)','var(--bordo)'];
+      sec.push({title:titulo, body:'\n    <div class="sector-grid">'+cart.map((x,i)=>
+        '\n      <div class="sector-card"><div class="sector-pct" style="color:'+cols[i%4]+';">'+esc(x.pct||'')+'</div>'+
+        '<div class="sector-name">'+esc(x.nombre)+'</div>'+
+        (porClase?'':'<div class="sector-emisor">'+esc(x.detalle||'')+'</div>')+
+        (x.monto?'<div class="sector-emisor" style="color:var(--color-text-tertiary);margin-top:6px;">'+money(x.monto)+'</div>':'')+
+        '<div class="sector-bar" style="background:'+cols[i%4]+';"></div></div>').join('')+
+        '\n    </div>\n    <div class="kpi-note">Total de cartera: '+totalValor+' &middot; '+totalPct+'</div>'});
+    } else {
+      const rows=cart.map(x=>'\n        <tr><td><b>'+esc(x.nombre)+'</b></td>'+
+        (porClase?'':'<td style="color:var(--color-text-tertiary);">'+esc(x.detalle)+'</td>')+
+        '<td class="num" style="font-weight:800;">'+money(x.monto)+'</td><td class="num right" style="text-align:right;">'+esc(x.pct)+'</td></tr>').join('');
+      sec.push({title:titulo, body:
+        '\n    <table class="comp-table">\n      <thead><tr><th>'+(porClase?'Clase de activo':'Activo')+'</th>'+
+        (porClase?'':'<th>Detalle</th>')+
+        '<th>'+(S.moneda==='usd'?'Valor (USD)':'Valor ($)')+'</th><th class="right" style="text-align:right;">% Cartera</th></tr></thead>\n      <tbody>'+rows+
+        '\n        <tr class="total-row"><td'+(porClase?'':' colspan="2"')+'>TOTAL CARTERA</td><td class="num" style="color:var(--yellow);">'+totalValor+'</td><td class="num right" style="text-align:right;color:var(--yellow);">'+totalPct+'</td></tr>\n      </tbody>\n    </table>'});
+    }
+  }
+
+  /* --- factsheets --- */
+  if(S.factsheets.length) sec.push({title:'Factsheets de Fondos', body:
+    '<div class="doc-links">'+S.factsheets.map(f=>'<a class="doc-dl" href="'+f.data+'" download="'+esc(f.name)+'">&#128206; Factsheet &middot; '+esc(f.name)+'</a>').join('')+'</div>'});
+
+  return sec;
+}
+
+function buildReport(){
+  const bks=benchmarks(), twrN=num2(S.twr);
+  const cliente=(S.cliente||'CLIENTE').toUpperCase();
+  const periodo=(S.fInicio&&S.fFin)?ddmmaaaa(S.fInicio)+' al '+ddmmaaaa(S.fFin):'';
+  const t1=S.titulo1||'RENDIMIENTO';
+  const t2=S.titulo2||'DE CARTERA';
+
+  const meta=[];
+  meta.push({l:'Cartera (TWR)', v:pct(twrN)});
+  if(bks.length) meta.push({l:'Exceso vs. '+bks[0].label.toLowerCase(), v:pp(twrN-bks[0].val)});
+  if(periodo) meta.push({l:'Per&iacute;odo', v:ddmmaaaa(S.fInicio)+' &ndash; '+ddmmaaaa(S.fFin)});
+  meta.push({l:'Moneda', v:(S.moneda==='usd'?'D&oacute;lares (USD)':'Pesos (ARS)')});
+  const metaHtml=meta.slice(0,4).map(m=>'\n      <div class="cover-meta-item">\n        <div class="cover-meta-label">'+m.l+'</div>\n        <div class="cover-meta-value">'+m.v+'</div>\n      </div>').join('');
+
+  const mainHtml=buildSections().map((s,i)=>'\n  <div class="section">\n    <div class="section-header">\n      <span class="section-num">'+String(i+1).padStart(2,'0')+'</span>\n      <span class="section-title">'+s.title+'</span>\n      <div class="section-line"></div>\n    </div>'+s.body+'\n  </div>').join('\n');
+
+  const disc=(S.disclaimer.trim()?esc(S.disclaimer).replace(/\n/g,' '):esc(autoDisclaimer()));
+  const footDate=(S.fechaInforme?ddmmaaaa(S.fechaInforme):'').toUpperCase();
+  const coverDate=(S.fechaInforme?'Informe generado el '+ddmmaaaa(S.fechaInforme)+' ':'')+'&middot; Fuente: '+esc(S.fuente);
+
+  return '<!DOCTYPE html>\n<html lang="es">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Informe de Rendimiento &middot; '+cliente+'</title>\n<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;800&display=swap" rel="stylesheet">\n<style>\n'+REPORT_CSS+'\n</style>\n</head>\n<body>\n'+
+'<div class="cover">\n  <div class="cover-logo"><img src="'+LOGO+'" alt="Amauta Inversiones Financieras"></div>\n  <div class="cover-center">\n'+
+'    <div class="cover-eyebrow">Informe de Rendimiento'+(S.comitente?' &middot; Cuenta Comitente '+esc(S.comitente):'')+'</div>\n'+
+'    <div class="cover-client">\n      <div class="cover-client-label">Cliente</div>\n      <div class="cover-client-name">'+esc(cliente)+'</div>\n    </div>\n'+
+'    <div class="cover-title">'+esc(t1)+'<br><em>'+esc(t2)+'</em></div>\n    <div class="cover-divider"></div>\n'+
+'    <div class="cover-meta">'+metaHtml+'\n    </div>\n'+
+'    <div class="cover-subtitle">'+(periodo?'Acumulado '+periodo+' &middot; ':'')+'Rendimiento en '+monLbl()+'</div>\n  </div>\n'+
+'  <div class="cover-bottom">\n    <div class="cover-date">'+coverDate+'</div>\n    <div class="cover-claim"><span class="arrow">&#9656;</span> Saber es <b>crecer</b></div>\n  </div>\n</div>\n\n'+
+'<div class="main">'+mainHtml+'\n</div>\n\n'+
+'<div class="footer">\n  <div class="footer-grid">\n    <div>\n      <div class="footer-logo"><img src="'+LOGO+'" alt="Amauta Inversiones Financieras"></div>\n'+
+'      <div style="font-size:13px;color:var(--color-text-tertiary);letter-spacing:0.15em;margin-top:10px;">'+footDate+'</div>\n'+
+'      <div style="font-size:13px;color:var(--color-text-tertiary);letter-spacing:0.08em;margin-top:6px;font-weight:800;text-transform:uppercase;">'+esc(cliente)+'</div>\n    </div>\n'+
+'    <div class="footer-disclaimer">'+disc+'</div>\n  </div>\n'+
+'  <div class="footer-bottom">\n    <span>Informe de Rendimiento &middot; '+esc(cliente)+'</span>\n    <span>Confidencial &middot; Uso exclusivo del destinatario</span>\n  </div>\n</div>\n</body>\n</html>';
+}
+
+const REPORT_CSS = [
+'  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }',
+'  :root{',
+'    --color-surface-base:#211C22; --color-surface-strong:#322B33;',
+'    --color-text-primary:#FFFFFF; --color-text-tertiary:#9C939B;',
+"    --font-family:'Fira Sans',Helvetica,Arial,sans-serif;",
+'    --space-6:16px; --space-7:18px; --space-8:20px;',
+'    --radius-xs:3px; --radius-sm:5px;',
+'    --shadow-1:rgba(0,0,0,0.35) 0px 12px 18px -6px;',
+'    --yellow:#F3CF11; --yellow-dim:rgba(243,207,17,0.10);',
+'    --surface-1:#2B252C; --border:rgba(243,207,17,0.20); --border-dim:rgba(255,255,255,0.07);',
+'    --green:#2EB87A; --green-bg:rgba(46,184,122,0.14);',
+'    --red:#E5484D; --red-bg:rgba(229,72,77,0.14);',
+'    --bordo:#8C1278; --bordo-bg:rgba(140,18,120,0.16);',
+'    --azul:#4A41C9; --azul-bg:rgba(74,65,201,0.16);',
+'  }',
+'  html{scroll-behavior:smooth}',
+'  body{font-family:var(--font-family);background:var(--color-surface-base);color:var(--color-text-primary);font-size:16px;font-weight:400;line-height:1.55}',
+'  .cover{background:var(--color-surface-base);min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;padding:48px 64px;position:relative;overflow:hidden;border-bottom:2px solid var(--yellow)}',
+"  .cover::before{content:'';position:absolute;top:0;right:0;width:320px;height:100%;background:var(--color-surface-strong);clip-path:polygon(20% 0,100% 0,100% 100%,0% 100%);z-index:0}",
+"  .cover::after{content:'';position:absolute;top:0;right:320px;width:3px;height:100%;background:var(--yellow);z-index:1}",
+'  .cover-logo{align-self:flex-start;position:relative;z-index:2}',
+'  .cover-logo img{height:46px;width:auto;display:block}',
+'  .cover-center{position:relative;z-index:2;max-width:640px}',
+'  .cover-eyebrow{font-size:13px;letter-spacing:0.22em;text-transform:uppercase;color:var(--yellow);font-weight:800;margin-bottom:var(--space-8)}',
+'  .cover-client{display:inline-block;margin-bottom:20px;padding:7px 16px;border:1px solid var(--border);border-radius:var(--radius-xs);background:rgba(243,207,17,0.07)}',
+'  .cover-client-label{font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--color-text-tertiary);font-weight:800;margin-bottom:3px}',
+'  .cover-client-name{font-size:16px;color:var(--yellow);font-weight:800;letter-spacing:0.04em}',
+'  .cover-title{font-size:56px;font-weight:800;line-height:1.02;color:var(--color-text-primary);text-transform:uppercase;letter-spacing:-0.02em}',
+'  .cover-title em{font-style:normal;color:var(--yellow)}',
+'  .cover-divider{width:48px;height:3px;background:var(--yellow);margin:var(--space-8) 0;border-radius:var(--radius-xs)}',
+'  .cover-meta{display:flex;gap:40px;flex-wrap:wrap}',
+'  .cover-meta-label{font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-text-tertiary);font-weight:800;margin-bottom:6.6px}',
+'  .cover-meta-value{font-size:22px;color:var(--yellow);font-weight:800;letter-spacing:-0.01em}',
+'  .cover-subtitle{font-size:14px;color:var(--color-text-tertiary);letter-spacing:0.05em;font-weight:400;margin-top:var(--space-7)}',
+'  .cover-bottom{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:2}',
+'  .cover-date{font-size:13px;color:var(--color-text-tertiary);letter-spacing:0.12em}',
+'  .cover-claim{font-size:13px;color:var(--color-text-tertiary);letter-spacing:0.05em;font-weight:400;display:flex;align-items:center;gap:8px}',
+'  .cover-claim b{color:var(--yellow);font-weight:800}',
+'  .cover-claim .arrow{color:var(--yellow)}',
+'  .main{background:var(--color-surface-base);padding:64px}',
+'  .section{margin-bottom:64px}',
+'  .section-header{display:flex;align-items:center;gap:16px;margin-bottom:var(--space-8);padding-bottom:14px;border-bottom:1px solid var(--border)}',
+'  .section-num{font-size:13px;color:var(--yellow);font-weight:800;letter-spacing:0.15em;min-width:24px}',
+'  .section-title{font-size:21px;font-weight:800;color:var(--color-text-primary);text-transform:uppercase;letter-spacing:0.03em}',
+'  .section-line{flex:1;height:1px;background:var(--border)}',
+'  .kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));background:var(--color-surface-strong);border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-1)}',
+'  .kpi-item{padding:28px 24px;border-right:1px solid var(--border-dim);position:relative}',
+'  .kpi-item:last-child{border-right:none}',
+'  .kpi-label{font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-text-tertiary);font-weight:800;margin-bottom:11px}',
+'  .kpi-value.sm{font-size:24px;letter-spacing:-0.01em}',
+'  .kpi-value{font-size:34px;font-weight:800;color:var(--yellow);line-height:1;letter-spacing:-0.02em}',
+'  .kpi-unit{font-size:13px;color:var(--color-text-tertiary);margin-top:8px;font-weight:400}',
+'  .kpi-note{font-size:13px;color:var(--color-text-tertiary);margin-top:12px;line-height:1.6}',
+'  .comp-table{width:100%;border-collapse:collapse;background:var(--surface-1);border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow-1);border:1px solid var(--border)}',
+'  .comp-table thead{background:var(--color-surface-strong)}',
+'  .comp-table thead th{padding:12px 14px;text-align:left;font-size:13px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text-tertiary);font-weight:800;border-right:1px solid var(--border-dim)}',
+'  .comp-table thead th:last-child{border-right:none}',
+'  .comp-table tbody tr{border-bottom:1px solid var(--border-dim)}',
+'  .comp-table tbody tr:last-child{border-bottom:none}',
+'  .comp-table td{padding:15px 14px;font-size:14px;color:var(--color-text-primary);border-right:1px solid var(--border-dim);vertical-align:middle}',
+'  .comp-table td:last-child{border-right:none}',
+'  .comp-table .total-row{background:var(--color-surface-strong);border-top:2px solid var(--yellow);font-weight:800}',
+'  .on-pill{display:inline-block;font-size:13px;font-weight:800;padding:3px 9px;border-radius:var(--radius-xs);letter-spacing:0.06em;text-transform:uppercase}',
+'  .bar-wrap{display:flex;align-items:center;gap:10px}',
+'  .bar-bg{flex:1;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}',
+'  .bar-fill{height:100%;border-radius:4px}',
+'  .bar-pct{font-size:13px;color:var(--color-text-tertiary);min-width:64px;font-weight:800;text-align:right}',
+'  .rat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}',
+'  .rat-card{background:var(--surface-1);border-radius:var(--radius-sm);padding:22px 26px;border-left:3px solid var(--yellow);border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border);box-shadow:var(--shadow-1)}',
+'  .rat-card h4{font-size:16px;font-weight:800;color:var(--yellow);margin-bottom:11px;text-transform:uppercase;letter-spacing:0.03em}',
+'  .rat-card p{font-size:14px;color:var(--color-text-tertiary);line-height:1.7;font-weight:400}',
+'  .sector-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}',
+'  .sector-card{background:var(--surface-1);border-radius:var(--radius-sm);padding:26px 22px;border:1px solid var(--border);box-shadow:var(--shadow-1);text-align:center}',
+'  .sector-pct{font-size:38px;font-weight:800;color:var(--yellow);line-height:1;letter-spacing:-0.03em}',
+'  .sector-name{font-size:13px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text-tertiary);margin:10px 0 8px;font-weight:800}',
+'  .sector-emisor{font-size:14px;color:var(--color-text-primary);font-weight:400}',
+'  .sector-bar{height:2px;border-radius:1px;margin-top:16px}',
+'  .doc-links{display:flex;flex-direction:column;gap:10px}',
+'  .doc-dl{display:inline-flex;align-items:center;gap:8px;background:var(--surface-1);border:1px solid var(--border);border-left:3px solid var(--yellow);border-radius:var(--radius-sm);padding:14px 18px;color:var(--color-text-primary);text-decoration:none;font-size:14px;font-weight:500}',
+'  .doc-dl:hover{background:var(--yellow-dim)}',
+'  .num{font-variant-numeric:tabular-nums}',
+'  .footer{background:var(--color-surface-strong);padding:40px 64px;border-top:2px solid var(--yellow)}',
+'  .footer-grid{display:grid;grid-template-columns:1fr 2fr;gap:48px;align-items:start}',
+'  .footer-logo img{height:32px;width:auto;display:block;margin-bottom:14px}',
+'  .footer-disclaimer{font-size:13px;color:var(--color-text-tertiary);line-height:1.8;font-weight:400}',
+'  .footer-bottom{display:flex;justify-content:space-between;margin-top:32px;padding-top:20px;border-top:1px solid var(--border-dim);font-size:13px;color:var(--color-text-tertiary);letter-spacing:0.1em;font-weight:800;text-transform:uppercase}',
+'  @page{size:A4;margin:12mm}',
+'  @media print{ body{font-size:14px} .cover{page-break-after:always;min-height:auto;padding:32px 40px} .main{padding:28px 40px} .footer{padding:24px 40px} .section{page-break-inside:avoid;margin-bottom:34px} .cover-title{font-size:44px} .kpi-value{font-size:28px} }'
+].join('\n');
+
+/* ================= EXPORT JSON PARA LA SKILL ================= */
+function skillJson(){
+  const bks=benchmarks(), twrN=num2(S.twr), d=dias(), c=conciliacion();
+  const sections=[];
+  const kpi={type:'kpi', title:'Resumen del Rendimiento', entries:[]};
+  kpi.entries.push({label:'Cartera (TWR)', value:(twrN>0?'+':'')+fmtNum(twrN), value_suffix:'%', unit:'Time-Weighted Return en '+monTxt()});
+  if(bks.length){ const ex=twrN-bks[0].val;
+    kpi.entries.push({label:'Exceso vs. '+bks[0].label.toLowerCase(), value:(ex>0?'+':'')+fmtNum(ex), value_suffix:' p.p.',
+      unit:'Diferencia contra '+bks[0].fuente, color:ex>=0?'var(--green)':'var(--red)'}); }
+  if(S.anualKpi&&anualVal()!=null) kpi.entries.push({label:'Anualizado (TEA)', value:(anualVal()>0?'+':'')+fmtNum(anualVal()), value_suffix:'%', unit:(d&&d<365)?'Equivalente anual del período':'Tasa efectiva anual', color:'var(--green)'});
+  if(c){ const ten=!isNaN(c.comp.ten);
+    kpi.entries.push({label:ten?'Resultado por tenencia':'Resultado del período',
+      value:mon(ten?c.comp.ten:c.resultado), value_suffix:'',
+      unit:ten?'Valorización de los activos':'Generado por las inversiones'}); }
+  sections.push(kpi);
+
+  if(bks.length&&!isNaN(twrN)){
+    const maxAbs=Math.max(Math.abs(twrN), ...bks.map(b=>Math.abs(b.val)))||1;
+    const rows=[{label:'CARTERA', source:'Amauta · TWR en '+monTxt(), value:(twrN>0?'+':'')+fmtNum(twrN)+'%', diff:'&mdash;',
+      pill_bg:'rgba(243,207,17,0.20)', pill_color:'#F3CF11', value_color:'var(--yellow)',
+      bar_pct:Math.round(Math.abs(twrN)/maxAbs*100), bar_color:'#F3CF11'}];
+    bks.forEach(b=>{ const diff=twrN-b.val;
+      rows.push({label:b.label, source:b.fuente, value:(b.val>0?'+':'')+fmtNum(b.val)+'%',
+        diff:(diff>0?'+':'')+fmtNum(diff)+' p.p.', diff_color:diff>=0?'#2EB87A':'#E5484D',
+        pill_bg:b.pillBg, pill_color:b.pillColor, bar_pct:Math.round(Math.abs(b.val)/maxAbs*100), bar_color:b.color}); });
+    sections.push({type:'comp_table', title:'Cartera vs. Benchmark'+(bks.length>1?'s':''),
+      headers:['Indicador','Fuente','Variación acumulada','Diferencia vs. cartera','Comparación visual'], rows:rows});
+  }
+  if(c){
+    const cel=(l,v)=>({cells:[{value:l},{value:mon(v),right:true}]});
+    const rws=[cel('Valor inicial · '+ddmmaaaa(S.fInicio), c.ini)];
+    if([c.dep,c.ext,c.tr,c.te].some(x=>!isNaN(x))){
+      if(!isNaN(c.dep)&&c.dep!==0) rws.push(cel('Depósitos y suscripciones',c.dep));
+      if(!isNaN(c.ext)&&c.ext!==0) rws.push(cel('Extracciones y rescates',c.ext));
+      if(!isNaN(c.tr)&&c.tr!==0) rws.push(cel('Títulos transferidos recibidos',c.tr));
+      if(!isNaN(c.te)&&c.te!==0) rws.push(cel('Títulos transferidos enviados',c.te));
+    } else if(c.flujos!==0) rws.push(cel((c.flujos<0?'Retiros netos':'Aportes netos')+' del período',c.flujos));
+    if(c.compSum!=null){
+      if(!isNaN(c.comp.ten)) rws.push(cel('Resultado por tenencia',c.comp.ten));
+      if(!isNaN(c.comp.cup)) rws.push(cel('Cupones y dividendos',c.comp.cup));
+      if(!isNaN(c.comp.gas)) rws.push(cel('Gastos, comisiones e impuestos',c.comp.gas));
+      if(!isNaN(c.comp.aju)) rws.push(cel('Ajustes',c.comp.aju));
+    } else rws.push(cel('Resultado generado por las inversiones',c.resultado));
+    rws.push({is_total:true, cells:[{value:'Valor final · '+ddmmaaaa(S.fFin)},{value:mon(c.fin),right:true,color:'var(--yellow)'}]});
+    sections.push({type:'portfolio_table', title:'Conciliación del Período', headers:['Concepto','Importe'], rows:rws});
+  }
+  const lects=S.lectura.filter(l=>(l.titulo||'').trim()||(l.texto||'').trim());
+  if(lects.length) sections.push({type:'rationale', title:'Lectura del Resultado',
+    entries:lects.map(l=>({title:l.titulo, text:l.texto}))});
+  const cart=S.cartera.filter(x=>(x.nombre||'').trim());
+  if(cart.length){
+    if(S.carteraVista==='grid'){
+      const cols=['var(--yellow)','var(--azul)','var(--green)','var(--bordo)'];
+      sections.push({type:'sector_grid', title:(S.agrupar&&S.posiciones.length?'Composición por Clase de Activo':'Detalle de la Cartera al Cierre'),
+        entries:cart.map((x,i)=>({pct:x.pct, name:x.nombre, detail:x.detalle, amount:x.monto, color:cols[i%4]}))});
+    } else {
+      sections.push({type:'portfolio_table', title:(S.agrupar&&S.posiciones.length?'Composición por Clase de Activo':'Cartera Consolidada'),
+        headers:[(S.agrupar&&S.posiciones.length?'Clase de activo':'Activo'),(S.agrupar&&S.posiciones.length?'Instrumentos':'Detalle'),(S.moneda==='usd'?'Valor (USD)':'Valor ($)'),'% Cartera'],
+        rows:cart.map(x=>({cells:[{value:x.nombre},{value:x.detalle||''},{value:x.monto||'',right:true},{value:x.pct||'',right:true}]}))});
+    }
+  }
+  return {
+    doc_title:'Informe de Rendimiento',
+    client_name:(S.cliente||'CLIENTE').toUpperCase(),
+    cover_eyebrow:'Informe de Rendimiento'+(S.comitente?' · Cuenta Comitente '+S.comitente:''),
+    cover_title_line1:(S.titulo1||'RENDIMIENTO'),
+    cover_title_line2:(S.titulo2||'DE CARTERA'),
+    cover_meta:[{label:'Cartera (TWR)', value:pctTxt(twrN)}].concat(
+      bks.length?[{label:'Exceso vs. '+bks[0].label.toLowerCase(), value:((twrN-bks[0].val)>0?'+':'')+fmtNum(twrN-bks[0].val)+' p.p.'}]:[],
+      (S.fInicio&&S.fFin)?[{label:'Período', value:ddmmaaaa(S.fInicio)+' – '+ddmmaaaa(S.fFin)}]:[],
+      [{label:'Moneda', value:(S.moneda==='usd'?'Dólares (USD)':'Pesos (ARS)')}]),
+    cover_subtitle:((S.fInicio&&S.fFin)?'Acumulado '+ddmmaaaa(S.fInicio)+' al '+ddmmaaaa(S.fFin)+' · ':'')+'Rendimiento en '+monTxt(),
+    cover_date_line:(S.fechaInforme?'Informe generado el '+ddmmaaaa(S.fechaInforme)+' ':'')+'· Fuente: '+S.fuente,
+    footer_date:(S.fechaInforme?ddmmaaaa(S.fechaInforme):'').toUpperCase(),
+    disclaimer:(S.disclaimer.trim()||autoDisclaimer()),
+    sections:sections
+  };
+}
+
+/* ================= RENDER ================= */
+let renderT;
+function render(){
+  clearTimeout(renderT);
+  renderT=setTimeout(()=>{
+    if(S.lecturaAuto){ S.lectura=autoLectura(); renderLectura(); }
+    $('preview').srcdoc=buildReport();
+    $('pvName').textContent=(S.cliente||'Nuevo informe');
+    $('disclaimer').placeholder=autoDisclaimer();
+    saveDraftLocal();
+  },140);
+}
+function update(){ recalc(); render(); }
+
+function renderCartera(){
+  $('carteraRows').innerHTML=S.cartera.map((c,i)=>
+    '<div class="card" data-i="'+i+'">'+
+    '<button class="del" data-del="cart" data-i="'+i+'">&times;</button>'+
+    '<div class="row2">'+
+    '<label class="fld"><span>Activo / categor&iacute;a</span><input type="text" data-f="nombre" data-i="'+i+'" value="'+esc(c.nombre)+'" placeholder="FCI"></label>'+
+    '<label class="fld"><span>% de cartera</span><input type="text" data-f="pct" data-i="'+i+'" value="'+esc(c.pct)+'" placeholder="59,4%"></label>'+
+    '</div>'+
+    '<label class="fld"><span>Detalle / emisores</span><input type="text" data-f="detalle" data-i="'+i+'" value="'+esc(c.detalle)+'" placeholder="Consultatio, Balanz, Schroder"></label>'+
+    '<label class="fld"><span>Valor</span><input type="text" data-f="monto" data-i="'+i+'" value="'+esc(c.monto)+'" placeholder="'+(S.moneda==='usd'?'85.671,00':'3.528.200,00')+'"></label>'+
+    '</div>').join('');
+}
+function renderFlujos(){
+  const box=$('flujosBox');
+  $('addFlujo').style.display = S.movTot||S.flujosDet.length ? 'block':'none';
+  if(!S.flujosDet.length){ box.innerHTML = S.movTot?'<p class="hint">No se detectaron flujos externos en el archivo. Si hubo aportes o retiros, agregalos a mano.</p>':''; return; }
+  box.innerHTML='<div class="pos-head">Flujos externos del período ('+S.flujosDet.length+')</div>'+
+    S.flujosDet.map((f,i)=>'<div class="flu-row"'+(f.usar===false?' style="opacity:.45"':'')+'>'+
+      '<input type="date" data-ff="fecha" data-i="'+i+'" value="'+esc(f.fecha)+'">'+
+      '<span class="mt" title="'+esc(f.desc)+'">'+esc((f.desc||'').slice(0,32))+(f.aprox?' <span style="color:var(--warning)">≈</span>':'')+(f.dup?' <span style="color:var(--danger)">dup?</span>':'')+'</span>'+
+      '<input type="text" data-ff="importe" data-i="'+i+'" value="'+esc(f.importe)+'">'+
+      '<input type="checkbox" data-fu="'+i+'" '+(f.usar===false?'':'checked')+' title="Incluir en el cálculo" style="width:15px;height:15px;accent-color:var(--accent)">'+
+      '<button class="rm" data-rmf="'+i+'">&times;</button></div>').join('')+
+    (S.flujosDet.some(f=>f.aprox)?'<p class="hint">Los marcados con ≈ estaban en otra moneda y se convirtieron con el tipo de cambio del paso 8. Si tenés el importe exacto del panel de evolución, pisalo.</p>':'')+
+    (S.flujosDet.some(f=>f.dup)?'<p class="hint" style="color:var(--warning)">Los marcados <b>dup?</b> repiten importe y fecha cercana a otro flujo (típico del par recibo de cobro / acreditación de cheque) y quedaron <b>excluidos</b>. Si eran movimientos distintos, volvé a tildarlos.</p>':'');
+}
+function renderDietz(){
+  const box=$('dietzBox'); const md=modifiedDietz();
+  if(!md){ box.innerHTML = (S.flujosDet.length?'<p class="hint">Cargá valor inicial, valor final y período para calcular el TWR.</p>':''); return; }
+  const c=conciliacion();
+  box.innerHTML='<div class="dietz">TWR del período (Modified Dietz): <b>'+pctTxt(md.twr)+'</b><br>'+
+    '<span style="color:var(--text-tertiary)">'+md.n+' flujo(s) ponderado(s) por permanencia · variación simple del saldo '+pctTxt(md.simple)+'</span>'+
+    ((md.difFlujos!=null&&Math.abs(md.difFlujos)>1)?'<br><span style="color:var(--warning)">Los flujos datados suman '+mon(md.F)+' y la evolución de cuenta declara '+mon(md.F+md.difFlujos)+'. Revisá antes de usarlo.</span>':'')+
+    '</div><button class="btn sm primary" id="usarDietz" style="width:100%;margin-top:8px">Usar '+pctTxt(md.twr)+' como TWR de cartera</button>';
+}
+function renderPosiciones(){
+  const box=$('posicionesBox');
+  if(!S.posiciones.length){ box.innerHTML=''; return; }
+  const opts=cl=>ASSET_CLASSES.map(c=>'<option value="'+c+'"'+(c===cl?' selected':'')+'>'+c+'</option>').join('');
+  box.innerHTML='<div class="pos-head">Posiciones detectadas ('+S.posiciones.length+')'+
+    '<button class="btn sm ghost" id="btnReclas">Reclasificar</button>'+
+    '<button class="btn sm ghost" id="btnLimpiaPos">Descartar</button></div>'+
+    S.posiciones.map((p,i)=>'<div class="pos-row">'+
+      '<div class="nm" title="'+esc(p.nombre)+'">'+esc(p.nombre)+'</div>'+
+      '<input type="text" data-pm="'+i+'" value="'+esc(p.monto||'')+'">'+
+      '<select data-pf="'+i+'">'+opts(p.clase)+'</select></div>').join('')+
+    '<p class="hint" style="margin-top:8px">Revisá la clase y el importe de cada instrumento; lo que corrijas acá se reagrupa al toque.</p>';
+}
+function renderLectura(){
+  $('lecturaRows').innerHTML=S.lectura.map((l,i)=>
+    '<div class="card" data-i="'+i+'">'+
+    '<button class="del" data-del="lect" data-i="'+i+'">&times;</button>'+
+    '<label class="fld"><span>T&iacute;tulo</span><input type="text" data-lf="titulo" data-i="'+i+'" value="'+esc(l.titulo)+'"></label>'+
+    '<label class="fld"><span>Texto</span><textarea data-lf="texto" data-i="'+i+'" rows="3">'+esc(l.texto)+'</textarea></label>'+
+    '</div>').join('');
+}
+function renderCustomBk(){
+  $('bkCustom').innerHTML=S.bkCustom.map((b,i)=>
+    '<div class="card" data-i="'+i+'">'+
+    '<button class="del" data-del="bk" data-i="'+i+'">&times;</button>'+
+    '<div class="row2">'+
+    '<label class="fld"><span>Nombre</span><input type="text" data-bf="label" data-i="'+i+'" value="'+esc(b.label)+'" placeholder="Objetivo interno"></label>'+
+    '<label class="fld"><span>Valor (%)</span><input type="text" data-bf="val" data-i="'+i+'" value="'+esc(b.val)+'" placeholder="17,68"></label>'+
+    '</div>'+
+    '<label class="fld"><span>Fuente</span><input type="text" data-bf="fuente" data-i="'+i+'" value="'+esc(b.fuente)+'"></label>'+
+    '</div>').join('');
+}
+function renderCuentas(){
+  $('cuentasRows').innerHTML=S.cuentas.map((c,i)=>
+    '<div class="card" data-i="'+i+'">'+
+    '<button class="del" data-del="cta" data-i="'+i+'">&times;</button>'+
+    '<div class="row2">'+
+    '<label class="fld"><span>ALyC</span><input type="text" data-cf="alyc" data-i="'+i+'" value="'+esc(c.alyc)+'" placeholder="Balanz"></label>'+
+    '<label class="fld"><span>Comitente</span><input type="text" data-cf="comitente" data-i="'+i+'" value="'+esc(c.comitente)+'"></label>'+
+    '</div>'+
+    '<div class="row3">'+
+    '<label class="fld"><span>TWR (%)</span><input type="text" data-cf="twr" data-i="'+i+'" value="'+esc(c.twr)+'" placeholder="21,4"></label>'+
+    '<label class="fld"><span>AUM inicial</span><input type="text" data-cf="aumIni" data-i="'+i+'" value="'+esc(c.aumIni)+'"></label>'+
+    '<label class="fld"><span>AUM final</span><input type="text" data-cf="aumFin" data-i="'+i+'" value="'+esc(c.aumFin)+'"></label>'+
+    '</div></div>').join('');
+}
+function renderFactsheets(){
+  $('factsheetsPrev').innerHTML=S.factsheets.map((f,i)=>'<div class="file-pill">'+esc(f.name)+'<span class="x" data-fs="'+i+'">&times;</span></div>').join('');
+}
+function renderPresets(){
+  $('bkPresets').innerHTML=PRESETS.map((p,i)=>'<button class="btn sm" data-preset="'+i+'">+ '+esc(p.label)+'</button>').join('');
+}
+function renderAll(){ renderCartera(); renderPosiciones(); renderFlujos(); renderLectura(); renderCustomBk(); renderCuentas(); renderFactsheets(); renderPresets(); }
+
+/* ================= FORMULARIO -> ESTADO ================= */
+function fillForm(){
+  ['fuente','cliente','comitente','fInicio','fFin','fechaInforme','twr','anual','saldoIni','saldoFin',
+   'depositos','extracciones','titRec','titEnv','tenencia','cupones','gastos','ajustes',
+   'carteraTotal','titulo1','titulo2','matricula','disclaimer','bkInfVal','bkInfFuente','tcIni','tcFin','bkTcVal','bkTcFuente']
+    .forEach(k=>{ if($(k)) $(k).value=S[k]||''; });
+  $('carteraMoneda').value=S.carteraMoneda; $('carteraTC').value=S.carteraTC||'';
+  $('bkInf').checked=S.bkInf; $('bkTc').checked=S.bkTc;
+  $('bkInfBox').style.display=S.bkInf?'block':'none';
+  $('bkTcBox').style.display=S.bkTc?'block':'none';
+  $('anualKpi').checked=S.anualKpi;
+  [['seg-moneda','m',S.moneda],['seg-origen','o',S.twrOrigen],['seg-vista','v',S.carteraVista],
+   ['seg-agrupar','g',S.agrupar?'clase':'instrumento']].forEach(cfg=>{
+    [...$(cfg[0]).children].forEach(b=>b.classList.toggle('on', b.dataset[cfg[1]]===cfg[2]));
+  });
+}
+function bindText(id){ const el=$(id); if(!el) return;
+  el.addEventListener('input',()=>{ S[id]=el.value; if(id==='cliente'||id==='comitente') saveCliente(); update(); }); }
+['fuente','cliente','comitente','saldoIni','saldoFin','carteraTotal','titulo1','titulo2','matricula','disclaimer','bkInfFuente','bkTcFuente','tcIni','tcFin',
+ 'depositos','extracciones','titRec','titEnv','tenencia','cupones','gastos','ajustes']
+  .forEach(bindText);
+['fInicio','fFin','fechaInforme'].forEach(id=>{
+  ['input','change'].forEach(ev=>$(id).addEventListener(ev,()=>{ S[id]=$(id).value; update(); }));
+});
+$('twr').addEventListener('input',e=>{ S.twr=e.target.value; update(); });
+$('anual').addEventListener('input',e=>{ touched.anual=1; S.anual=e.target.value; update(); });
+$('anualKpi').addEventListener('change',e=>{ touched.anualKpi=1; S.anualKpi=e.target.checked; update(); });
+$('bkInfVal').addEventListener('input',e=>{ touched.bkInfVal=1; S.bkInfVal=e.target.value; update(); });
+$('bkTcVal').addEventListener('input',e=>{ touched.bkTcVal=1; S.bkTcVal=e.target.value; update(); });
+$('bkInf').addEventListener('change',e=>{ S.bkInf=e.target.checked; $('bkInfBox').style.display=e.target.checked?'block':'none'; update(); });
+$('bkTc').addEventListener('change',e=>{ S.bkTc=e.target.checked; $('bkTcBox').style.display=e.target.checked?'block':'none'; update(); });
+
+$('seg-moneda').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+  S.moneda=b.dataset.m; [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  $('bkInfSrc').textContent=(S.moneda==='usd'?'BLS · CPI-U (EE.UU.)':'INDEC · IPC');
+  if(!touched.bkInfFuente){ S.bkInfFuente=(S.moneda==='usd'?'BLS · CPI-U':'INDEC · IPC'); $('bkInfFuente').value=S.bkInfFuente; }
+  renderCartera(); update(); });
+$('bkInfFuente').addEventListener('input',()=>{ touched.bkInfFuente=1; });
+$('seg-origen').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+  S.twrOrigen=b.dataset.o; [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); update(); });
+$('carteraMoneda').addEventListener('change',e=>{ S.carteraMoneda=e.target.value; aplicarPosiciones(); update(); });
+$('carteraTC').addEventListener('input',e=>{ S.carteraTC=e.target.value; aplicarPosiciones(); update(); });
+$('seg-agrupar').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+  S.agrupar=(b.dataset.g==='clase'); [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+  if(S.posiciones.length) aplicarPosiciones(); else update(); });
+$('seg-vista').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+  S.carteraVista=b.dataset.v; [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); update(); });
+
+$('addBk').addEventListener('click',()=>{ S.bkCustom.push({label:'',val:'',fuente:'',color:'#8C1278'}); renderCustomBk(); update(); });
+$('addCart').addEventListener('click',()=>{ S.cartera.push({pct:'',nombre:'',detalle:'',monto:''}); renderCartera(); update(); });
+$('addLect').addEventListener('click',()=>{ S.lecturaAuto=false; S.lectura.push({titulo:'',texto:''}); renderLectura(); update(); });
+$('btnEvo').addEventListener('click',()=>{
+  const o=parseEvolucion($('evoText').value);
+  if(!o){ $('evoImgPrev').innerHTML='<div class="ocr-warn">No pude leer el panel. Necesito filas con su etiqueta y su importe, por ejemplo: <i>Valor Inicial 3.788.537,70</i> o <i>Saldo al Inicio: USD 39.514,85</i>.</div>'; return; }
+  const puestos=aplicarEvolucion(o);
+  ['saldoIni','saldoFin','depositos','extracciones','titRec','titEnv','tenencia','cupones','gastos','ajustes','twr']
+    .forEach(k=>{ const el=$(k); if(el) el.classList.remove('ocr'); });
+  update();
+  $('evoImgPrev').innerHTML='<div class="ocr-warn">'+mensajePanel(o,puestos)+'</div>';
+});
+function mensajePanel(o,puestos){
+  const p=[];
+  p.push('<b>'+puestos.length+' campo(s) completado(s)</b>'+(puestos.indexOf('twr')>-1?', incluido el TWR informado por la ALyC':''));
+  const c=conciliacion();
+  if(o.__neto!=null&&c){
+    const dif=c.resultado-o.__neto;
+    p.push(Math.abs(dif)<=1
+      ? '<span style="color:var(--success)">El resultado calculado coincide con el rendimiento neto del panel.</span>'
+      : '<span style="color:var(--danger)">El resultado calculado ('+mon(c.resultado)+') no coincide con el rendimiento neto del panel ('+mon(o.__neto)+'): revisá los importes.</span>');
+  } else if(c&&c.compSum!=null){
+    const tol=Math.max(1,Math.abs(c.resultado)*0.000002);
+    p.push(Math.abs(c.desvio)<=tol
+      ? '<span style="color:var(--success)">Los importes cierran entre sí.</span>'
+      : '<span style="color:var(--danger)">Los importes no cierran por '+mon(c.desvio)+': revisá los campos.</span>');
+  }
+  if(o.__anual!=null){
+    const n=tna();
+    p.push(n!=null&&Math.abs(n-o.__anual)<0.6
+      ? 'El anualizado del panel ('+pctTxt(o.__anual)+') es lineal y coincide con la TNA equivalente que calcula el generador; la TEA compuesta figura al lado.'
+      : 'El panel informa un anualizado de '+pctTxt(o.__anual)+'.');
+  }
+  return p.join('<br>');
+}
+async function procesarImagenPanel(f){
+  const det=$('evoImg').closest('details'); if(det) det.open=true;
+  const prev=$('evoImgPrev');
+  prev.innerHTML='<div class="file-pill">Cargando el lector de imágenes…</div>';
+  const ok=await cargarOCR();
+  if(!ok){ prev.innerHTML='<div class="ocr-warn">No se pudo cargar el OCR (sin conexión). Copiá el panel como texto y pegalo arriba.</div>'; return; }
+  try{
+    prev.innerHTML='<div class="file-pill">Preparando la imagen…</div>';
+    const canvas=await preprocesarImagen(f);
+    const txt=await ocrPanel(canvas,pr=>{ prev.innerHTML='<div class="file-pill">Leyendo la imagen… '+Math.round(pr*100)+'%</div>'; });
+    $('evoText').value=txt;
+    const o=parseEvolucion(txt);
+    if(!o){
+      prev.innerHTML='<div class="ocr-warn">No pude reconocer ningún campo. El texto crudo quedó en el recuadro de arriba: corregilo y usá el botón, o copiá el panel como texto desde la pantalla de la ALyC.</div>';
+      return;
+    }
+    const puestos=aplicarEvolucion(o); marcarOCR(puestos); update();
+    prev.innerHTML='<div class="ocr-warn">'+mensajePanel(o,puestos)+
+      '<br>Leído de una imagen: los campos en ámbar conviene verificarlos contra la pantalla.</div>';
+  }catch(err){
+    prev.innerHTML='<div class="ocr-warn">Falló la lectura ('+esc(String(err&&err.message||err))+'). Copiá el panel como texto y pegalo arriba.</div>';
+  }
+}
+$('evoImg').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) procesarImagenPanel(f); });
+document.addEventListener('paste',e=>{
+  const items=[...((e.clipboardData&&e.clipboardData.items)||[])];
+  const it=items.find(x=>x.type&&x.type.indexOf('image')===0);
+  if(!it) return;
+  const f=it.getAsFile(); if(!f) return;
+  e.preventDefault();
+  procesarImagenPanel(f);
+});
+$('addFlujo').addEventListener('click',()=>{ S.flujosDet.push({fecha:S.fInicio||'',desc:'Flujo manual',importe:'',usar:true}); renderFlujos(); update(); });
+$('addCta').addEventListener('click',()=>{ S.cuentas.push({alyc:'',comitente:'',twr:'',aumIni:'',aumFin:''}); renderCuentas(); update(); });
+$('btnRegenLect').addEventListener('click',()=>{ S.lecturaAuto=true; S.lectura=autoLectura(); renderLectura(); update(); });
+$('usarPond').addEventListener('click',()=>{ const w=twrPonderado(); if(w){ S.twr=fmtNum(w.val); $('twr').value=S.twr; touched.anual=0; update(); } });
+$('bkPresets').addEventListener('click',e=>{ const b=e.target.closest('[data-preset]'); if(!b)return;
+  const p=PRESETS[+b.dataset.preset]; S.bkCustom.push({label:p.label,val:'',fuente:p.fuente,color:'#8C1278'}); renderCustomBk(); update(); });
+
+document.querySelector('.form-panel').addEventListener('input',e=>{
+  const t=e.target, i=+t.dataset.i;
+  if(t.dataset.ff!==undefined){ S.flujosDet[i][t.dataset.ff]=t.value;
+    if(t.dataset.ff==='importe') S.flujosDet[i].aprox=false;
+    update(); return; }
+  if(t.dataset.pm!==undefined){ S.posiciones[+t.dataset.pm].monto=t.value;
+    if(S.agrupar) S.cartera=agruparPosiciones(S.posiciones); else S.cartera[+t.dataset.pm].monto=t.value;
+    renderCartera(); update(); return; }
+  if(t.dataset.f!==undefined){ S.cartera[i][t.dataset.f]=t.value; update(); }
+  else if(t.dataset.lf!==undefined){ S.lecturaAuto=false; S.lectura[i][t.dataset.lf]=t.value; update(); }
+  else if(t.dataset.bf!==undefined){ S.bkCustom[i][t.dataset.bf]=t.value; update(); }
+  else if(t.dataset.cf!==undefined){ S.cuentas[i][t.dataset.cf]=t.value; update(); }
+});
+document.querySelector('.form-panel').addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.pf!==undefined){ S.posiciones[+t.dataset.pf].clase=t.value; aplicarPosiciones(); }
+  if(t.dataset.fu!==undefined){ S.flujosDet[+t.dataset.fu].usar=t.checked; renderFlujos(); update(); }
+  if(t.dataset.ff!==undefined){ S.flujosDet[+t.dataset.i][t.dataset.ff]=t.value; update(); }
+});
+document.querySelector('.form-panel').addEventListener('click',e=>{
+  const d=e.target.closest('[data-del]');
+  if(d){ const i=+d.dataset.i;
+    if(d.dataset.del==='cart'){ S.cartera.splice(i,1); renderCartera(); }
+    if(d.dataset.del==='lect'){ S.lecturaAuto=false; S.lectura.splice(i,1); renderLectura(); }
+    if(d.dataset.del==='bk'){ S.bkCustom.splice(i,1); renderCustomBk(); }
+    if(d.dataset.del==='cta'){ S.cuentas.splice(i,1); renderCuentas(); }
+    update(); return; }
+  const rmf=e.target.closest('[data-rmf]');
+  if(rmf){ S.flujosDet.splice(+rmf.dataset.rmf,1); renderFlujos(); update(); return; }
+  if(e.target.id==='usarDietz'){ const md=modifiedDietz(); if(md){
+      S.twr=fmtNum(md.twr); $('twr').value=S.twr; touched.anual=0;
+      S.twrOrigen='amauta'; [...$('seg-origen').children].forEach(x=>x.classList.toggle('on',x.dataset.o==='amauta'));
+      update(); } return; }
+  if(e.target.id==='btnReclas'){ S.posiciones.forEach(p=>{ p.clase=clasificar(p.nombre); }); aplicarPosiciones(); return; }
+  if(e.target.id==='btnLimpiaPos'){ S.posiciones=[]; renderPosiciones(); update(); return; }
+  const fs=e.target.closest('[data-fs]');
+  if(fs){ S.factsheets.splice(+fs.dataset.fs,1); renderFactsheets(); update(); }
+});
+
+/* ================= ARCHIVOS ================= */
+function readFile(file,cb){ const r=new FileReader(); r.onload=()=>cb(r.result); r.readAsDataURL(file); }
+$('factsheets').addEventListener('change',e=>{
+  const files=[...e.target.files]; let done=0;
+  files.forEach(f=>readFile(f,d=>{ S.factsheets.push({data:d,name:f.name}); done++;
+    if(done===files.length){ renderFactsheets(); update(); } }));
+});
+if(window.pdfjsLib){ try{ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }catch(e){} }
+$('pdfConsol').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const prev=$('pdfConsolPrev'); prev.innerHTML='<div class="file-pill">Leyendo '+esc(f.name)+'…</div>';
+  try{
+    if(!window.pdfjsLib) throw new Error('nolib');
+    const txt=await readPdfText(f); $('consolText').value=txt;
+    const sec=parseConsolidadoSecciones(txt);
+    let rows=null, aviso='';
+    if(sec){
+      rows=sec.rows;
+      S.posiciones=rows.map(r=>({nombre:r.nombre,monto:r.monto,pct:'',clase:r.clase}));
+      const tcs=[]; if(!isNaN(sec.meta.tcMep)) tcs.push(['MEP',sec.meta.tcMep]);
+      if(!isNaN(sec.meta.tcOficial)) tcs.push(['oficial',sec.meta.tcOficial]);
+      if(tcs.length&&!S.carteraTC){ S.carteraTC=fmtNum(tcs[0][1]); $('carteraTC').value=S.carteraTC;
+        aviso+=' · TC '+tcs[0][0]+' '+fmtNum(tcs[0][1])+' tomado del PDF'+(tcs.length>1?' (el otro era '+tcs[1][0]+' '+fmtNum(tcs[1][1])+')':''); }
+      const suma=rows.reduce((a,r)=>a+num2(r.monto),0);
+      if(!String(S.saldoFin||'').trim()&&suma>0){
+        const vf=convMonto(fmtNum(suma));
+        if(!isNaN(vf)){ S.saldoFin=fmtNum(vf); $('saldoFin').value=S.saldoFin; aviso+=' · valor final de cuenta completado con el total del consolidado'; }
+      }
+      if(!isNaN(sec.meta.total)&&sec.meta.total>0){
+        const dif=(suma/sec.meta.total-1)*100;
+        aviso+=' · suma '+fmtNum(suma)+' vs total del PDF '+fmtNum(sec.meta.total)+
+               (Math.abs(dif)>0.5?' → difiere '+fmtNum(dif,1)+'%, revisá si hay tenencias valuadas en otra moneda':' → coincide');
+      }
+    } else {
+      rows=parseTabla(txt);
+      if(rows.length) S.posiciones=rows.map(r=>({nombre:r.nombre,monto:r.monto,pct:r.pct,clase:clasificar(r.nombre)}));
+    }
+    if(rows&&rows.length){
+      aplicarPosiciones();
+      const clases=[...new Set(S.posiciones.map(x=>x.clase))].length;
+      prev.innerHTML='<div class="file-pill">'+esc(f.name)+' · '+rows.length+' instrumento(s) en '+clases+' clase(s)'+aviso+'</div>'; }
+    else prev.innerHTML='<div class="file-pill">'+esc(f.name)+' · no se detectaron filas; revisá el texto y usá el botón de cargar</div>';
+  }catch(err){ prev.innerHTML='<div class="file-pill">No pude leer el PDF (escaneado o sin conexión). Pegá el texto arriba.</div>'; }
+});
+function matrizDesdeCSV(txt){
+  const sep = (txt.split('\n')[0].match(/;/g)||[]).length > (txt.split('\n')[0].match(/,/g)||[]).length ? ';' : ',';
+  return txt.split(/\r?\n/).filter(l=>l.trim()).map(l=>l.split(l.indexOf('\t')>-1?'\t':sep).map(c=>c.replace(/^"|"$/g,'').trim()));
+}
+$('movFile').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const prev=$('movPrev'); prev.innerHTML='<div class="file-pill">Leyendo '+esc(f.name)+'…</div>';
+  try{
+    let matriz=null;
+    if(/\.csv$/i.test(f.name)){ matriz=matrizDesdeCSV(await f.text()); }
+    else {
+      if(!window.XLSX) throw new Error('sin XLSX');
+      const buf=await f.arrayBuffer();
+      const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});
+      matriz=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''});
+    }
+    const res=procesarMovimientos(matriz);
+    if(!res){ prev.innerHTML='<div class="file-pill">No pude interpretar el archivo. Necesita columnas de fecha, tipo/descripción e importe.</div>'; return; }
+    S.movTot=res; flujosDesdeMovimientos();
+    renderFlujos(); update();
+    const ext=res.movs.filter(m=>m.cat==='Flujo externo').length;
+    prev.innerHTML='<div class="file-pill">'+esc(f.name)+' · '+ext+' flujo(s) externo(s) sobre '+res.n+' movimientos. Boletos, suscripciones y rescates de fondos son internos y no afectan el TWR.</div>';
+  }catch(err){ prev.innerHTML='<div class="file-pill">No pude leer el archivo ('+esc(String(err.message||err))+'). Probá exportarlo a CSV.</div>'; }
+});
+$('btnParse').addEventListener('click',()=>{
+  const rows=parseTabla($('consolText').value);
+  if(rows.length){ S.posiciones=rows.map(r=>({nombre:r.nombre,monto:r.monto,pct:r.pct,clase:clasificar(r.nombre)})); aplicarPosiciones(); }
+  else alert('No se detectaron posiciones. Cada línea necesita al menos un nombre y un número.');
+});
+
+/* ================= BORRADORES / JSON ================= */
+const LS_KEY='amauta_informe_draft';
+function saveDraftLocal(){ try{ localStorage.setItem(LS_KEY,JSON.stringify({S:S,ts:Date.now()})); }catch(e){} }
+function descargar(nombre,contenido,tipo){
+  const blob=new Blob([contenido],{type:tipo});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nombre; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function slug(s){ return String(s||'Cliente').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,''); }
+function nombreArchivo(ext){
+  const per=(S.fInicio&&S.fFin)?'_'+S.fInicio.replace(/-/g,'')+'-'+S.fFin.replace(/-/g,''):'';
+  return 'Rendimiento_'+slug(S.cliente)+per+(S.moneda==='usd'?'_USD':'_ARS')+'.'+ext;
+}
+$('btnSaveDraft').addEventListener('click',()=>descargar(nombreArchivo('json'),JSON.stringify(S,null,2),'application/json'));
+$('btnExportSkill').addEventListener('click',()=>descargar('skill_'+nombreArchivo('json'),JSON.stringify(skillJson(),null,2),'application/json'));
+$('btnLoadDraft').addEventListener('click',()=>$('draftFile').click());
+$('draftFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const j=JSON.parse(r.result);
+    S=Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),j);
+    Object.keys(touched).forEach(k=>delete touched[k]); touched.anual=1; touched.anualKpi=1;
+    fillForm(); renderAll(); update();
+  }catch(err){ alert('No pude leer ese archivo: no parece un borrador válido.'); } };
+  r.readAsText(f);
+});
+$('btnIpcSave').addEventListener('click',()=>{
+  const o=ipcFromText($('ipcEdit').value);
+  if(!Object.keys(o).length){ alert('No detecté ningún mes. Formato: 2026-07: 2,1'); return; }
+  IPC=o; IPC_ORIGEN='serie editada en este navegador';
+  try{ localStorage.setItem('amauta_ipc',JSON.stringify(o)); }catch(e){}
+  touched.bkInfVal=0; refreshIpcBox(); update();
+});
+$('btnIpcReset').addEventListener('click',()=>{
+  IPC=Object.assign({},IPC_BASE); IPC_ORIGEN='serie local';
+  try{ localStorage.removeItem('amauta_ipc'); }catch(e){}
+  touched.ipc=0; touched.bkInfVal=0; refreshIpcBox(); update();
+});
+$('ipcEdit').addEventListener('input',()=>{ touched.ipc=1; });
+
+/* ================= ACCIONES ================= */
+$('btnDownload').addEventListener('click',()=>{ saveCliente(); descargar(nombreArchivo('html'),buildReport(),'text/html;charset=utf-8'); });
+$('btnPrint').addEventListener('click',()=>{ const f=$('preview');
+  try{ f.contentWindow.focus(); f.contentWindow.print(); }
+  catch(err){ alert('Descargá el informe y abrilo para imprimir a PDF.'); } });
+$('btnReset').addEventListener('click',()=>{
+  if(!confirm('¿Empezar un informe nuevo? Se pierde lo cargado en pantalla.')) return;
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  location.reload();
+});
+
+/* ================= INIT ================= */
+function initRestore(){
+  let saved=null;
+  try{ saved=JSON.parse(localStorage.getItem(LS_KEY)||'null'); }catch(e){}
+  if(!saved||!saved.S||!(saved.S.cliente||saved.S.twr)) return;
+  const f=new Date(saved.ts||Date.now());
+  $('restoreBar').innerHTML='<div class="restore"><span>Hay un borrador de <b>'+esc(saved.S.cliente||'un informe')+
+    '</b> del '+f.toLocaleDateString('es-AR')+' '+f.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+
+    '.</span><button class="btn sm" id="btnRestore">Retomarlo</button><button class="btn sm ghost" id="btnDiscard">Descartar</button></div>';
+  $('btnRestore').addEventListener('click',()=>{
+    S=Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),saved.S);
+    touched.anual=1; touched.anualKpi=1; touched.bkInfVal=1; touched.bkTcVal=1;
+    $('restoreBar').innerHTML=''; fillForm(); renderAll(); update();
+  });
+  $('btnDiscard').addEventListener('click',()=>{ try{ localStorage.removeItem(LS_KEY); }catch(e){} $('restoreBar').innerHTML=''; });
+}
+(function init(){
+  try{ const ipcLS=JSON.parse(localStorage.getItem('amauta_ipc')||'null');
+    if(ipcLS&&Object.keys(ipcLS).length){ IPC=ipcLS; IPC_ORIGEN='serie editada en este navegador'; } }catch(e){}
+  loadClientes(); renderClientes();
+  fillForm(); renderAll(); refreshIpcBox();
+  S.lecturaAuto=true;
+  initRestore();
+  update();
+  cargarDatosExternos();
+  $('cliente').addEventListener('change',()=>{
+    const c=CLIENTES[$('cliente').value.trim()];
+    if(c){ if(c.comitente&&!S.comitente){ S.comitente=c.comitente; $('comitente').value=c.comitente; }
+           if(c.fuente){ S.fuente=c.fuente; $('fuente').value=c.fuente; } update(); }
+  });
+})();
+</script>
+</body>
+</html>
