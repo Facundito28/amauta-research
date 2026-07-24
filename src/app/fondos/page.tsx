@@ -40,6 +40,8 @@ interface SP {
   periodo?: string;
   categoria?: string;
   clase?: string;
+  moneda?: string;
+  subcategoria?: string;
 }
 
 export default async function FondosPage({
@@ -52,8 +54,11 @@ export default async function FondosPage({
   const periodo = PERIODOS.some((p) => p.value === sp.periodo) ? sp.periodo! : "30d";
   const categoria = (sp.categoria ?? "").trim();
   const clase = (sp.clase ?? "").trim();
+  const moneda = (sp.moneda ?? "").trim();
+  const subcategoria = (sp.subcategoria ?? "").trim();
 
-  const rankingArgs: Record<string, unknown> = { periodo, limite: 60 };
+  // Traemos más filas porque moneda/subcategoría se filtran del lado del cliente.
+  const rankingArgs: Record<string, unknown> = { periodo, limite: 150 };
   if (categoria) rankingArgs.categoria = categoria;
   if (clase) rankingArgs.clase = clase;
 
@@ -64,18 +69,30 @@ export default async function FondosPage({
       : Promise.resolve(null),
   ]);
 
-  const rows = ranking?.rows ?? [];
+  // Filas que devuelve la fuente (ya filtradas por categoría/clase en el server).
+  const allRows = ranking?.rows ?? [];
+  // Opciones de los filtros client-side, derivadas de los datos disponibles.
+  const monedasDisponibles = [...new Set(allRows.map((r) => r.moneda).filter(Boolean))] as string[];
+  const subcatsDisponibles = [...new Set(allRows.map((r) => r.subcategoria).filter(Boolean))].sort() as string[];
+  // Aplicamos moneda + subcategoría en el cliente.
+  const rows = allRows.filter(
+    (r) =>
+      (!moneda || r.moneda === moneda) &&
+      (!subcategoria || r.subcategoria === subcategoria),
+  );
   const best = rows[0];
   // Máximo retorno positivo → escala de la barra de magnitud del ranking.
   const maxRet = rows.reduce((m, r) => Math.max(m, r.return_pct ?? 0), 0) || 1;
 
   const buildHref = (ov: Partial<SP>) => {
-    const merged: SP = { q, periodo, categoria, clase, ...ov };
+    const merged: SP = { q, periodo, categoria, clase, moneda, subcategoria, ...ov };
     const p = new URLSearchParams();
     if (merged.q) p.set("q", merged.q);
     if (merged.periodo && merged.periodo !== "30d") p.set("periodo", merged.periodo);
     if (merged.categoria) p.set("categoria", merged.categoria);
     if (merged.clase) p.set("clase", merged.clase);
+    if (merged.moneda) p.set("moneda", merged.moneda);
+    if (merged.subcategoria) p.set("subcategoria", merged.subcategoria);
     const qs = p.toString();
     return qs ? `/fondos?${qs}` : "/fondos";
   };
@@ -94,8 +111,13 @@ export default async function FondosPage({
         },
         {
           label: "Fondos rankeados",
-          value: ranking ? String(ranking.count) : "—",
-          sub: categoria ? titleCase(categoria) : "todas las categorías",
+          value: ranking ? String(rows.length) : "—",
+          sub:
+            moneda || subcategoria
+              ? [moneda, subcategoria && titleCase(subcategoria)].filter(Boolean).join(" · ")
+              : categoria
+                ? titleCase(categoria)
+                : "todas las categorías",
         },
         {
           label: "Período",
@@ -105,6 +127,7 @@ export default async function FondosPage({
         {
           label: "Categoría",
           value: categoria ? titleCase(categoria) : "Todas",
+          sub: moneda ? `moneda ${moneda}` : undefined,
         },
       ]}
     >
@@ -221,11 +244,45 @@ export default async function FondosPage({
           </div>
         </div>
 
-        {/* Categoría / clase */}
+        {/* Moneda: segmented (client-side) */}
+        {monedasDisponibles.length > 1 && (
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-text-tertiary">
+              Moneda
+            </span>
+            <div className="inline-flex bg-surface-raised border border-brand-border rounded-lg p-[3px] gap-[2px]">
+              <Link
+                href={buildHref({ moneda: "" })}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
+                  !moneda ? "bg-amauta-yellow text-amauta-dark" : "text-text-secondary hover:bg-surface-overlay hover:text-text-primary"
+                }`}
+              >
+                Todas
+              </Link>
+              {[...monedasDisponibles].sort().map((mo) => (
+                <Link
+                  key={mo}
+                  href={buildHref({ moneda: mo })}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold tabular-nums transition-colors ${
+                    moneda === mo ? "bg-amauta-yellow text-amauta-dark" : "text-text-secondary hover:bg-surface-overlay hover:text-text-primary"
+                  }`}
+                >
+                  {mo}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Categoría / clase / subcategoría */}
         <form method="get" action="/fondos" className="flex flex-wrap items-end gap-2.5">
           {q && <input type="hidden" name="q" value={q} />}
           {periodo !== "30d" && <input type="hidden" name="periodo" value={periodo} />}
+          {moneda && <input type="hidden" name="moneda" value={moneda} />}
           <FilterSelect id="categoria" label="Categoría" value={categoria} options={[...CATEGORIAS]} render={titleCase} />
+          {subcatsDisponibles.length > 0 && (
+            <FilterSelect id="subcategoria" label="Subcategoría" value={subcategoria} options={subcatsDisponibles} render={titleCase} />
+          )}
           <FilterSelect id="clase" label="Clase" value={clase} options={[...CLASES]} />
           <button
             type="submit"
@@ -233,9 +290,9 @@ export default async function FondosPage({
           >
             Aplicar
           </button>
-          {(categoria || clase) && (
+          {(categoria || clase || subcategoria || moneda) && (
             <Link
-              href={buildHref({ categoria: "", clase: "" })}
+              href={buildHref({ categoria: "", clase: "", subcategoria: "", moneda: "" })}
               className="text-xs font-bold text-text-tertiary hover:text-amauta-yellow transition-colors py-2.5"
             >
               Limpiar
@@ -247,7 +304,7 @@ export default async function FondosPage({
       {/* ── Tabla de ranking ──────────────────────────────────────────── */}
       <Section
         title="Ranking por rendimiento"
-        subtitle={ranking ? `${periodoLabel(periodo)} · ${ranking.count} fondos` : undefined}
+        subtitle={ranking ? `${periodoLabel(periodo)} · ${rows.length} fondos` : undefined}
       >
         {!ranking ? (
           <div className="p-4">
