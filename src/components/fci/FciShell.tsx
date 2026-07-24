@@ -44,7 +44,7 @@ export default function FciShell({
   children: ReactNode;
 }) {
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* ── Encabezado ───────────────────────────────────────────────── */}
       <div>
         {kicker && (

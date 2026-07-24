@@ -260,8 +260,12 @@ export default async function FondosPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-brand-border/70">
-                  <Th className="text-left w-14">#</Th>
+                  <Th className="text-left w-16">#</Th>
                   <Th className="text-left">Fondo</Th>
+                  <Th className="text-left hidden lg:table-cell">Categoría</Th>
+                  <Th className="text-center hidden md:table-cell">Clase</Th>
+                  <Th className="text-center hidden md:table-cell">Moneda</Th>
+                  <Th className="text-right hidden lg:table-cell">VCP</Th>
                   <Th className="text-right">Rendimiento</Th>
                   <Th className="text-right hidden sm:table-cell">TNA</Th>
                 </tr>
@@ -279,33 +283,54 @@ export default async function FondosPage({
                       <td className="px-5 py-3.5">
                         <RankBadge n={i + 1} />
                       </td>
-                      <td className="px-5 py-3.5 max-w-[26rem]">
+                      <td className="px-5 py-3.5">
                         <Link
                           href={`/fondo/${encodeURIComponent(r.fondo)}`}
                           className="font-bold text-text-primary group-hover:text-amauta-yellow transition-colors leading-snug"
                         >
                           {r.fondo}
                         </Link>
-                        <div className="flex items-center gap-2 mt-1">
+                        {/* Tags inline solo cuando las columnas propias están ocultas */}
+                        <div className="flex items-center gap-2 mt-1 lg:hidden">
                           <CategoryChip categoria={r.categoria} />
                           {r.moneda && (
-                            <span className="text-[11px] font-semibold text-text-tertiary">{r.moneda}</span>
+                            <span className="text-[11px] font-semibold text-text-tertiary md:hidden">
+                              {r.moneda}
+                            </span>
                           )}
                           {r.clase && (
-                            <span className="text-[11px] text-text-tertiary">· Clase {r.clase}</span>
+                            <span className="text-[11px] text-text-tertiary md:hidden">· {r.clase}</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <div className={`text-[15px] tabular-nums ${ret.colorClass}`}>{ret.text}</div>
-                        {pos && (
-                          <div className="h-1 rounded-full bg-surface-overlay mt-1.5 ml-auto max-w-[120px] overflow-hidden">
-                            <span
-                              className="block h-full rounded-full bg-emerald-400/80"
-                              style={{ width: `${barW}%` }}
-                            />
-                          </div>
-                        )}
+                      <td className="px-5 py-3.5 hidden lg:table-cell">
+                        <CategoryChip categoria={r.categoria} />
+                      </td>
+                      <td className="px-5 py-3.5 text-center hidden md:table-cell tabular-nums font-medium text-text-secondary">
+                        {r.clase ?? "—"}
+                      </td>
+                      <td className="px-5 py-3.5 text-center hidden md:table-cell font-medium text-text-secondary">
+                        {r.moneda ?? "—"}
+                      </td>
+                      <td className="px-5 py-3.5 text-right hidden lg:table-cell tabular-nums text-text-secondary">
+                        {fmtNumber(r.vcp_to, 2)}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center justify-end gap-3">
+                          {pos && (
+                            <div className="hidden lg:block h-1.5 rounded-full bg-surface-overlay w-28 overflow-hidden">
+                              <span
+                                className="block h-full rounded-full bg-emerald-400/80"
+                                style={{ width: `${barW}%` }}
+                              />
+                            </div>
+                          )}
+                          <span
+                            className={`text-[15px] tabular-nums text-right inline-block min-w-[5.5rem] ${ret.colorClass}`}
+                          >
+                            {ret.text}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-5 py-3.5 text-right hidden sm:table-cell tabular-nums text-xs font-bold text-text-secondary">
                         {fmtPercent(r.tna_pct, 1)}

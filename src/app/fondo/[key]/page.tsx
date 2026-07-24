@@ -92,7 +92,7 @@ export default async function FichaPage({
 
   return (
     <div className="min-h-full">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="space-y-6">
         {/* ── Hero plano ───────────────────────────────────────────────── */}
         <div>
           <nav className="text-xs text-text-tertiary font-medium mb-3">
