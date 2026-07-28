@@ -555,9 +555,10 @@ table.hist tr:hover td{background:var(--surface-overlay);}
       <div class="field-note" style="margin-bottom:10px;line-height:1.5;">Trae el histórico y el AUM desde tu planilla de Google (misma URL del Web App configurada en ⚙). Requiere la versión actualizada del Apps Script (incluye <strong>doGet</strong>).</div>
       <div class="btn-row" style="margin-top:0;">
         <button class="btn btn-primary btn-small" id="btnSyncDesdeSheets">⬇ Sincronizar desde Google Sheets</button>
+        <button class="btn btn-ghost btn-small" id="btnReenviarSheets">⬆ Reenviar actividades a la planilla</button>
         <label class="btn btn-ghost btn-small" style="cursor:pointer;">📄 Importar CSV<input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;"></label>
       </div>
-      <div class="field-note" id="sync-status" style="margin-top:10px;"></div>
+      <div class="field-note" id="sync-status" style="margin-top:10px;">Si alguna carga masiva no llegó completa a la planilla, tocá <strong>Reenviar</strong>: manda todo de nuevo y las que ya están no se duplican (se detectan por ID).</div>
     </div>
   </div>
 
@@ -1509,11 +1510,16 @@ async function finalizeBulk(){
   }));
   newRecords.forEach(r=>ACTIVITIES.push(r));
   await saveActivities();
-  await pushBatchToGoogleSheets(newRecords);
   renderHistory();
   renderMetrics();
   renderContactabilidad();
-  showToast(`${finalNames.length} actividades registradas ✓`);
+  if(newRecords.length > 1){
+    await pushRecordsToGoogleSheets(newRecords, (d,t)=>showToast(`Guardando en la planilla… ${d}/${t}`));
+    showToast(`${finalNames.length} actividades registradas y sincronizadas ✓`);
+  }else{
+    await pushRecordsToGoogleSheets(newRecords);
+    showToast(`${finalNames.length} actividades registradas ✓`);
+  }
   bulkRows = [''];
   renderBulkRows();
   bulkPending = null;
@@ -1562,20 +1568,27 @@ async function pushToGoogleSheets(record){
   }catch(e){ console.error('No se pudo sincronizar con Google Sheets', e); }
 }
 
-/* Envía MUCHOS registros en UN solo request (una escritura en la hoja).
-   Antes se disparaba 1 POST por registro y Google descartaba los simultáneos:
-   se cargaban 26 y llegaban 3. Ahora va todo junto y entra completo al toque. */
-async function pushBatchToGoogleSheets(records){
+/* Envía varios registros a la planilla UNO POR UNO (esperando cada uno).
+   Antes se disparaban todos los POST a la vez y Google descartaba los
+   simultáneos (se cargaban 26 y llegaban 3). En serie entran todos.
+   El doPost hace dedup por ID, así que reenviar no duplica lo ya cargado. */
+async function pushRecordsToGoogleSheets(records, onProgress){
   const url = CONFIG.sheetsWebhookUrl;
-  if(!url || !records || !records.length) return;
-  try{
-    await fetch(url, {
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ records })
-    });
-  }catch(e){ console.error('No se pudo sincronizar el lote con Google Sheets', e); }
+  if(!url || !records || !records.length) return 0;
+  let ok = 0;
+  for(let i=0;i<records.length;i++){
+    try{
+      await fetch(url, {
+        method:'POST',
+        mode:'no-cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify(records[i])
+      });
+      ok++;
+    }catch(e){ console.error('No se pudo sincronizar un registro', e); }
+    if(onProgress) onProgress(i+1, records.length);
+  }
+  return ok;
 }
 
 /* ---------------- toast ---------------- */
@@ -2375,6 +2388,33 @@ async function syncDesdeSheets(){
   }
 }
 document.getElementById('btnSyncDesdeSheets').addEventListener('click', syncDesdeSheets);
+
+/* Reenvía TODAS las actividades a la planilla, una por una. El doPost hace dedup
+   por ID: lo que ya está no se duplica, y entra lo que en su momento no llegó. */
+async function reenviarASheets(){
+  const url = (CONFIG.sheetsWebhookUrl||'').trim();
+  const status = document.getElementById('sync-status');
+  const btn = document.getElementById('btnReenviarSheets');
+  if(!url){ showToast('Configurá primero la URL del Web App en ⚙', true); status.textContent='Falta la URL del Web App (⚙ Configuración).'; return; }
+  if(!ACTIVITIES.length){ showToast('No hay actividades para reenviar', true); return; }
+  const total = ACTIVITIES.length;
+  btn.disabled = true; const txt = btn.textContent; btn.textContent = 'Reenviando…';
+  status.textContent = `Reenviando ${total} actividades a la planilla…`;
+  try{
+    await pushRecordsToGoogleSheets([...ACTIVITIES], (d,t)=>{
+      status.textContent = `Reenviando a la planilla… ${d}/${t}`;
+    });
+    status.textContent = `Listo: reenviadas ${total} actividades. Las que ya estaban no se duplicaron (dedup por ID).`;
+    showToast(`Reenviado ✓ (${total} actividades)`);
+  }catch(e){
+    console.error(e);
+    status.textContent = 'No se pudo reenviar. Verificá la URL del Web App (⚙).';
+    showToast('Error al reenviar', true);
+  }finally{
+    btn.disabled = false; btn.textContent = txt;
+  }
+}
+document.getElementById('btnReenviarSheets').addEventListener('click', reenviarASheets);
 
 /* ---- import CSV (fallback / carga manual desde export de Sheets) ---- */
 function parseCSV(text){
