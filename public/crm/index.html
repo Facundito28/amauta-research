@@ -634,23 +634,45 @@ table.hist tr:hover td{background:var(--surface-overlay);}
 var SHEET_ID = '1uY7I8MV_HdsaN-Vhl4uL9b_cKLuRaqybeAv8yq8UjcI';
 
 function doPost(e){
-  var ss = SpreadsheetApp.openById(SHEET_ID);
-  var base = ss.getSheetByName('BASE_ACTIVIDAD');
-  var d = JSON.parse(e.postData.contents);
-  var id = d.id || ('APP-' + Utilities.formatDate(new Date(),'GMT-3','yyyyMMdd-HHmmss'));
-  var last = base.getLastRow();
-  if(last >= 1){
-    var ids = base.getRange(1,1,last,1).getValues();
-    for(var i=0;i<ids.length;i++){ if(String(ids[i][0])===String(id)){
-      return ContentService.createTextOutput(JSON.stringify({ok:true,dup:true})).setMimeType(ContentService.MimeType.JSON);
-    }}
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(30000); } catch(err){}
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var base = ss.getSheetByName('BASE_ACTIVIDAD');
+    var d = JSON.parse(e.postData.contents);
+    // Acepta un lote {records:[...]} o un registro suelto {...} (compatibilidad).
+    var recs = (d.records && d.records.length) ? d.records : [d];
+
+    // IDs ya existentes: se leen UNA sola vez para todo el lote.
+    var existing = {};
+    var last = base.getLastRow();
+    if(last >= 1){
+      var ids = base.getRange(1,1,last,1).getValues();
+      for(var i=0;i<ids.length;i++) existing[String(ids[i][0])] = true;
+    }
+
+    var rows = [];
+    for(var k=0;k<recs.length;k++){
+      var r = recs[k];
+      var id = r.id || ('APP-' + Utilities.formatDate(new Date(),'GMT-3','yyyyMMdd-HHmmss') + '-' + k);
+      if(existing[String(id)]) continue;   // evita duplicados / reintentos
+      existing[String(id)] = true;
+      var fAct  = amautaFecha_(r.fecha) || new Date();
+      var fProx = amautaFecha_(r.fechaProximaAccion);
+      rows.push([id, new Date(), fAct, r.asesor, r.cliente, r.tipo,
+        r.motivo||'', r.resultado||'', r.proximaAccion||'', fProx,
+        r.prioridad||'', r.observaciones||'', 'App']);
+    }
+
+    // UNA sola escritura para todo el lote.
+    if(rows.length){
+      base.getRange(base.getLastRow()+1, 1, rows.length, rows[0].length).setValues(rows);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ok:true, added:rows.length}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
   }
-  var fAct  = amautaFecha_(d.fecha) || new Date();
-  var fProx = amautaFecha_(d.fechaProximaAccion);
-  base.appendRow([id, new Date(), fAct, d.asesor, d.cliente, d.tipo,
-    d.motivo||'', d.resultado||'', d.proximaAccion||'', fProx,
-    d.prioridad||'', d.observaciones||'', 'App']);
-  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doGet(e){
@@ -1487,7 +1509,7 @@ async function finalizeBulk(){
   }));
   newRecords.forEach(r=>ACTIVITIES.push(r));
   await saveActivities();
-  newRecords.forEach(r=>pushToGoogleSheets(r));
+  await pushBatchToGoogleSheets(newRecords);
   renderHistory();
   renderMetrics();
   renderContactabilidad();
@@ -1538,6 +1560,22 @@ async function pushToGoogleSheets(record){
       body: JSON.stringify(record)
     });
   }catch(e){ console.error('No se pudo sincronizar con Google Sheets', e); }
+}
+
+/* Envía MUCHOS registros en UN solo request (una escritura en la hoja).
+   Antes se disparaba 1 POST por registro y Google descartaba los simultáneos:
+   se cargaban 26 y llegaban 3. Ahora va todo junto y entra completo al toque. */
+async function pushBatchToGoogleSheets(records){
+  const url = CONFIG.sheetsWebhookUrl;
+  if(!url || !records || !records.length) return;
+  try{
+    await fetch(url, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ records })
+    });
+  }catch(e){ console.error('No se pudo sincronizar el lote con Google Sheets', e); }
 }
 
 /* ---------------- toast ---------------- */
