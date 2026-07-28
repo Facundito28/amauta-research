@@ -1,10 +1,10 @@
 export const metadata = { title: "Financiamiento · Amauta" };
 
-// Web app de Apps Script (Tablero de Seguimiento de Financiamiento).
-// Google no permite embeberlo en iframe (X-Frame-Options), así que lo abrimos
-// en una pestaña nueva desde un launcher branded dentro del portal.
+// Tablero de Seguimiento de Financiamiento: es una PLANILLA de Google (Apps
+// Script bound con menú Amauta → Nueva/Actualizar gestión), no un web app.
+// Se abre en pestaña nueva (no se puede embeber por X-Frame-Options de Google).
 const FIN_URL =
-  "https://script.google.com/a/macros/amautainversiones.com/s/AKfycbxhsH6wNn284AvawR6a6_jpq5OX21sPA8HFFDYMrbaQb80t2t5lfsm7v_PcX74APPr7cQ/exec";
+  "https://docs.google.com/spreadsheets/d/16ECmQqfa_aXT3Qy6GAb7CeWDGiQZu65uwwTCM-_41R4/edit";
 
 export default function FinanciamientoPage() {
   return (
@@ -30,13 +30,14 @@ export default function FinanciamientoPage() {
           rel="noopener noreferrer"
           className="mt-8 inline-flex items-center gap-2 rounded-lg bg-amauta-yellow text-amauta-dark font-extrabold uppercase tracking-wider text-sm px-7 py-3.5 hover:bg-amauta-yellow-hover transition-colors"
         >
-          Abrir tablero →
+          Abrir tablero (Google Sheets) →
         </a>
 
-        <p className="mt-5 text-xs text-text-tertiary max-w-sm mx-auto leading-relaxed">
-          Se abre en una pestaña nueva, con tu cuenta{" "}
-          <span className="text-text-secondary font-semibold">@amautainversiones.com</span>. La
-          herramienta vive en Google (Apps Script), por eso no se muestra embebida acá.
+        <p className="mt-5 text-xs text-text-tertiary max-w-md mx-auto leading-relaxed">
+          Se abre la planilla en una pestaña nueva (con tu cuenta{" "}
+          <span className="text-text-secondary font-semibold">@amautainversiones.com</span>). Cargá o
+          actualizá gestiones desde el menú <span className="text-text-secondary font-semibold">Amauta →
+          Nueva / Actualizar gestión</span>.
         </p>
       </div>
     </div>
