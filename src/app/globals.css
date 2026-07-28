@@ -1556,6 +1556,14 @@ body.view-fci .disclaimer {
   background: transparent; border-top: 1px solid var(--brand-border); color: var(--text-tertiary);
 }
 
+/* ============ Financiamiento — nativo, ancho completo, tema oscuro ============ */
+body.view-fin .main,
+body.view-fin .content-area { background: var(--surface-base); }
+body.view-fin .content-area { color: var(--text-primary); }
+body.view-fin .disclaimer {
+  background: transparent; border-top: 1px solid var(--brand-border); color: var(--text-tertiary);
+}
+
 body.view-cedears .ced-title { color: var(--text-primary); }
 body.view-cedears .ced-title span { color: var(--accent); }
 body.view-cedears .ced-subtitle { color: var(--text-secondary); }

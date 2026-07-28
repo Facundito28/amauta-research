@@ -89,7 +89,7 @@ export default function AppFrame({ children }: { children: React.ReactNode }) {
   // Clases de vista en <body> (reusan el CSS del portal)
   useEffect(() => {
     const b = document.body;
-    b.classList.remove("view-hub", "view-cedears", "view-news", "view-fci", "embedding");
+    b.classList.remove("view-hub", "view-cedears", "view-news", "view-fci", "view-fin", "embedding");
     if (status !== "authed") return;
     const isFci =
       pathname === "/fondos" ||
@@ -100,6 +100,7 @@ export default function AppFrame({ children }: { children: React.ReactNode }) {
     else if (pathname === "/cedears") b.classList.add("view-cedears");
     else if (pathname === "/noticias") b.classList.add("view-news");
     else if (isFci) b.classList.add("view-fci"); // nativo, ocupa todo el ancho
+    else if (pathname === "/financiamiento") b.classList.add("view-fin"); // nativo, ancho completo
     else b.classList.add("embedding"); // chat, simulador (iframe)
 
     // Colapsar el panel al entrar a una herramienta; expandir en el hub (desktop)
