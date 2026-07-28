@@ -20,6 +20,7 @@ const TOOLS = [
   { href: "/chat", title: "Chat + Noticias", sub: "Asistente IA + noticias de Argentina", icon: "💬", short: "Chat" },
   { href: "/simulador", title: "Simulador", sub: "Comparador CPD · Banco vs Mercado", icon: "🧮", short: "Simulador" },
   { href: "/informes", title: "Generador de Informes", sub: "Informes de rendimiento para clientes", icon: "📄", short: "Informes" },
+  { href: "/financiamiento", title: "Financiamiento", sub: "Seguimiento de gestiones (SGR/BCO)", icon: "🏦", short: "Financiamiento" },
   { href: "/crm", title: "CRM", sub: "Gestión comercial y clientes", icon: "🤝", short: "CRM" },
 ];
 

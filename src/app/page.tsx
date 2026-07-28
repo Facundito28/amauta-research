@@ -6,6 +6,7 @@ const TOOLS = [
   { href: "/chat", title: "Chat + Noticias", sub: "Asistente IA + noticias de Argentina", icon: "💬" },
   { href: "/simulador", title: "Simulador", sub: "Comparador CPD · Banco vs Mercado", icon: "🧮" },
   { href: "/informes", title: "Generador de Informes", sub: "Informes de rendimiento para clientes", icon: "📄" },
+  { href: "/financiamiento", title: "Financiamiento", sub: "Seguimiento de gestiones (SGR/BCO)", icon: "🏦" },
 ];
 
 export default function Home() {
