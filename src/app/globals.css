@@ -1563,6 +1563,13 @@ body.view-fin .content-area { color: var(--text-primary); }
 body.view-fin .disclaimer {
   background: transparent; border-top: 1px solid var(--brand-border); color: var(--text-tertiary);
 }
+/* ícono del calendario en blanco (visible sobre fondo oscuro) */
+body.view-fin input[type="date"] { cursor: pointer; }
+body.view-fin input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.9);
+  opacity: 0.9; cursor: pointer; width: 17px; height: 17px; padding: 2px;
+}
+body.view-fin input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
 body.view-cedears .ced-title { color: var(--text-primary); }
 body.view-cedears .ced-title span { color: var(--accent); }

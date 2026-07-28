@@ -75,9 +75,9 @@ export interface CambioGestion {
 // ---------------------------------------------------------------------------
 export const ESTADOS_PROCESO = [
   "PENDIENTE CLIENTE",
-  "DOCUMENTACIÓN RECIBIDA",
-  "ENVIADA A ENTIDAD",
-  "EN ANÁLISIS",
+  "PENDIENTE ASESOR",
+  "EN ESPERA DICTAMEN",
+  "OBSERVADA - SGR/BCO",
 ];
 export const ESTADOS_CIERRE_APR = ["CALIFICADA", "FINANCIADA"];
 export const ESTADOS_CIERRE_HIST = ["RECHAZADA", "CAÍDA"];
@@ -87,26 +87,26 @@ export const ESTADOS = [
   ...ESTADOS_CIERRE_HIST,
 ];
 
-// Sugerencias (datalist): el usuario puede escribir cualquier valor.
 export const OPERACIONES = [
-  "CPD",
   "CPD TERCEROS",
+  "CPD PROPIOS",
   "CHEQUES / ECHEQ",
   "PAGARÉ BURSÁTIL",
   "PRÉSTAMO",
   "LEASING",
   "DESCUENTO DE FACTURAS",
-  "FIDEICOMISO",
 ];
 export const ENTIDADES = [
-  "ACINDAR PYMES SGR",
-  "GARANTIZAR SGR",
-  "AVAL RURAL SGR",
-  "VÍNCULOS SGR",
-  "POTENCIAR SGR",
-  "AFIANZAR SGR",
-  "BANCO",
-  "ALYC",
+  "ACINDAR",
+  "BALANZ",
+  "BST",
+  "CAMPO AVAL",
+  "COMAFI",
+  "CONSULTATIO",
+  "FIDAVAL",
+  "GARANTIZAR",
+  "SyC",
+  "THE CAPITA",
 ];
 export const MOTIVOS_CIERRE = [
   "No calificó",
@@ -116,6 +116,12 @@ export const MOTIVOS_CIERRE = [
   "Otro",
 ];
 export const MONEDAS = ["ARS", "USD"];
+
+/** Carga rápida: setean operación + entidad de un toque. */
+export const ACCIONES_RAPIDAS: { label: string; operacion: string; entidad: string }[] = [
+  { label: "CPD TERCEROS · ACINDAR", operacion: "CPD TERCEROS", entidad: "ACINDAR" },
+  { label: "CPD TERCEROS · FIDAVAL", operacion: "CPD TERCEROS", entidad: "FIDAVAL" },
+];
 
 export function cierraA(estado?: string | null): "APR" | "HIST" | null {
   if (!estado) return null;
@@ -333,6 +339,14 @@ export async function setUso(g: Gestion, uso: string): Promise<Gestion> {
   if (!r.ok) throw new Error(await errMsg(r, "No se pudo actualizar el uso."));
   const rows = (await r.json()) as Gestion[];
   return rows[0];
+}
+
+export async function eliminarGestion(id: number): Promise<void> {
+  const r = await fetch(`${REST}/${TABLE}?id=eq.${id}`, {
+    method: "DELETE",
+    headers: await authHeaders(true),
+  });
+  if (!r.ok) throw new Error(await errMsg(r, "No se pudo eliminar la gestión."));
 }
 
 async function errMsg(r: Response, fallback: string): Promise<string> {

@@ -8,6 +8,7 @@ import {
   crearGestion,
   actualizarGestion,
   setUso,
+  eliminarGestion,
   ASESORES,
   clientesDeAsesor,
   todosLosClientes,
@@ -17,6 +18,7 @@ import {
   ENTIDADES,
   MONEDAS,
   MOTIVOS_CIERRE,
+  ACCIONES_RAPIDAS,
   cierraA,
   fmtMonto,
   fmtFecha,
@@ -163,6 +165,11 @@ export default function FinanciamientoApp() {
             setRows((prev) => prev.map((r) => (r.id === g.id ? g : r)));
             setEditar(null);
             flash(msg);
+          }}
+          onDeleted={(id, cliente) => {
+            setRows((prev) => prev.filter((r) => r.id !== id));
+            setEditar(null);
+            flash(`Gestión eliminada — ${cliente}.`);
           }}
         />
       )}
@@ -424,6 +431,29 @@ function FormNueva({ onClose, onSaved }: { onClose: () => void; onSaved: (g: Ges
       {asesor && (
         <div style={S.paso}>
           <div style={S.pasoN}>PASO 2</div>
+
+          <div style={{ marginTop: 12 }}>
+            <label style={S.label}>Carga rápida</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+              {ACCIONES_RAPIDAS.map((a) => {
+                const activa = operacion === a.operacion && entidad === a.entidad;
+                return (
+                  <button
+                    key={a.label}
+                    type="button"
+                    style={{ ...S.rapida, ...(activa ? S.rapidaActiva : {}) }}
+                    onClick={() => {
+                      setOperacion(a.operacion);
+                      setEntidad(a.entidad);
+                    }}
+                  >
+                    {a.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div style={S.row}>
             <Field label="Fecha pedido de documentación" req>
               <input type="date" style={S.input} value={fPedido} onChange={(e) => setFPedido(e.target.value)} />
@@ -453,8 +483,7 @@ function FormNueva({ onClose, onSaved }: { onClose: () => void; onSaved: (g: Ges
           </Field>
           <div style={S.row}>
             <Field label="Operación">
-              <input list="ops" style={S.input} value={operacion} onChange={(e) => setOperacion(e.target.value)} placeholder="CPD, cheques…" />
-              <datalist id="ops">{OPERACIONES.map((o) => <option key={o} value={o} />)}</datalist>
+              <SelectOpc value={operacion} onChange={setOperacion} options={OPERACIONES} />
             </Field>
             <Field label="Monto">
               <input style={S.input} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="1.500.000" />
@@ -467,8 +496,7 @@ function FormNueva({ onClose, onSaved }: { onClose: () => void; onSaved: (g: Ges
           </div>
           <div style={S.row}>
             <Field label="SGR / BCO / ALYC">
-              <input list="ents" style={S.input} value={entidad} onChange={(e) => setEntidad(e.target.value)} placeholder="Garantizar, Acindar…" />
-              <datalist id="ents">{ENTIDADES.map((o) => <option key={o} value={o} />)}</datalist>
+              <SelectOpc value={entidad} onChange={setEntidad} options={ENTIDADES} />
             </Field>
             <Field label="Estado actual" req>
               <select style={S.input} value={estado} onChange={(e) => setEstado(e.target.value)}>
@@ -505,12 +533,16 @@ function FormActualizar({
   gestion,
   onClose,
   onSaved,
+  onDeleted,
 }: {
   gestion: Gestion;
   onClose: () => void;
   onSaved: (g: Gestion, msg: string) => void;
+  onDeleted: (id: number, cliente: string) => void;
 }) {
   const readOnly = gestion.flujo !== "PROCESO";
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [busyDel, setBusyDel] = useState(false);
   const [fRecep, setFRecep] = useState(gestion.f_recep || "");
   const [fEnvio, setFEnvio] = useState(gestion.f_envio || "");
   const [envioAuto, setEnvioAuto] = useState(!gestion.f_envio);
@@ -527,6 +559,19 @@ function FormActualizar({
   const [err, setErr] = useState("");
 
   const cierre = cierraA(estado);
+
+  async function borrar() {
+    setBusyDel(true);
+    setErr("");
+    try {
+      await eliminarGestion(gestion.id);
+      onDeleted(gestion.id, gestion.cliente);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "No se pudo eliminar.");
+      setBusyDel(false);
+      setConfirmDel(false);
+    }
+  }
 
   async function guardar() {
     setErr("");
@@ -574,8 +619,7 @@ function FormActualizar({
 
       <div style={S.row}>
         <Field label="Operación">
-          <input list="ops2" style={S.input} disabled={readOnly} value={operacion} onChange={(e) => setOperacion(e.target.value)} />
-          <datalist id="ops2">{OPERACIONES.map((o) => <option key={o} value={o} />)}</datalist>
+          <SelectOpc value={operacion} onChange={setOperacion} options={OPERACIONES} disabled={readOnly} />
         </Field>
         <Field label="Monto">
           <input style={S.input} disabled={readOnly} value={monto} onChange={(e) => setMonto(e.target.value)} />
@@ -589,8 +633,7 @@ function FormActualizar({
 
       <div style={S.row}>
         <Field label="SGR / BCO / ALYC">
-          <input list="ents2" style={S.input} disabled={readOnly} value={entidad} onChange={(e) => setEntidad(e.target.value)} />
-          <datalist id="ents2">{ENTIDADES.map((o) => <option key={o} value={o} />)}</datalist>
+          <SelectOpc value={entidad} onChange={setEntidad} options={ENTIDADES} disabled={readOnly} />
         </Field>
         <Field label="Asesor">
           <select style={S.input} disabled={readOnly} value={asesor} onChange={(e) => setAsesor(e.target.value)}>
@@ -652,6 +695,20 @@ function FormActualizar({
           </button>
         )}
         <button style={S.btnCancel} onClick={onClose}>{readOnly ? "Cerrar" : "Cancelar"}</button>
+
+        {confirmDel ? (
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>¿Eliminar definitivamente?</span>
+            <button style={{ ...S.btnDanger, opacity: busyDel ? 0.5 : 1 }} disabled={busyDel} onClick={borrar}>
+              {busyDel ? "Eliminando…" : "Sí, eliminar"}
+            </button>
+            <button style={S.btnGhost} onClick={() => setConfirmDel(false)}>No</button>
+          </div>
+        ) : (
+          <button style={{ ...S.btnGhostDanger, marginLeft: "auto" }} onClick={() => setConfirmDel(true)}>
+            🗑 Eliminar
+          </button>
+        )}
       </div>
     </Modal>
   );
@@ -682,6 +739,33 @@ function Th({ children, right }: { children?: React.ReactNode; right?: boolean }
 }
 function Td({ children, right }: { children?: React.ReactNode; right?: boolean }) {
   return <td style={{ ...S.td, textAlign: right ? "right" : "left" }}>{children}</td>;
+}
+
+/** Select con las opciones dadas; si el valor actual no está en la lista, lo incluye igual. */
+function SelectOpc({
+  value,
+  onChange,
+  options,
+  disabled,
+  placeholder = "— elegir —",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  disabled?: boolean;
+  placeholder?: string;
+}) {
+  const opts = value && !options.includes(value) ? [value, ...options] : options;
+  return (
+    <select style={S.input} disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">{placeholder}</option>
+      {opts.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
+    </select>
+  );
 }
 
 function Field({ label, req, children, flex }: { label: string; req?: boolean; children: React.ReactNode; flex?: string }) {
@@ -744,6 +828,10 @@ const S: Record<string, React.CSSProperties> = {
   btnPrimary: { background: "var(--accent)", color: "var(--on-accent)", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 14, fontWeight: 800, padding: "11px 20px", cursor: "pointer", whiteSpace: "nowrap" },
   btnGhost: { background: "transparent", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 8, fontFamily: "inherit", fontSize: 12.5, fontWeight: 700, padding: "6px 12px", cursor: "pointer", whiteSpace: "nowrap" },
   btnCancel: { background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--brand-border)", borderRadius: 10, fontFamily: "inherit", fontSize: 14, fontWeight: 700, padding: "11px 20px", cursor: "pointer" },
+  btnDanger: { background: "var(--danger)", color: "#fff", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "9px 14px", cursor: "pointer", whiteSpace: "nowrap" },
+  btnGhostDanger: { background: "transparent", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 10, fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "10px 16px", cursor: "pointer", whiteSpace: "nowrap" },
+  rapida: { background: "transparent", border: "1px solid var(--accent)", color: "var(--accent)", fontFamily: "inherit", fontSize: 12, fontWeight: 700, padding: "5px 11px", borderRadius: 20, cursor: "pointer" },
+  rapidaActiva: { background: "var(--accent)", color: "var(--on-accent)" },
   // Modal
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px", zIndex: 1000, overflowY: "auto" },
   modal: { width: "100%", maxWidth: 580, background: "var(--surface-base)", border: "1px solid var(--brand-border)", borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" },
