@@ -954,6 +954,15 @@ let CLIENTES_AUM = {};   // normalizeName(cliente) -> {nombre, asesor, aum}
 let CLIENTES_POR_ASESOR = {};
 let CLIENT_ASESOR = {};  // normalizeName(cliente) -> asesor
 
+// Un nombre "válido" tiene letras y NO es solo un código (00001-00). Se usa para
+// que la lista de clientes muestre únicamente nombres, sin códigos sueltos.
+function nombreValido_(n){
+  const s = String(n==null?'':n).trim();
+  if(!s) return false;
+  if(typeof esCodigo_==='function' && esCodigo_(s)) return false;
+  return /[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(s);
+}
+
 // Reconstruye la lista de clientes por asesor. Si hay roster sincronizado desde
 // la pestaña CLIENTES, ese manda (reemplaza la lista de cada asesor presente).
 // Si no hay roster, usa la lista base incluida en el archivo.
@@ -973,8 +982,10 @@ function rebuildClientesIndex(){
       const asesor = (c.asesor && String(c.asesor).trim()) || CLIENT_ASESOR[k] || '';
       CLIENT_ASESOR[k] = asesor;                 // el Sheet manda para asignar asesor
       if(!asesor) return;
+      // Solo nombres reales: descartamos entradas que son solo código (00001-00).
+      if(!nombreValido_(c.nombre)) return;
       if(!rosterByAsesor[asesor]) rosterByAsesor[asesor] = [];
-      rosterByAsesor[asesor].push(c.nombre || k);
+      rosterByAsesor[asesor].push(c.nombre);
     });
     Object.keys(rosterByAsesor).forEach(asesor=>{ CLIENTES_POR_ASESOR[asesor] = rosterByAsesor[asesor]; });
   }
@@ -996,7 +1007,7 @@ function rebuildClientesIndex(){
   FULL_ACCESS_ASESORES.forEach(asesor=>{ (CLIENTES_POR_ASESOR[asesor]||[]).forEach(_collect); });
   // Además, todos los de la hoja CLIENTES sincronizada — incluso sin asesor
   // asignado — para que FL tenga el listado COMPLETO de verdad.
-  Object.keys(CLIENTES_AUM).forEach(k=>{ const c = CLIENTES_AUM[k]; _collect((c && c.nombre) ? c.nombre : k); });
+  Object.keys(CLIENTES_AUM).forEach(k=>{ const c = CLIENTES_AUM[k]; if(c && nombreValido_(c.nombre)) _collect(c.nombre); });
   _allCli.sort((a,b)=>a.localeCompare(b));
   FULL_ACCESS_ASESORES.forEach(asesor=>{ CLIENTES_POR_ASESOR[asesor] = _allCli.slice(); });
 }
@@ -1157,7 +1168,8 @@ function getClientesFor(asesor){
   const base = CLIENTES_POR_ASESOR[asesor] || [];
   const loggedExtra = [...new Set(ACTIVITIES.filter(a=>a.asesor===asesor).map(a=>a.cliente))]
     .filter(c=>!base.some(b=>normalizeName(b)===normalizeName(c)));
-  return [...base, ...loggedExtra];
+  // Solo nombres reales en el desplegable (sin códigos sueltos tipo 00001-00).
+  return [...base, ...loggedExtra].filter(nombreValido_);
 }
 function findExactCanonical(list, typed){
   const n = normalizeName(typed);
@@ -1707,7 +1719,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-29j-clientes';
+var CRM_BUILD = '2026-07-29k-solo-nombres';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
@@ -2520,7 +2532,8 @@ function rowsToClientes(rows){
   const out={};
   for(let r=1;r<rows.length;r++){
     const row=rows[r]; if(!row) continue;
-    const nombre=(row[nombreCol]||'').toString().trim(); if(!nombre) continue;
+    const nombre=(row[nombreCol]||'').toString().trim();
+    if(!nombreValido_(nombre)) continue;   // ignora filas que son solo código (00001-00)
     const k=normalizeName(nombre);
     out[k] = { nombre, asesor: asesorCol>=0?String(row[asesorCol]||'').trim():(CLIENT_ASESOR[k]||''), aum: aumCol>=0?parseAum(row[aumCol]):0 };
   }
