@@ -833,6 +833,22 @@ function amautaFecha_(s){
   var lastActIds = [], lastProsIds = [], lastCliKeys = [];
   function toDelete(prev, current){ return prev.filter(function(x){ return current.indexOf(x)===-1; }); }
 
+  // PostgREST/Supabase devuelve como máximo 1000 filas por lectura. Como hay
+  // >1000 actividades y >1000 clientes, hay que leer POR PÁGINAS o se pierden
+  // las filas > 1000 (las más nuevas). Esto trae TODAS.
+  async function selectAll(tabla){
+    var todo = [], desde = 0, PAG = 1000;
+    for(;;){
+      var r = await sb.from(tabla).select('*').range(desde, desde+PAG-1);
+      if(r.error) throw r.error;
+      var lote = r.data || [];
+      todo = todo.concat(lote);
+      if(lote.length < PAG) break;
+      desde += PAG;
+    }
+    return todo;
+  }
+
   async function get(key){
     try{
       if(!(await ensureAuth())) throw new Error('CRM_NO_AUTH');
@@ -842,24 +858,18 @@ function amautaFecha_(s){
         return rc.data ? { value: JSON.stringify(rc.data.config) } : null;
       }
       if(key==='amauta_crm_activities_v2'){
-        var ra = await sb.from('crm_activities').select('*');
-        if(ra.error) throw ra.error;
-        var arr = (ra.data||[]).map(rowToAct);
+        var arr = (await selectAll('crm_activities')).map(rowToAct);
         lastActIds = arr.map(function(a){return a.id;});
         return { value: JSON.stringify(arr) };
       }
       if(key==='amauta_crm_prospects_v1'){
-        var rp = await sb.from('crm_prospects').select('*');
-        if(rp.error) throw rp.error;
-        var arrp = (rp.data||[]).map(rowToPros);
+        var arrp = (await selectAll('crm_prospects')).map(rowToPros);
         lastProsIds = arrp.map(function(p){return p.id;});
         return { value: JSON.stringify(arrp) };
       }
       if(key==='amauta_crm_clientes_v1'){
-        var rcl = await sb.from('crm_clientes').select('*');
-        if(rcl.error) throw rcl.error;
         var obj = {};
-        (rcl.data||[]).forEach(function(c){ obj[c.key] = { nombre:c.nombre||'', asesor:c.asesor||'', aum:(c.aum!=null?Number(c.aum):0) }; });
+        (await selectAll('crm_clientes')).forEach(function(c){ obj[c.key] = { nombre:c.nombre||'', asesor:c.asesor||'', aum:(c.aum!=null?Number(c.aum):0) }; });
         lastCliKeys = Object.keys(obj);
         return { value: JSON.stringify(obj) };
       }
@@ -1693,7 +1703,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-29e';
+var CRM_BUILD = '2026-07-29f-paginado';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
