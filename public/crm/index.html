@@ -555,10 +555,10 @@ table.hist tr:hover td{background:var(--surface-overlay);}
       <div class="field-note" style="margin-bottom:10px;line-height:1.5;">Trae el histórico y el AUM desde tu planilla de Google (misma URL del Web App configurada en ⚙). Requiere la versión actualizada del Apps Script (incluye <strong>doGet</strong>).</div>
       <div class="btn-row" style="margin-top:0;">
         <button class="btn btn-primary btn-small" id="btnSyncDesdeSheets">⬇ Sincronizar desde Google Sheets</button>
-        <button class="btn btn-ghost btn-small" id="btnReenviarSheets">⬆ Reenviar actividades a la planilla</button>
+        <button class="btn btn-ghost btn-small" id="btnReenviarSheets">⬆ Reenviar actividades de la app</button>
         <label class="btn btn-ghost btn-small" style="cursor:pointer;">📄 Importar CSV<input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;"></label>
       </div>
-      <div class="field-note" id="sync-status" style="margin-top:10px;">Si alguna carga masiva no llegó completa a la planilla, tocá <strong>Reenviar</strong>: manda todo de nuevo y las que ya están no se duplican (se detectan por ID).</div>
+      <div class="field-note" id="sync-status" style="margin-top:10px;">Si una carga masiva no llegó completa, tocá <strong>Reenviar</strong>: reenvía sólo las actividades <strong>creadas desde la app</strong> (las que ya están no se duplican, se reconocen por su ID). Las históricas importadas del Sheet no se tocan.</div>
     </div>
   </div>
 
@@ -2396,15 +2396,23 @@ async function reenviarASheets(){
   const status = document.getElementById('sync-status');
   const btn = document.getElementById('btnReenviarSheets');
   if(!url){ showToast('Configurá primero la URL del Web App en ⚙', true); status.textContent='Falta la URL del Web App (⚙ Configuración).'; return; }
-  if(!ACTIVITIES.length){ showToast('No hay actividades para reenviar', true); return; }
-  const total = ACTIVITIES.length;
+
+  // SOLO se reenvían actividades creadas desde la app (ID propio ACT-/APP-).
+  // Las importadas desde la planilla (id "imp_...") NO se reenvían: no tienen
+  // ID en la hoja y se duplicarían. Ya están en la planilla de origen.
+  const candidatas = ACTIVITIES.filter(a=>/^(ACT-|APP-)/.test(String(a.id||'')));
+  const total = candidatas.length;
+  if(!total){ showToast('No hay actividades propias de la app para reenviar', true); return; }
+
+  if(!confirm(`Se van a reenviar ${total} actividades creadas desde la app.\n\nLas que ya están en la planilla NO se duplican (se reconocen por su ID). Las actividades históricas importadas del Sheet no se tocan.\n\n¿Continuar?`)) return;
+
   btn.disabled = true; const txt = btn.textContent; btn.textContent = 'Reenviando…';
   status.textContent = `Reenviando ${total} actividades a la planilla…`;
   try{
-    await pushRecordsToGoogleSheets([...ACTIVITIES], (d,t)=>{
+    await pushRecordsToGoogleSheets(candidatas, (d,t)=>{
       status.textContent = `Reenviando a la planilla… ${d}/${t}`;
     });
-    status.textContent = `Listo: reenviadas ${total} actividades. Las que ya estaban no se duplicaron (dedup por ID).`;
+    status.textContent = `Listo: reenviadas ${total} actividades de la app. Las que ya estaban no se duplicaron (dedup por ID).`;
     showToast(`Reenviado ✓ (${total} actividades)`);
   }catch(e){
     console.error(e);
