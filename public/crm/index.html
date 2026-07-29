@@ -779,21 +779,25 @@ function amautaFecha_(s){
       try{
         var g = await sb.auth.getSession();
         var sess = g && g.data && g.data.session;
-        if(sess && sess.expires_at && sess.expires_at*1000 > Date.now()+30000){ return true; }
+        if(sess && sess.expires_at && sess.expires_at*1000 > Date.now()+30000){ window.__crmAuthDiag='ok'; return true; }
         var raw = localStorage.getItem('amauta:session');
         if(raw){
           var s = JSON.parse(raw);
           if(s && s.access_token && s.refresh_token){
+            var venc = '';
+            try{ var exp = JSON.parse(atob(s.access_token.split('.')[1])).exp; venc = exp ? (exp*1000<Date.now()?'token-vencido':'token-vigente') : ''; }catch(_){}
             var r = await sb.auth.setSession({ access_token:s.access_token, refresh_token:s.refresh_token });
             if(!r.error){
               var g2 = await sb.auth.getSession();
-              if(g2 && g2.data && g2.data.session){ return true; }
-            } else { console.warn('[CRM auth] setSession:', r.error.message); }
-          }
-        } else if(intento===0){
-          console.warn('[CRM] sin sesion del portal; logueate para que persista.');
+              if(g2 && g2.data && g2.data.session){ window.__crmAuthDiag='ok'; return true; }
+              window.__crmAuthDiag='sin-sesion-tras-set ('+venc+')';
+            } else { window.__crmAuthDiag='setSession-error: '+r.error.message+' ('+venc+')'; console.warn('[CRM auth] setSession:', r.error.message); }
+          } else { window.__crmAuthDiag='session-portal-incompleta'; }
+        } else {
+          window.__crmAuthDiag='sin-sesion-portal';
+          if(intento===0) console.warn('[CRM] sin sesion del portal; logueate para que persista.');
         }
-      }catch(e){ console.error('[CRM auth]', e && e.message); }
+      }catch(e){ window.__crmAuthDiag='excepcion: '+(e && e.message); console.error('[CRM auth]', e && e.message); }
       await new Promise(function(res){ setTimeout(res, 500); });
     }
     return false;
@@ -1030,7 +1034,9 @@ async function loadAll(){
     return loadAll();   // reintento
   }
   if(vacioSospechoso){
-    showToast('Reconectando con el servidor… si la lista sigue vacía, recargá con F5.', true);
+    mostrarBannerReconexion();
+  } else {
+    ocultarBannerReconexion();
   }
   window.__crmLoadRetried = false;
 
@@ -1686,6 +1692,30 @@ function showToast(msg, isWarn){
   t.classList.add('show');
   clearTimeout(t._timer);
   t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
+   Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
+   Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
+function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
+function mostrarBannerReconexion(){
+  ocultarBannerReconexion();
+  const diag = window.__crmAuthDiag || '(sin dato)';
+  const bar = document.createElement('div');
+  bar.id = 'crm-reconexion';
+  bar.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--danger,#d8434e);color:#fff;padding:12px 16px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;';
+  bar.innerHTML = '<b>No pudimos leer tus datos (problema de sesión).</b>'+
+    '<span style="opacity:.9;">Tus actividades NO se borraron; están guardadas. Motivo: <code style="background:rgba(0,0,0,.25);padding:1px 6px;border-radius:4px;">'+String(diag).replace(/</g,'&lt;')+'</code></span>';
+  const b1 = document.createElement('button');
+  b1.textContent = '↻ Reintentar';
+  b1.style.cssText = 'background:#fff;color:#231F20;border:none;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;';
+  b1.onclick = function(){ window.__crmLoadRetried=false; loadAll(); };
+  const b2 = document.createElement('button');
+  b2.textContent = 'Re-loguearme en el portal';
+  b2.style.cssText = 'background:transparent;color:#fff;border:1px solid #fff;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;';
+  b2.onclick = function(){ try{ window.top.location.href = '/?relogin=1'; }catch(e){ location.href='/'; } };
+  bar.appendChild(b1); bar.appendChild(b2);
+  document.body.insertBefore(bar, document.body.firstChild);
 }
 
 /* ---------------- historial ---------------- */
