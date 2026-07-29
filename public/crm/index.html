@@ -440,7 +440,9 @@ table.hist tr:hover td{background:var(--surface-overlay);}
         <select id="hf-asesor"><option value="">Todos los asesores</option></select>
         <select id="hf-tipo"><option value="">Todos los tipos</option></select>
         <select id="hf-resultado"><option value="">Todos los resultados</option></select>
+        <input type="date" id="hf-fecha" title="Filtrar por fecha">
         <input type="text" id="hf-search" placeholder="Buscar cliente...">
+        <button class="btn btn-ghost btn-small" id="hf-limpiar" type="button">Limpiar</button>
       </div>
       <div style="overflow-x:auto;">
         <table class="hist" id="hist-table">
@@ -1626,9 +1628,19 @@ function showToast(msg, isWarn){
 }
 
 /* ---------------- historial ---------------- */
-['hf-asesor','hf-tipo','hf-resultado','hf-search'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', renderHistory);
+['hf-asesor','hf-tipo','hf-resultado','hf-fecha','hf-search'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', renderHistory);
 });
+(function(){
+  const b = document.getElementById('hf-limpiar');
+  if(b) b.addEventListener('click', ()=>{
+    ['hf-asesor','hf-tipo','hf-resultado','hf-fecha','hf-search'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+    renderHistory();
+  });
+})();
 
 function classifyResultado(r){
   const pos = ['Contactado','Interesado','Agendada','Cerrado'];
@@ -1642,12 +1654,14 @@ function renderHistory(){
   const fA = document.getElementById('hf-asesor').value;
   const fT = document.getElementById('hf-tipo').value;
   const fR = document.getElementById('hf-resultado').value;
+  const fF = (document.getElementById('hf-fecha')||{}).value || '';
   const fS = document.getElementById('hf-search').value.trim().toLowerCase();
 
   let rows = ACTIVITIES.filter(a=>{
     if(fA && a.asesor!==fA) return false;
     if(fT && a.tipo!==fT) return false;
     if(fR && a.resultado!==fR) return false;
+    if(fF && String(a.fecha||'').slice(0,10)!==fF) return false;
     if(fS && !a.cliente.toLowerCase().includes(fS)) return false;
     return true;
   }).sort((a,b)=>b.createdAt-a.createdAt);
@@ -2426,10 +2440,12 @@ async function reenviarASheets(){
   // ID en la hoja y se duplicarían. Ya están en la planilla de origen.
   const fAsesor = (document.getElementById('reenviar-asesor')||{}).value || '';
   const fFecha  = (document.getElementById('reenviar-fecha')||{}).value || ''; // YYYY-MM-DD
+  // La fecha REAL de carga está codificada en el ID (ACT-JC-YYYYMMDD-HHMMSS-NN).
+  // createdAt no sirve: se re-estampa al importar/sincronizar (daba 404 en vez de 26).
   const fechaDeCarga = a=>{
-    if(a.createdAt){ const d=new Date(a.createdAt); const p=n=>String(n).padStart(2,'0');
-      return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
-    return String(a.fecha||'').slice(0,10);
+    const m = String(a.id||'').match(/(\d{4})(\d{2})(\d{2})-\d{6}/);
+    if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+    return String(a.fecha||'').slice(0,10);   // fallback
   };
   const candidatas = ACTIVITIES.filter(a=>{
     if(!/^(ACT-|APP-)/.test(String(a.id||''))) return false;
