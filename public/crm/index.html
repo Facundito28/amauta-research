@@ -774,7 +774,15 @@ function amautaFecha_(s){
 
   /* Asegura sesión válida tomando SIEMPRE el token del portal. Reintenta: si el
      portal está justo refrescando el token, en el 2º intento ya está fresco. */
-  async function ensureAuth(){
+  // Evita que varias lecturas en paralelo disparen setSession a la vez (se
+  // pisarían). Comparten un mismo intento en curso.
+  var _authGate = null;
+  function ensureAuth(){
+    if(_authGate) return _authGate;
+    _authGate = _ensureAuthCore().finally(function(){ _authGate = null; });
+    return _authGate;
+  }
+  async function _ensureAuthCore(){
     for(var intento=0; intento<4; intento++){
       try{
         var g = await sb.auth.getSession();
@@ -1006,10 +1014,17 @@ function nuevoActId(asesor, seq){
 }
 
 async function loadAll(){
-  try{
-    const cfgRes = await window.storage.get(CFG_KEY, true);
-    CONFIG = cfgRes ? JSON.parse(cfgRes.value) : structuredClone(DEFAULT_CONFIG);
-  }catch(e){ CONFIG = structuredClone(DEFAULT_CONFIG); }
+  // Las 4 lecturas van EN PARALELO (antes eran una tras otra y sumaban la espera
+  // de cada una). Cada get puede traer varias páginas; igual corren a la vez.
+  const [cfgRes, actRes, prosRes, cliRes] = await Promise.all([
+    window.storage.get(CFG_KEY, true).catch(function(){ return null; }),
+    window.storage.get(ACT_KEY, true).catch(function(){ return null; }),
+    window.storage.get(PROS_KEY, true).catch(function(){ return null; }),
+    window.storage.get(CLI_KEY, true).catch(function(){ return null; })
+  ]);
+
+  try{ CONFIG = cfgRes ? JSON.parse(cfgRes.value) : structuredClone(DEFAULT_CONFIG); }
+  catch(e){ CONFIG = structuredClone(DEFAULT_CONFIG); }
   if(!CONFIG) CONFIG = structuredClone(DEFAULT_CONFIG);
   // migración suave: completar campos nuevos si vienen de una versión previa
   if(!Array.isArray(CONFIG.prospectEtapas) || !CONFIG.prospectEtapas.length) CONFIG.prospectEtapas = DEFAULT_PROSPECT_ETAPAS.slice();
@@ -1017,20 +1032,9 @@ async function loadAll(){
   if(typeof CONFIG.dedupWindowDays !== 'number' || CONFIG.dedupWindowDays < 1) CONFIG.dedupWindowDays = 7;
   if(typeof CONFIG.objetivoSemanal !== 'number' || CONFIG.objetivoSemanal < 1) CONFIG.objetivoSemanal = 20;
 
-  try{
-    const actRes = await window.storage.get(ACT_KEY, true);
-    ACTIVITIES = actRes ? JSON.parse(actRes.value) : [];
-  }catch(e){ ACTIVITIES = []; }
-
-  try{
-    const prosRes = await window.storage.get(PROS_KEY, true);
-    PROSPECTS = prosRes ? JSON.parse(prosRes.value) : [];
-  }catch(e){ PROSPECTS = []; }
-
-  try{
-    const cliRes = await window.storage.get(CLI_KEY, true);
-    CLIENTES_AUM = cliRes ? JSON.parse(cliRes.value) : {};
-  }catch(e){ CLIENTES_AUM = {}; }
+  try{ ACTIVITIES = actRes ? JSON.parse(actRes.value) : []; }catch(e){ ACTIVITIES = []; }
+  try{ PROSPECTS = prosRes ? JSON.parse(prosRes.value) : []; }catch(e){ PROSPECTS = []; }
+  try{ CLIENTES_AUM = cliRes ? JSON.parse(cliRes.value) : {}; }catch(e){ CLIENTES_AUM = {}; }
 
   // Si hay sesión del portal pero no cargó NADA, casi seguro fue un problema de
   // reconexión (no es que no haya datos). Reintentamos una vez antes de mostrar
@@ -1703,7 +1707,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-29f-paginado';
+var CRM_BUILD = '2026-07-29g-rapido';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
