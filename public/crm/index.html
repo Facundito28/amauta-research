@@ -765,20 +765,40 @@ function amautaFecha_(s){
     window.storage = { get: async function(){ return null; }, set: async function(){} };
     return;
   }
-  var sb = window.supabase.createClient(SB_URL, SB_ANON, { auth: { persistSession:false, autoRefreshToken:true } });
+  // autoRefreshToken:false -> el iframe NO rota el refresh token (de eso se encarga
+  // el portal). Solo consume el access_token fresco que el portal deja en
+  // localStorage 'amauta:session'. Así se evita la pelea de rotación que dejaba
+  // al iframe sin sesión y devolvía lecturas vacías al recargar.
+  var sb = window.supabase.createClient(SB_URL, SB_ANON, { auth: { persistSession:false, autoRefreshToken:false } });
   window.__crmSb = sb;
-  /* Hidrata la sesion del portal (login de equipo) guardada en localStorage 'amauta:session' */
-  var authReady = (async function(){
-    try{
-      var raw = localStorage.getItem('amauta:session');
-      if(!raw){ console.warn('[CRM] sin sesion del portal; logueate para que persista.'); return false; }
-      var s = JSON.parse(raw);
-      if(!s || !s.access_token || !s.refresh_token) return false;
-      var r = await sb.auth.setSession({ access_token:s.access_token, refresh_token:s.refresh_token });
-      if(r.error){ console.error('[CRM auth] setSession:', r.error.message); return false; }
-      return true;
-    }catch(e){ console.error('[CRM auth]', e && e.message); return false; }
-  })();
+
+  /* Asegura sesión válida tomando SIEMPRE el token del portal. Reintenta: si el
+     portal está justo refrescando el token, en el 2º intento ya está fresco. */
+  async function ensureAuth(){
+    for(var intento=0; intento<4; intento++){
+      try{
+        var g = await sb.auth.getSession();
+        var sess = g && g.data && g.data.session;
+        if(sess && sess.expires_at && sess.expires_at*1000 > Date.now()+30000){ return true; }
+        var raw = localStorage.getItem('amauta:session');
+        if(raw){
+          var s = JSON.parse(raw);
+          if(s && s.access_token && s.refresh_token){
+            var r = await sb.auth.setSession({ access_token:s.access_token, refresh_token:s.refresh_token });
+            if(!r.error){
+              var g2 = await sb.auth.getSession();
+              if(g2 && g2.data && g2.data.session){ return true; }
+            } else { console.warn('[CRM auth] setSession:', r.error.message); }
+          }
+        } else if(intento===0){
+          console.warn('[CRM] sin sesion del portal; logueate para que persista.');
+        }
+      }catch(e){ console.error('[CRM auth]', e && e.message); }
+      await new Promise(function(res){ setTimeout(res, 500); });
+    }
+    return false;
+  }
+  window.__crmEnsureAuth = ensureAuth;
 
   function actToRow(a){ return {
     id:a.id, fecha:a.fecha||null, asesor:a.asesor||null, cliente:a.cliente||null,
@@ -811,7 +831,7 @@ function amautaFecha_(s){
 
   async function get(key){
     try{
-      await authReady;
+      if(!(await ensureAuth())) throw new Error('CRM_NO_AUTH');
       if(key==='amauta_crm_config_v2'){
         var rc = await sb.from('crm_config').select('config').eq('id','global').maybeSingle();
         if(rc.error) throw rc.error;
@@ -845,7 +865,7 @@ function amautaFecha_(s){
 
   async function set(key, value){
     try{
-      await authReady;
+      if(!(await ensureAuth())) throw new Error('CRM_NO_AUTH');
       var parsed = JSON.parse(value);
       if(key==='amauta_crm_config_v2'){
         var uc = await sb.from('crm_config').upsert({ id:'global', config:parsed, updated_at:new Date().toISOString() }, { onConflict:'id' });
@@ -997,6 +1017,22 @@ async function loadAll(){
     const cliRes = await window.storage.get(CLI_KEY, true);
     CLIENTES_AUM = cliRes ? JSON.parse(cliRes.value) : {};
   }catch(e){ CLIENTES_AUM = {}; }
+
+  // Si hay sesión del portal pero no cargó NADA, casi seguro fue un problema de
+  // reconexión (no es que no haya datos). Reintentamos una vez antes de mostrar
+  // la lista vacía, así no parece que "se borraron" las actividades.
+  const haySesionPortal = !!localStorage.getItem('amauta:session');
+  const vacioSospechoso = haySesionPortal && ACTIVITIES.length===0 &&
+                          Object.keys(CLIENTES_AUM||{}).length===0;
+  if(vacioSospechoso && !window.__crmLoadRetried){
+    window.__crmLoadRetried = true;
+    await new Promise(function(r){ setTimeout(r, 1000); });
+    return loadAll();   // reintento
+  }
+  if(vacioSospechoso){
+    showToast('Reconectando con el servidor… si la lista sigue vacía, recargá con F5.', true);
+  }
+  window.__crmLoadRetried = false;
 
   rebuildClientesIndex();
 
