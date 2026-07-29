@@ -2515,7 +2515,15 @@ async function reenviarASheets(){
     return true;
   });
   const total = candidatas.length;
-  if(!total){ showToast('No hay actividades de la app para reenviar con esos filtros', true); return; }
+  if(!total){
+    const appCount = ACTIVITIES.filter(a=>/^(ACT-|APP-)/.test(String(a.id||''))).length;
+    if(ACTIVITIES.length===0){
+      showToast('Todavía no se cargaron tus actividades (reconectando con el servidor). Esperá unos segundos o recargá con F5, y reintentá.', true);
+    }else{
+      showToast(`Sin actividades para esos filtros. En memoria: ${ACTIVITIES.length} · de la app: ${appCount} · ${fAsesor||'todos'} el ${fFecha||'(cualquier fecha)'}: 0.`, true);
+    }
+    return;
+  }
 
   const filtroTxt = (fAsesor||fFecha)
     ? ` (asesor: ${fAsesor||'todos'}${fFecha?', fecha de carga: '+fFecha:''})`
