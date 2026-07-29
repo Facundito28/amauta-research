@@ -1591,10 +1591,10 @@ async function finalizeBulk(){
   renderMetrics();
   renderContactabilidad();
   if(newRecords.length > 1){
-    await pushRecordsToGoogleSheets(newRecords, (d,t)=>showToast(`Guardando en la planilla… ${d}/${t}`));
+    await pushBatchToGoogleSheets(newRecords, (d,t)=>showToast(`Guardando en la planilla… ${d}/${t}`));
     showToast(`${finalNames.length} actividades registradas y sincronizadas ✓`);
   }else{
-    await pushRecordsToGoogleSheets(newRecords);
+    await pushBatchToGoogleSheets(newRecords);
     showToast(`${finalNames.length} actividades registradas ✓`);
   }
   bulkRows = [''];
@@ -1707,7 +1707,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-29h-seq';
+var CRM_BUILD = '2026-07-29i-lote';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
@@ -2579,7 +2579,7 @@ async function reenviarASheets(){
   btn.disabled = true; const txt = btn.textContent; btn.textContent = 'Reenviando…';
   status.textContent = `Reenviando ${total} actividades a la planilla…`;
   try{
-    await pushRecordsToGoogleSheets(candidatas, (d,t)=>{
+    await pushBatchToGoogleSheets(candidatas, (d,t)=>{
       status.textContent = `Reenviando a la planilla… ${d}/${t}`;
     });
     status.textContent = `Listo: reenviadas ${total} actividades de la app. Las que ya estaban no se duplicaron (dedup por ID).`;
