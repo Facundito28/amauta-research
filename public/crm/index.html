@@ -1707,7 +1707,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-29i-lote';
+var CRM_BUILD = '2026-07-29j-clientes';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
@@ -2477,21 +2477,52 @@ function rowsToActivities(rows, sourceTag){
   }
   return out;
 }
+// ¿El valor parece un código (00004-00, 12345, cuenta) y no un nombre?
+function esCodigo_(v){ return /^[\d]{2,}[-\d\s]*$/.test(String(v==null?'':v).trim()); }
+// Fracción de valores que parecen NOMBRE real (con letras y no código) en una muestra.
+function fraccionNombres_(rows, col){
+  let tot=0, ok=0;
+  for(let r=1;r<Math.min(rows.length,60);r++){
+    const v = rows[r] && rows[r][col];
+    if(v==null || String(v).trim()==='') continue;
+    tot++;
+    if(!esCodigo_(v) && /[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(String(v))) ok++;
+  }
+  return tot ? ok/tot : 0;
+}
 function rowsToClientes(rows){
   if(!rows || rows.length<2) return {};
   const headers = rows[0];
-  const ci = {
-    cliente: findCol(headers,'cliente','razon social','nombre','denominacion'),
-    asesor: findCol(headers,'asesor','productor'),
-    aum: findCol(headers,'aum','patrimonio','tenencia','valuacion','valor','monto','saldo','total')
-  };
-  if(ci.cliente<0) return {};
+  const asesorCol = findCol(headers,'asesor','productor','asesor/a');
+  const aumCol    = findCol(headers,'aum','patrimonio','tenencia','valuacion','valor','monto','saldo','total');
+
+  // Columna de NOMBRE: primero por encabezado (razón social / denominación / nombre
+  // / cliente), pero SOLO si sus valores parecen nombres. Si el candidato trae
+  // códigos (ej. la columna "CLIENTE" es en realidad el código de comitente),
+  // se descarta y se busca la mejor columna de texto de toda la hoja.
+  let nombreCol = -1;
+  const cands = ['razon social','razón social','denominacion','denominación','nombre','cliente','apellido y nombre','apellido'];
+  for(const c of cands){
+    const idx = findCol(headers, c);
+    if(idx>=0 && idx!==asesorCol && idx!==aumCol && fraccionNombres_(rows, idx) >= 0.6){ nombreCol = idx; break; }
+  }
+  if(nombreCol<0){
+    let best=-1, bestFrac=0;
+    for(let col=0; col<headers.length; col++){
+      if(col===asesorCol || col===aumCol) continue;
+      const f = fraccionNombres_(rows, col);
+      if(f>bestFrac){ bestFrac=f; best=col; }
+    }
+    if(bestFrac>=0.5) nombreCol = best;
+  }
+  if(nombreCol<0) return {};
+
   const out={};
   for(let r=1;r<rows.length;r++){
     const row=rows[r]; if(!row) continue;
-    const nombre=(row[ci.cliente]||'').toString().trim(); if(!nombre) continue;
+    const nombre=(row[nombreCol]||'').toString().trim(); if(!nombre) continue;
     const k=normalizeName(nombre);
-    out[k] = { nombre, asesor: ci.asesor>=0?String(row[ci.asesor]||'').trim():(CLIENT_ASESOR[k]||''), aum: ci.aum>=0?parseAum(row[ci.aum]):0 };
+    out[k] = { nombre, asesor: asesorCol>=0?String(row[asesorCol]||'').trim():(CLIENT_ASESOR[k]||''), aum: aumCol>=0?parseAum(row[aumCol]):0 };
   }
   return out;
 }
