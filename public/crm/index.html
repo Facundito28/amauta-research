@@ -1026,19 +1026,15 @@ async function loadAll(){
   // reconexión (no es que no haya datos). Reintentamos una vez antes de mostrar
   // la lista vacía, así no parece que "se borraron" las actividades.
   const haySesionPortal = !!localStorage.getItem('amauta:session');
-  const vacioSospechoso = haySesionPortal && ACTIVITIES.length===0 &&
-                          Object.keys(CLIENTES_AUM||{}).length===0;
-  if(vacioSospechoso && !window.__crmLoadRetried){
+  const vacio = ACTIVITIES.length===0;
+  if(vacio && haySesionPortal && !window.__crmLoadRetried){
     window.__crmLoadRetried = true;
     await new Promise(function(r){ setTimeout(r, 1000); });
     return loadAll();   // reintento
   }
-  if(vacioSospechoso){
-    mostrarBannerReconexion();
-  } else {
-    ocultarBannerReconexion();
-  }
   window.__crmLoadRetried = false;
+  if(vacio){ mostrarBannerReconexion(haySesionPortal); }
+  else { ocultarBannerReconexion(); }
 
   rebuildClientesIndex();
 
@@ -1697,15 +1693,21 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
+var CRM_BUILD = '2026-07-29e';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
-function mostrarBannerReconexion(){
+function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
   const diag = window.__crmAuthDiag || '(sin dato)';
+  const nCli = Object.keys(CLIENTES_AUM||{}).length;
   const bar = document.createElement('div');
   bar.id = 'crm-reconexion';
-  bar.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--danger,#d8434e);color:#fff;padding:12px 16px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;';
-  bar.innerHTML = '<b>No pudimos leer tus datos (problema de sesión).</b>'+
-    '<span style="opacity:.9;">Tus actividades NO se borraron; están guardadas. Motivo: <code style="background:rgba(0,0,0,.25);padding:1px 6px;border-radius:4px;">'+String(diag).replace(/</g,'&lt;')+'</code></span>';
+  bar.style.cssText = 'position:sticky;top:0;z-index:9999;background:var(--danger,#d8434e);color:#fff;padding:12px 16px;font-size:13.5px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;';
+  bar.innerHTML = '<b>No se pudieron leer tus datos.</b>'+
+    '<span style="opacity:.92;">Tus actividades NO se borraron; están guardadas en el servidor.</span>'+
+    '<code style="background:rgba(0,0,0,.28);padding:2px 7px;border-radius:5px;white-space:nowrap;">'+
+      'sesión-portal: '+(haySesion?'SÍ':'NO')+' · motivo: '+String(diag).replace(/</g,'&lt;')+
+      ' · act: '+ACTIVITIES.length+' · cli: '+nCli+' · build '+CRM_BUILD+
+    '</code>';
   const b1 = document.createElement('button');
   b1.textContent = '↻ Reintentar';
   b1.style.cssText = 'background:#fff;color:#231F20;border:none;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;';
