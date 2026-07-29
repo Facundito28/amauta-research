@@ -555,10 +555,24 @@ table.hist tr:hover td{background:var(--surface-overlay);}
       <div class="field-note" style="margin-bottom:10px;line-height:1.5;">Trae el histórico y el AUM desde tu planilla de Google (misma URL del Web App configurada en ⚙). Requiere la versión actualizada del Apps Script (incluye <strong>doGet</strong>).</div>
       <div class="btn-row" style="margin-top:0;">
         <button class="btn btn-primary btn-small" id="btnSyncDesdeSheets">⬇ Sincronizar desde Google Sheets</button>
-        <button class="btn btn-ghost btn-small" id="btnReenviarSheets">⬆ Reenviar actividades de la app</button>
         <label class="btn btn-ghost btn-small" style="cursor:pointer;">📄 Importar CSV<input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;"></label>
       </div>
-      <div class="field-note" id="sync-status" style="margin-top:10px;">Si una carga masiva no llegó completa, tocá <strong>Reenviar</strong>: reenvía sólo las actividades <strong>creadas desde la app</strong> (las que ya están no se duplican, se reconocen por su ID). Las históricas importadas del Sheet no se tocan.</div>
+      <div class="reenviar-box" style="margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:10px;">
+        <div style="font-weight:600;margin-bottom:8px;">Reenviar actividades a la planilla</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
+          <div class="field" style="margin:0;min-width:150px;">
+            <label style="font-size:12px;">Asesor</label>
+            <select id="reenviar-asesor"><option value="">Todos</option></select>
+          </div>
+          <div class="field" style="margin:0;min-width:150px;">
+            <label style="font-size:12px;">Fecha de carga</label>
+            <input type="date" id="reenviar-fecha">
+          </div>
+          <button class="btn btn-ghost btn-small" id="btnReenviarSheets">⬆ Reenviar</button>
+        </div>
+        <div class="field-note" style="margin-top:8px;">Reenvía sólo actividades <strong>creadas desde la app</strong>. Dejá los filtros vacíos para reenviar todas las de la app; elegí asesor y/o fecha para acotar (ej: JC + ayer). Las que ya están no se duplican; las históricas importadas del Sheet no se tocan.</div>
+      </div>
+      <div class="field-note" id="sync-status" style="margin-top:10px;"></div>
     </div>
   </div>
 
@@ -1051,6 +1065,15 @@ function populateSelects(){
     fillSelect(cAs, CONFIG.asesores, null);
     cAs.insertAdjacentHTML('afterbegin','<option value="">Todos los asesores</option>');
     cAs.value = prev || '';
+  }
+
+  // reenviar a la planilla (filtro)
+  const rAs = document.getElementById('reenviar-asesor');
+  if(rAs){
+    const prev = rAs.value;
+    fillSelect(rAs, CONFIG.asesores, null);
+    rAs.insertAdjacentHTML('afterbegin','<option value="">Todos</option>');
+    rAs.value = prev || '';
   }
 
   document.getElementById('f-fecha').value = todayStr();
@@ -2389,8 +2412,9 @@ async function syncDesdeSheets(){
 }
 document.getElementById('btnSyncDesdeSheets').addEventListener('click', syncDesdeSheets);
 
-/* Reenvía TODAS las actividades a la planilla, una por una. El doPost hace dedup
-   por ID: lo que ya está no se duplica, y entra lo que en su momento no llegó. */
+/* Reenvía actividades de la app a la planilla, una por una, con filtro opcional
+   por asesor y fecha de carga. El doPost hace dedup por ID: lo que ya está no se
+   duplica, y entra lo que en su momento no llegó. */
 async function reenviarASheets(){
   const url = (CONFIG.sheetsWebhookUrl||'').trim();
   const status = document.getElementById('sync-status');
@@ -2400,11 +2424,26 @@ async function reenviarASheets(){
   // SOLO se reenvían actividades creadas desde la app (ID propio ACT-/APP-).
   // Las importadas desde la planilla (id "imp_...") NO se reenvían: no tienen
   // ID en la hoja y se duplicarían. Ya están en la planilla de origen.
-  const candidatas = ACTIVITIES.filter(a=>/^(ACT-|APP-)/.test(String(a.id||'')));
+  const fAsesor = (document.getElementById('reenviar-asesor')||{}).value || '';
+  const fFecha  = (document.getElementById('reenviar-fecha')||{}).value || ''; // YYYY-MM-DD
+  const fechaDeCarga = a=>{
+    if(a.createdAt){ const d=new Date(a.createdAt); const p=n=>String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+    return String(a.fecha||'').slice(0,10);
+  };
+  const candidatas = ACTIVITIES.filter(a=>{
+    if(!/^(ACT-|APP-)/.test(String(a.id||''))) return false;
+    if(fAsesor && a.asesor !== fAsesor) return false;
+    if(fFecha && fechaDeCarga(a) !== fFecha) return false;
+    return true;
+  });
   const total = candidatas.length;
-  if(!total){ showToast('No hay actividades propias de la app para reenviar', true); return; }
+  if(!total){ showToast('No hay actividades de la app para reenviar con esos filtros', true); return; }
 
-  if(!confirm(`Se van a reenviar ${total} actividades creadas desde la app.\n\nLas que ya están en la planilla NO se duplican (se reconocen por su ID). Las actividades históricas importadas del Sheet no se tocan.\n\n¿Continuar?`)) return;
+  const filtroTxt = (fAsesor||fFecha)
+    ? ` (asesor: ${fAsesor||'todos'}${fFecha?', fecha de carga: '+fFecha:''})`
+    : ' (todas las de la app)';
+  if(!confirm(`Se van a reenviar ${total} actividades${filtroTxt}.\n\nLas que ya están en la planilla NO se duplican (se reconocen por su ID). Las históricas importadas del Sheet no se tocan.\n\n¿Continuar?`)) return;
 
   btn.disabled = true; const txt = btn.textContent; btn.textContent = 'Reenviando…';
   status.textContent = `Reenviando ${total} actividades a la planilla…`;
