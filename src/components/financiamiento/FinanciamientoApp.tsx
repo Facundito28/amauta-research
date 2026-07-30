@@ -770,6 +770,60 @@ function checklistTexto(): string {
   return L.join("\n");
 }
 
+const LOGO_SVG =
+  '<svg width="52" height="52" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg"><polygon points="96,20 172,96 96,172 20,96" fill="#F3CF11"/><g stroke="#231F20" stroke-width="9" stroke-linecap="round"><line x1="96" y1="56" x2="96" y2="136"/><line x1="56" y1="96" x2="136" y2="96"/><line x1="124.3" y1="67.7" x2="67.7" y2="124.3"/><line x1="67.7" y1="67.7" x2="124.3" y2="124.3"/></g></svg>';
+
+// Abre una versión imprimible (con logo Amauta) y dispara el diálogo de impresión,
+// donde el asesor puede elegir "Guardar como PDF".
+function descargarChecklistPDF() {
+  const w = window.open("", "_blank");
+  if (!w) return;
+  const items = DOCS_ENVIAR.map(
+    (d, i) => `<div class="it"><span class="n">${i + 1}</span><span>${d}</span></div>`
+  ).join("");
+  const agro = DOCS_AGRO.map((d) => `<li>${d}</li>`).join("");
+  const obj = DOCS_OBJETIVO.map((d) => `<li>${d}</li>`).join("");
+  const contra = DOCS_CONTRAGARANTIAS.map((d) => `<li>${d}</li>`).join("");
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Check List SGR - Persona Juridica - Amauta</title>
+<style>
+  *{box-sizing:border-box} body{font-family:'Fira Sans',Arial,sans-serif;color:#231F20;margin:0;padding:0;font-size:12px}
+  .head{background:#231F20;color:#fff;padding:22px 34px;display:flex;align-items:center;gap:16px}
+  .head h1{font-size:18px;margin:0;font-weight:800} .head .k{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#F3CF11;font-weight:800}
+  .body{padding:26px 34px}
+  .accent{color:#621044}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #F3CF11;padding-bottom:6px;margin:20px 0 12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px}
+  .it{display:flex;gap:9px;align-items:flex-start;break-inside:avoid}
+  .it .n{flex:0 0 20px;width:20px;height:20px;border-radius:50%;background:#F3CF11;color:#231F20;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{border:1px solid #ddd;border-top:3px solid #621044;border-radius:8px;padding:12px 14px;break-inside:avoid}
+  .card h3{margin:0 0 8px;font-size:13px} ul{margin:6px 0 0;padding-left:18px} li{margin-bottom:5px;line-height:1.45}
+  .nota{background:#fff8dc;border:1px solid #F3CF11;border-radius:8px;padding:10px 12px;margin-top:16px;font-weight:600}
+  .foot{margin-top:20px;border-top:1px solid #ddd;padding-top:12px;color:#666;font-size:10.5px}
+  @media print{.card,.it{break-inside:avoid}}
+</style></head><body>
+<div class="head">${LOGO_SVG}<div><div class="k">Amauta Inversiones Financieras</div><h1>Check List para calificar con las SGR — Persona Jurídica</h1></div></div>
+<div class="body">
+  <h2>Documentación a enviar</h2>
+  <div class="grid">${items}</div>
+  <div class="cards" style="margin-top:18px">
+    <div class="card"><h3>🏗️ Empresa constructora <span style="font-size:10px;color:#a06a00">(solo si corresponde)</span></h3><ul><li>Detalle de obras en curso con grado de avance y comitentes.</li></ul></div>
+    <div class="card"><h3>🌾 Actividad agropecuaria <span style="font-size:10px;color:#2f7d4f">(si aplica)</span></h3><ul>${agro}</ul></div>
+  </div>
+  <div class="cards" style="margin-top:16px">
+    <div class="card" style="border-top-color:#F3CF11"><h3>🎯 Objetivo financiero</h3><ul>${obj}</ul></div>
+    <div class="card"><h3>🛡️ Contragarantías</h3><div style="font-size:11px;color:#444">Siempre se ofrece la fianza de todos los socios en primera instancia. Otras opciones:</div><ul>${contra}</ul></div>
+  </div>
+  <div class="nota">✳️ Si ya operan con SGRs, es importante que nos indiquen con cuáles.</div>
+  <div class="foot">Equipo Amauta Inversiones Financieras · CNV Mat. 1029 · amautainversiones.com</div>
+</div>
+</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { try { w.print(); } catch { /* noop */ } }, 500);
+}
+
 function ChecklistSGR() {
   const [copiado, setCopiado] = useState(false);
   async function copiar() {
@@ -792,9 +846,14 @@ function ChecklistSGR() {
           </h2>
           <p style={D.bannerSub}>Documentación a presentar para iniciar la calificación.</p>
         </div>
-        <button style={D.copyBtn} onClick={copiar}>
-          {copiado ? "✓ Copiado" : "📋 Copiar para enviar"}
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button style={D.copyBtn} onClick={copiar}>
+            {copiado ? "✓ Copiado" : "📋 Copiar para enviar"}
+          </button>
+          <button style={D.pdfBtn} onClick={descargarChecklistPDF}>
+            ⬇ Descargar PDF
+          </button>
+        </div>
       </div>
 
       {/* Documentación a enviar */}
@@ -858,6 +917,21 @@ function ChecklistSGR() {
       </div>
 
       <div style={D.nota}>✳️ Si ya operan con SGRs, es importante que nos indiquen con cuáles.</div>
+
+      {/* Alta en ePyme (requisito para operar en MAV) */}
+      <div style={D.epyme}>
+        <div style={{ flex: "1 1 320px" }}>
+          <div style={D.cardHead}>📄 Alta en ePyme <span style={D.badgeAmber}>requisito para MAV</span></div>
+          <p style={D.cardP}>
+            Para operar en el <b style={{ color: "var(--text-primary)" }}>MAV</b> (descuento de cheques / CPD y otros
+            instrumentos), la empresa debe estar <b style={{ color: "var(--text-primary)" }}>dada de alta en ePyme</b>.
+            Si todavía no lo está, descargá el instructivo con el paso a paso.
+          </p>
+        </div>
+        <a href="/docs/instructivo-epyme.pdf" target="_blank" rel="noopener noreferrer" style={D.epymeBtn}>
+          ⬇ Descargar instructivo ePyme (PDF)
+        </a>
+      </div>
 
       <div style={D.footer}>
         Equipo <b style={{ color: "var(--text-secondary)" }}>Amauta Inversiones Financieras</b> · CNV Mat. 1029 · Ante
@@ -1020,6 +1094,9 @@ const D: Record<string, React.CSSProperties> = {
   bannerTitle: { fontSize: 20, fontWeight: 800, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 },
   bannerSub: { fontSize: 13.5, color: "var(--text-secondary)", margin: "6px 0 0" },
   copyBtn: { background: "var(--accent)", color: "var(--on-accent)", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 16px", cursor: "pointer", whiteSpace: "nowrap" },
+  pdfBtn: { background: "transparent", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 10, fontFamily: "inherit", fontSize: 13, fontWeight: 700, padding: "10px 16px", cursor: "pointer", whiteSpace: "nowrap" },
+  epyme: { display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between", background: "var(--surface-raised)", border: "1px solid var(--brand-border)", borderLeft: "4px solid var(--brand-bordo)", borderRadius: 14, padding: "16px 18px", marginBottom: 18 },
+  epymeBtn: { background: "var(--brand-bordo)", color: "#fff", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 13.5, fontWeight: 800, padding: "12px 18px", cursor: "pointer", whiteSpace: "nowrap", textDecoration: "none", display: "inline-block" },
   sectionTitle: { fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-primary)", margin: "6px 0 12px", paddingBottom: 8, borderBottom: "1px solid var(--brand-border)" },
   grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 10, marginBottom: 20 },
   item: { display: "flex", gap: 12, alignItems: "flex-start", background: "var(--surface-raised)", border: "1px solid var(--brand-border)", borderRadius: 10, padding: "11px 13px" },
