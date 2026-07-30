@@ -340,6 +340,15 @@ table.hist tr:hover td{background:var(--surface-overlay);}
         <button class="btn btn-ghost btn-small" id="btnCargarCartera">Cargar cartera completa del asesor</button>
       </div>
       <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;">
+          <input type="checkbox" id="b-usar-fecha" style="width:auto;margin:0;"> Usar otra fecha de registro <span style="color:var(--text-tertiary);font-weight:400;">(si no lo marcás, usa la de hoy)</span>
+        </label>
+      </div>
+      <div class="field" id="b-fecha-wrap" style="display:none;">
+        <label>Fecha del registro</label>
+        <input type="date" id="b-fecha" style="max-width:220px;">
+      </div>
+      <div class="field">
         <label>Acciones rápidas</label>
         <div class="chip-row" style="margin-bottom:0;">
           <button class="chip quick-btn-b" data-q="llamado_ok">📞 Llamado</button>
@@ -1506,6 +1515,18 @@ document.getElementById('btnCargarCartera').addEventListener('click', ()=>{
   showToast(`${clientes.length} clientes de ${asesor} cargados`);
 });
 
+// Interruptor de "usar otra fecha de registro" en carga masiva
+(function(){
+  const chk = document.getElementById('b-usar-fecha');
+  const wrap = document.getElementById('b-fecha-wrap');
+  const inp = document.getElementById('b-fecha');
+  if(!chk || !wrap) return;
+  chk.addEventListener('change', ()=>{
+    wrap.style.display = chk.checked ? '' : 'none';
+    if(chk.checked && inp && !inp.value) inp.value = todayStr();  // arranca en hoy
+  });
+})();
+
 let bulkPending = null; // {fecha, asesor, tipo, common, resolved:[names], ambiguous:[{typed, candidates, choice}]}
 
 document.getElementById('btnBulk').addEventListener('click', ()=>{
@@ -1539,7 +1560,10 @@ document.getElementById('btnBulk').addEventListener('click', ()=>{
     }
   });
 
-  bulkPending = {fecha: todayStr(), asesor, tipo, common, resolved, ambiguous};
+  const usarFecha = document.getElementById('b-usar-fecha') && document.getElementById('b-usar-fecha').checked;
+  const fechaSel  = document.getElementById('b-fecha') ? document.getElementById('b-fecha').value : '';
+  const fechaReg  = (usarFecha && fechaSel) ? fechaSel : todayStr();
+  bulkPending = {fecha: fechaReg, asesor, tipo, common, resolved, ambiguous};
 
   if(ambiguous.length===0){
     finalizeBulk();
@@ -1657,6 +1681,12 @@ document.getElementById('btnBulkLimpiar').addEventListener('click', ()=>{
   ['b-motivo','b-proxaccion','b-proxfecha','b-tipo','b-resultado','b-prioridad','b-observaciones'].forEach(id=>{
     document.getElementById(id).value='';
   });
+  const chkF = document.getElementById('b-usar-fecha');
+  if(chkF){ chkF.checked = false; }
+  const wrapF = document.getElementById('b-fecha-wrap');
+  if(wrapF){ wrapF.style.display = 'none'; }
+  const inpF = document.getElementById('b-fecha');
+  if(inpF){ inpF.value = ''; }
   bulkRows = [''];
   renderBulkRows();
 });
@@ -1759,7 +1789,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-29l-bloqueo';
+var CRM_BUILD = '2026-07-29m-fecha';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
