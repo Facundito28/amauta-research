@@ -1586,32 +1586,72 @@ document.getElementById('modalRevisionClose').addEventListener('click', ()=>{
   bulkPending = null;
 });
 
+/* Overlay que BLOQUEA la pantalla mientras se registra: tapa todo (no se puede
+   volver a clickear) y avisa que aguarde. Evita doble carga / duplicados. */
+function mostrarBloqueo(titulo, sub){
+  let ov = document.getElementById('crm-bloqueo');
+  if(!ov){
+    if(!document.getElementById('crm-spin-style')){
+      const st = document.createElement('style'); st.id='crm-spin-style';
+      st.textContent='@keyframes crmspin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(st);
+    }
+    ov = document.createElement('div');
+    ov.id = 'crm-bloqueo';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
+    ov.innerHTML = '<div style="background:var(--surface-raised,#231F20);border:1px solid var(--border,#3A3433);border-radius:14px;padding:26px 30px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">'+
+      '<div style="width:34px;height:34px;border:3px solid rgba(243,207,17,.25);border-top-color:var(--accent,#F3CF11);border-radius:50%;margin:0 auto 14px;animation:crmspin .8s linear infinite;"></div>'+
+      '<div id="crm-bloqueo-tit" style="font-weight:700;font-size:15px;color:var(--text-primary,#F5F2F0);margin-bottom:6px;"></div>'+
+      '<div id="crm-bloqueo-sub" style="font-size:13px;color:var(--text-secondary,#B8B2B3);line-height:1.5;"></div>'+
+      '</div>';
+    // el overlay se traga cualquier clic mientras está visible
+    ov.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); });
+    document.body.appendChild(ov);
+  }
+  ov.style.display = 'flex';
+  document.getElementById('crm-bloqueo-tit').textContent = titulo || 'Procesando…';
+  document.getElementById('crm-bloqueo-sub').textContent = sub || '';
+}
+function actualizarBloqueo(sub){ const el=document.getElementById('crm-bloqueo-sub'); if(el) el.textContent = sub||''; }
+function ocultarBloqueo(){ const ov=document.getElementById('crm-bloqueo'); if(ov) ov.style.display='none'; }
+
+let bulkGuardando = false;
 async function finalizeBulk(){
   if(!bulkPending) return;
-  const {fecha, asesor, tipo, common, resolved, ambiguous} = bulkPending;
-  const finalNames = [...resolved];
-  ambiguous.forEach(item=>{
-    finalNames.push(item.choice==='typed' ? item.typed : item.candidates[item.choice]);
-  });
-  const newRecords = finalNames.map((cliente, i)=>({
-    id: nuevoActId(asesor, i+1),
-    fecha, asesor, cliente, tipo, ...common, createdAt: Date.now()
-  }));
-  newRecords.forEach(r=>ACTIVITIES.push(r));
-  await saveActivities();
-  renderHistory();
-  renderMetrics();
-  renderContactabilidad();
-  if(newRecords.length > 1){
-    await pushBatchToGoogleSheets(newRecords, (d,t)=>showToast(`Guardando en la planilla… ${d}/${t}`));
-    showToast(`${finalNames.length} actividades registradas y sincronizadas ✓`);
-  }else{
-    await pushBatchToGoogleSheets(newRecords);
-    showToast(`${finalNames.length} actividades registradas ✓`);
+  if(bulkGuardando) return;                 // ya está registrando: ignora doble clic
+  bulkGuardando = true;
+  const btn = document.getElementById('btnBulk');
+  if(btn) btn.disabled = true;
+  mostrarBloqueo('Registrando actividades…', 'Aguardá unos segundos, se está guardando. No cierres la ventana ni vuelvas a tocar el botón.');
+  try{
+    const {fecha, asesor, tipo, common, resolved, ambiguous} = bulkPending;
+    const finalNames = [...resolved];
+    ambiguous.forEach(item=>{
+      finalNames.push(item.choice==='typed' ? item.typed : item.candidates[item.choice]);
+    });
+    const newRecords = finalNames.map((cliente, i)=>({
+      id: nuevoActId(asesor, i+1),
+      fecha, asesor, cliente, tipo, ...common, createdAt: Date.now()
+    }));
+    newRecords.forEach(r=>ACTIVITIES.push(r));
+    await saveActivities();
+    renderHistory();
+    renderMetrics();
+    renderContactabilidad();
+    actualizarBloqueo('Sincronizando con la planilla…');
+    await pushBatchToGoogleSheets(newRecords, (d,t)=>actualizarBloqueo(`Sincronizando con la planilla… ${d}/${t}`));
+    bulkRows = [''];
+    renderBulkRows();
+    bulkPending = null;
+    showToast(`${finalNames.length} actividad${finalNames.length>1?'es':''} registrada${finalNames.length>1?'s':''} ✓`);
+  }catch(e){
+    console.error('[CRM] error al registrar carga masiva', e && e.message);
+    showToast('Hubo un error al registrar. Revisá y volvé a intentar.', true);
+  }finally{
+    ocultarBloqueo();
+    if(btn) btn.disabled = false;
+    bulkGuardando = false;
   }
-  bulkRows = [''];
-  renderBulkRows();
-  bulkPending = null;
 }
 document.getElementById('btnBulkLimpiar').addEventListener('click', ()=>{
   ['b-motivo','b-proxaccion','b-proxfecha','b-tipo','b-resultado','b-prioridad','b-observaciones'].forEach(id=>{
@@ -1719,7 +1759,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-29k-solo-nombres';
+var CRM_BUILD = '2026-07-29l-bloqueo';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
