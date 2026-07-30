@@ -28,7 +28,7 @@ import {
   diasSinUso,
 } from "@/lib/financiamiento";
 
-type Tab = "PROCESO" | "APROBADA" | "HISTORICO";
+type Tab = "PROCESO" | "APROBADA" | "HISTORICO" | "DOCS";
 
 export default function FinanciamientoApp() {
   const [rows, setRows] = useState<Gestion[]>([]);
@@ -98,16 +98,18 @@ export default function FinanciamientoApp() {
         </button>
       </div>
 
-      {/* KPIs */}
-      <div style={S.kpis}>
-        <Kpi label="Gestiones en proceso" value={String(enProceso.length)} highlight />
-        <Kpi label="En gestión (ARS)" value={fmtMonto(montoEnGestionARS, "ARS")} />
-        {montoEnGestionUSD > 0 && <Kpi label="En gestión (USD)" value={fmtMonto(montoEnGestionUSD, "USD")} />}
-        <Kpi label="Líneas aprobadas" value={String(aprobadas.length)} />
-        <Kpi label="Aprobado (ARS)" value={fmtMonto(aprobadoARS, "ARS")} />
-        {aprobadoUSD > 0 && <Kpi label="Aprobado (USD)" value={fmtMonto(aprobadoUSD, "USD")} />}
-        <Kpi label="+10 días sin responder" value={String(clientesLentos)} warn={clientesLentos > 0} />
-      </div>
+      {/* KPIs (no en la vista de documentación) */}
+      {tab !== "DOCS" && (
+        <div style={S.kpis}>
+          <Kpi label="Gestiones en proceso" value={String(enProceso.length)} highlight />
+          <Kpi label="En gestión (ARS)" value={fmtMonto(montoEnGestionARS, "ARS")} />
+          {montoEnGestionUSD > 0 && <Kpi label="En gestión (USD)" value={fmtMonto(montoEnGestionUSD, "USD")} />}
+          <Kpi label="Líneas aprobadas" value={String(aprobadas.length)} />
+          <Kpi label="Aprobado (ARS)" value={fmtMonto(aprobadoARS, "ARS")} />
+          {aprobadoUSD > 0 && <Kpi label="Aprobado (USD)" value={fmtMonto(aprobadoUSD, "USD")} />}
+          <Kpi label="+10 días sin responder" value={String(clientesLentos)} warn={clientesLentos > 0} />
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={S.tabs}>
@@ -120,11 +122,16 @@ export default function FinanciamientoApp() {
         <TabBtn active={tab === "HISTORICO"} onClick={() => setTab("HISTORICO")}>
           Histórico <b>{historico.length}</b>
         </TabBtn>
+        <TabBtn active={tab === "DOCS"} onClick={() => setTab("DOCS")}>
+          📋 Documentación SGR
+        </TabBtn>
       </div>
 
-      {error && <div style={S.errorBox}>{error}</div>}
+      {error && tab !== "DOCS" && <div style={S.errorBox}>{error}</div>}
 
-      {loading ? (
+      {tab === "DOCS" ? (
+        <ChecklistSGR />
+      ) : loading ? (
         <div style={S.empty}>Cargando gestiones…</div>
       ) : lista.length === 0 ? (
         <div style={S.empty}>
@@ -715,6 +722,152 @@ function FormActualizar({
 }
 
 // ===========================================================================
+// CHECK LIST DOCUMENTACIÓN SGR (Persona Jurídica)
+// ===========================================================================
+const DOCS_ENVIAR = [
+  "Estatuto o Contrato Social con inscripción en IGJ, Registro Público de Comercio o Direcciones Provinciales.",
+  "Acta de Asamblea que aprueba Estados Contables y distribución de utilidades (solo SRL y SA).",
+  "Acta de Directorio con designación de cargos vigentes.",
+  "Últimos dos Estados Contables comparativos: cerrados, períodos de 12 meses, auditados y certificados.",
+  "Manifestación de bienes de socios actualizada, firmada por titular y contador público, + última DDJJ de Bienes Personales + papeles de trabajo ARCA.",
+  "Detalle de ventas y compras (netas de IVA): mensuales del último balance y postbalance, actualizado al mes anterior.",
+  "Detalle de deuda bancaria, financiera y con otras SGR: actualizado hasta el mes anterior al de curso.",
+  "Certificado MiPyME vigente.",
+  "Breve reseña de la empresa.",
+  "Último F931.",
+  "Composición accionaria actualizada con datos de socios (celular y casilla de mail).",
+  "Copia de DNI de los socios.",
+];
+const DOCS_AGRO = [
+  "Plan de siembra / planteo productivo (campos propios y arrendados).",
+  "IP1 – Campaña de Invierno / IP2 – Campaña de Verano.",
+  "Score SISA (servicioscf.afip.gob.ar/Registros/sisa).",
+  "Stock de hacienda (de corresponder).",
+];
+const DOCS_OBJETIVO = [
+  "Descuento de CPD propios / terceros (informar libradores con CUIT).",
+  "Pagaré Bursátil.",
+  "Aval Bancario (especificar condiciones del préstamo y bancos calificados).",
+];
+const DOCS_CONTRAGARANTIAS = ["Prenda de títulos.", "Hipotecas.", "Otras."];
+
+function checklistTexto(): string {
+  const L: string[] = [];
+  L.push("CHECK LIST PARA CALIFICAR CON LAS SGR — PERSONA JURÍDICA");
+  L.push("Amauta Inversiones Financieras\n");
+  L.push("DOCUMENTACIÓN A ENVIAR:");
+  DOCS_ENVIAR.forEach((d, i) => L.push(`${i + 1}. ${d}`));
+  L.push("\nSI ES EMPRESA CONSTRUCTORA (solo si corresponde):");
+  L.push("- Detalle de obras en curso con grado de avance y comitentes.");
+  L.push("\nSI ES ACTIVIDAD AGROPECUARIA:");
+  DOCS_AGRO.forEach((d) => L.push(`- ${d}`));
+  L.push("\nOBJETIVO FINANCIERO (cuantificar el requerimiento):");
+  DOCS_OBJETIVO.forEach((d) => L.push(`- ${d}`));
+  L.push("\nCONTRAGARANTÍAS (siempre se ofrece la fianza de todos los socios en primera instancia):");
+  DOCS_CONTRAGARANTIAS.forEach((d) => L.push(`- ${d}`));
+  L.push("\nSi ya operan con SGRs, indicar con cuáles.");
+  L.push("\nAmauta Inversiones Financieras · CNV Mat. 1029 · amautainversiones.com");
+  return L.join("\n");
+}
+
+function ChecklistSGR() {
+  const [copiado, setCopiado] = useState(false);
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(checklistTexto());
+      setCopiado(true);
+      window.setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      /* noop */
+    }
+  }
+  return (
+    <div style={D.wrap}>
+      {/* Banner */}
+      <div style={D.banner}>
+        <div>
+          <div style={D.bannerKicker}>Amauta · Financiamiento</div>
+          <h2 style={D.bannerTitle}>
+            Check List para calificar con las SGR — <span style={{ color: "var(--accent)" }}>Persona Jurídica</span>
+          </h2>
+          <p style={D.bannerSub}>Documentación a presentar para iniciar la calificación.</p>
+        </div>
+        <button style={D.copyBtn} onClick={copiar}>
+          {copiado ? "✓ Copiado" : "📋 Copiar para enviar"}
+        </button>
+      </div>
+
+      {/* Documentación a enviar */}
+      <div style={D.sectionTitle}>Documentación a enviar</div>
+      <div style={D.grid2}>
+        {DOCS_ENVIAR.map((d, i) => (
+          <div key={i} style={D.item}>
+            <span style={D.num}>{i + 1}</span>
+            <span style={D.itemText}>{d}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Constructora / Agro */}
+      <div style={D.cards2}>
+        <div style={D.card}>
+          <div style={D.cardHead}>
+            🏗️ Empresa constructora <span style={D.badgeAmber}>solo si corresponde</span>
+          </div>
+          <ul style={D.ul}>
+            <li style={D.li}>Detalle de obras en curso con grado de avance y comitentes.</li>
+          </ul>
+        </div>
+        <div style={D.card}>
+          <div style={D.cardHead}>
+            🌾 Actividad agropecuaria <span style={D.badgeGreen}>si aplica</span>
+          </div>
+          <ul style={D.ul}>
+            {DOCS_AGRO.map((d, i) => (
+              <li key={i} style={D.li}>{d}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Objetivo / Contragarantías */}
+      <div style={D.cards2}>
+        <div style={{ ...D.card, borderTopColor: "var(--accent)" }}>
+          <div style={D.cardHead}>🎯 Objetivo financiero</div>
+          <p style={D.cardP}>
+            Es fundamental especificar el objetivo financiero que busca la empresa y cuantificar el requerimiento:
+          </p>
+          <ul style={D.ul}>
+            {DOCS_OBJETIVO.map((d, i) => (
+              <li key={i} style={D.li}>{d}</li>
+            ))}
+          </ul>
+        </div>
+        <div style={{ ...D.card, borderTopColor: "var(--brand-bordo)" }}>
+          <div style={D.cardHead}>🛡️ Contragarantías</div>
+          <p style={D.cardP}>
+            Para evaluar opciones con las SGR necesitamos entender qué contragarantías puede ofrecer. Siempre se ofrece
+            la <b style={{ color: "var(--text-primary)" }}>fianza de todos los socios</b> en primera instancia. Otras opciones:
+          </p>
+          <ul style={D.ul}>
+            {DOCS_CONTRAGARANTIAS.map((d, i) => (
+              <li key={i} style={D.li}>{d}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div style={D.nota}>✳️ Si ya operan con SGRs, es importante que nos indiquen con cuáles.</div>
+
+      <div style={D.footer}>
+        Equipo <b style={{ color: "var(--text-secondary)" }}>Amauta Inversiones Financieras</b> · CNV Mat. 1029 · Ante
+        cualquier consulta, no dudes en contactarnos · amautainversiones.com
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
 // PRIMITIVOS UI
 // ===========================================================================
 function Kpi({ label, value, highlight, warn }: { label: string; value: string; highlight?: boolean; warn?: boolean }) {
@@ -857,4 +1010,29 @@ const S: Record<string, React.CSSProperties> = {
   errBox: { background: "rgba(216,67,78,0.15)", border: "1px solid var(--danger)", color: "#F0A0A6", borderRadius: 8, padding: "10px 12px", fontSize: 13, marginTop: 14 },
   acciones: { display: "flex", gap: 10, marginTop: 18 },
   toast: { position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "var(--surface-overlay)", border: "1px solid var(--success)", color: "#8FE0B4", padding: "12px 20px", borderRadius: 10, fontSize: 13.5, fontWeight: 600, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", zIndex: 1100, maxWidth: "90vw" },
+};
+
+// Estilos del Check List de documentación SGR
+const D: Record<string, React.CSSProperties> = {
+  wrap: { maxWidth: 1100 },
+  banner: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", background: "linear-gradient(180deg, var(--surface-raised), var(--surface-base))", border: "1px solid var(--brand-border)", borderLeft: "4px solid var(--accent)", borderRadius: 14, padding: "18px 20px", marginBottom: 18 },
+  bannerKicker: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.16em", color: "var(--accent)", fontWeight: 800, marginBottom: 4 },
+  bannerTitle: { fontSize: 20, fontWeight: 800, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 },
+  bannerSub: { fontSize: 13.5, color: "var(--text-secondary)", margin: "6px 0 0" },
+  copyBtn: { background: "var(--accent)", color: "var(--on-accent)", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 13, fontWeight: 800, padding: "10px 16px", cursor: "pointer", whiteSpace: "nowrap" },
+  sectionTitle: { fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-primary)", margin: "6px 0 12px", paddingBottom: 8, borderBottom: "1px solid var(--brand-border)" },
+  grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 10, marginBottom: 20 },
+  item: { display: "flex", gap: 12, alignItems: "flex-start", background: "var(--surface-raised)", border: "1px solid var(--brand-border)", borderRadius: 10, padding: "11px 13px" },
+  num: { flexShrink: 0, width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 12.5, display: "grid", placeItems: "center", marginTop: 1 },
+  itemText: { fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.5 },
+  cards2: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14, marginBottom: 16 },
+  card: { background: "var(--surface-raised)", border: "1px solid var(--brand-border)", borderTop: "3px solid var(--brand-bordo)", borderRadius: 14, padding: "16px 18px" },
+  cardHead: { display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 10, flexWrap: "wrap" },
+  cardP: { fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 10px" },
+  ul: { margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 7 },
+  li: { fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.5 },
+  badgeAmber: { fontSize: 11, fontWeight: 700, color: "var(--warning)", background: "rgba(232,181,74,0.14)", padding: "2px 9px", borderRadius: 20 },
+  badgeGreen: { fontSize: 11, fontWeight: 700, color: "var(--success)", background: "rgba(47,191,113,0.14)", padding: "2px 9px", borderRadius: 20 },
+  nota: { background: "rgba(243,207,17,0.10)", border: "1px solid var(--accent)", color: "var(--text-primary)", borderRadius: 10, padding: "12px 15px", fontSize: 13.5, fontWeight: 600, marginBottom: 18 },
+  footer: { fontSize: 12, color: "var(--text-tertiary)", borderTop: "1px solid var(--brand-border)", paddingTop: 14, lineHeight: 1.5 },
 };
