@@ -526,6 +526,22 @@ const EQUIPO = {
 
 let currentUser = { email:'', nombre:'', firma:'' };
 
+/* Firmas por asesor. Si un email no está acá, se arma una firma estándar
+   (nombre + Amauta + mail + matrícula). Para poner tu firma EXACTA, pegala acá. */
+const FIRMAS = {
+  // 'facundo@amautainversiones.com': 'Facundo Argañaraz\nAsesor Financiero\nAmauta Inversiones Financieras\n+54 9 381 ...\nfacundo@amautainversiones.com',
+};
+function firmaTexto(email){
+  if(FIRMAS[email]) return FIRMAS[email];
+  const nombre = EQUIPO[email] || (email ? email.split('@')[0] : '');
+  const lineas = [];
+  if(nombre) lineas.push(nombre);
+  lineas.push('Amauta Inversiones Financieras');
+  if(email) lineas.push(email);
+  lineas.push('CNV Mat. 1029 · amautainversiones.com');
+  return lineas.join('\n');
+}
+
 const CLIENTES = {
 "100025":"CAJA POPULAR DE AHORROS DE TUCUMAN SEGUROS",
 "100026":"CAJA POPULAR DE AHORROS DE TUCUMAN ART",
@@ -1584,6 +1600,14 @@ function construirCuerpo(comitente, nombre){
   }
 
   lineas.push('Saludos cordiales.');
+
+  // Firma del asesor logueado
+  const firma = firmaTexto(currentUser.email);
+  if(firma){
+    lineas.push('');
+    lineas.push('--');
+    lineas.push(firma);
+  }
   return lineas.join('\n');
 }
 
