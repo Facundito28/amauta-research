@@ -7,6 +7,7 @@ const TOOLS = [
   { href: "/simulador", title: "Simulador", sub: "Comparador CPD · Banco vs Mercado", icon: "🧮" },
   { href: "/informes", title: "Generador de Informes", sub: "Informes de rendimiento para clientes", icon: "📄" },
   { href: "/financiamiento", title: "Financiamiento", sub: "Seguimiento de gestiones (SGR/BCO)", icon: "🏦" },
+  { href: "/ordenes", title: "Órdenes", sub: "Generador de órdenes múltiples", icon: "🧾" },
 ];
 
 export default function Home() {
