@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OrdenBot — Amauta Inversiones Financieras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700;800&family=Fira+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --surface-base:   #1C1819;
+    --surface-raised: #231F20;
+    --surface-overlay:#2C2728;
+    --border:         #3A3433;
+
+    --text-primary:   #F5F2F0;
+    --text-secondary: #B8B2B3;
+    --text-tertiary:  #8A8487;
+
+    --accent:     #F3CF11;
+    --on-accent:  #231F20;
+    --brand-bordo:#621044;
+
+    --success:#2FBF71;  --warning:#E8B54A;  --danger:#D8434E;
+
+    --font:'Fira Sans',Helvetica,Arial,sans-serif;
+    --font-mono:'Fira Mono','SFMono-Regular',Consolas,monospace;
+    --fw-body:400;  --fw-medium:500;  --fw-bold:700;  --fw-display:800;
+    --fs-xs:12px; --fs-sm:13px; --fs-md:15px; --fs-lg:18px; --fs-xl:22px; --fs-2xl:28px;
+    --lh-base:1.5;
+
+    --r-sm:6px; --r-md:10px; --r-lg:14px;
+    --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--surface-base);
+    color:var(--text-primary);
+    font-family:var(--font);
+    font-weight:var(--fw-body);
+    line-height:var(--lh-base);
+    font-size:var(--fs-md);
+    min-height:100vh;
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:var(--space-4);
+    padding:var(--space-4) var(--space-6);
+    background:var(--accent);
+  }
+  .topbar-logo{
+    height:42px;flex:none;
+  }
+  .topbar .titles{display:flex;flex-direction:column;line-height:1.2;}
+  .topbar .titles .brand{font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--on-accent);opacity:.6;font-weight:var(--fw-medium);}
+  .topbar .titles h1{margin:2px 0 0;font-size:var(--fs-xl);font-weight:var(--fw-display);color:var(--on-accent);}
+  .topbar .titles h1 span{color:var(--brand-bordo);}
+  .user-badge{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .user-avatar{
+    width:34px;height:34px;border-radius:50%;
+    background:var(--on-accent);
+    color:var(--accent);
+    font-weight:var(--fw-bold);
+    font-size:var(--fs-sm);
+    display:flex;align-items:center;justify-content:center;
+    flex:none;
+  }
+  .user-info{display:flex;flex-direction:column;line-height:1.2;}
+  .user-info .user-name{font-size:var(--fs-sm);font-weight:var(--fw-bold);color:var(--on-accent);}
+  .user-info .user-email{font-size:var(--fs-xs);color:var(--on-accent);opacity:.55;}
+  @media (max-width:600px){ .user-info{display:none;} }
+
+
+  /* ---------- layout ---------- */
+  .shell{
+    max-width:1280px;
+    margin:0 auto;
+    padding:var(--space-6);
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:var(--space-6);
+    align-items:start;
+  }
+  @media (max-width:980px){
+    .shell{grid-template-columns:1fr;}
+  }
+  .col{display:flex;flex-direction:column;gap:var(--space-4);}
+  .col-right{position:sticky;top:var(--space-6);}
+  @media (max-width:980px){ .col-right{position:static;} }
+
+  .card{
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    border-radius:var(--r-lg);
+    padding:var(--space-6);
+  }
+  .card h2{
+    margin:0 0 var(--space-4);
+    font-size:var(--fs-md);
+    font-weight:var(--fw-bold);
+    display:flex;
+    align-items:center;
+    gap:var(--space-2);
+  }
+  .card h2::before{
+    content:"";
+    width:4px;height:16px;
+    background:var(--brand-bordo);
+    border-radius:2px;
+    display:inline-block;
+  }
+
+  /* ---------- form controls ---------- */
+  label{
+    display:block;
+    font-size:var(--fs-xs);
+    color:var(--text-secondary);
+    font-weight:var(--fw-medium);
+    margin-bottom:6px;
+  }
+  input[type=text], input[type=number], select, textarea{
+    width:100%;
+    background:var(--surface-overlay);
+    border:1px solid var(--border);
+    color:var(--text-primary);
+    border-radius:var(--r-sm);
+    padding:10px 12px;
+    font-family:var(--font);
+    font-size:var(--fs-sm);
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  input::placeholder{color:var(--text-tertiary);}
+  input:focus, select:focus, textarea:focus{border-color:var(--accent);}
+  input[readonly]{color:var(--text-secondary); cursor:default;}
+  select{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23B8B2B3'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:30px;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3);}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--space-3);}
+  @media (max-width:520px){ .grid2,.grid3{grid-template-columns:1fr;} }
+  .field{margin-bottom:var(--space-3);}
+  .field:last-child{margin-bottom:0;}
+
+  .hint{font-size:var(--fs-xs); color:var(--text-tertiary); margin-top:4px;}
+  .hint.ok{color:var(--success);}
+
+  /* market toggle chip */
+  .price-row{display:flex; gap:8px; align-items:center;}
+  .chip{
+    flex:none;
+    font-size:var(--fs-xs);
+    font-weight:var(--fw-medium);
+    padding:9px 12px;
+    border-radius:var(--r-sm);
+    border:1px solid var(--border);
+    background:var(--surface-overlay);
+    color:var(--text-secondary);
+    cursor:pointer;
+    white-space:nowrap;
+    user-select:none;
+    transition:all .15s ease;
+  }
+  .chip.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:var(--on-accent);
+  }
+
+  /* switch (por mesa) */
+  .switch-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:var(--space-3);
+    background:var(--surface-overlay);
+    border:1px solid var(--border);
+    border-radius:var(--r-sm);
+    padding:10px 12px;
+    margin-bottom:var(--space-3);
+  }
+  .switch-row .label-txt{font-size:var(--fs-sm); color:var(--text-primary); font-weight:var(--fw-medium);}
+  .switch-row .label-sub{font-size:var(--fs-xs); color:var(--text-tertiary); margin-top:2px;}
+  .switch{
+    position:relative; width:40px; height:22px; flex:none;
+    background:var(--surface-base); border:1px solid var(--border);
+    border-radius:999px; cursor:pointer; transition:background .15s;
+  }
+  .switch::after{
+    content:""; position:absolute; top:2px; left:2px;
+    width:16px; height:16px; border-radius:50%;
+    background:var(--text-tertiary);
+    transition:transform .15s, background .15s;
+  }
+  .switch.on{background:rgba(243,207,17,.18); border-color:var(--accent);}
+  .switch.on::after{transform:translateX(18px); background:var(--accent);}
+
+  /* ---------- order cards ---------- */
+  .order{
+    background:var(--surface-overlay);
+    border:1px solid var(--border);
+    border-radius:var(--r-md);
+    padding:var(--space-4);
+    margin-bottom:var(--space-4);
+    position:relative;
+  }
+  .order:last-child{margin-bottom:0;}
+  .order-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:var(--space-3);
+  }
+  .order-head .order-num{
+    font-size:var(--fs-sm); font-weight:var(--fw-bold);
+    display:flex; align-items:center; gap:8px;
+  }
+  .order-head .order-num .dot{
+    width:20px;height:20px;border-radius:50%;
+    background:var(--brand-bordo); color:#fff;
+    font-size:11px; font-weight:var(--fw-bold);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .order-remove{
+    background:none; border:none; color:var(--text-tertiary);
+    cursor:pointer; font-size:var(--fs-sm); padding:4px 8px;
+    border-radius:var(--r-sm);
+  }
+  .order-remove:hover{color:var(--danger); background:rgba(216,67,78,.1);}
+
+  /* ---------- buttons ---------- */
+  .actions{display:flex; flex-wrap:wrap; gap:var(--space-2);}
+  button.btn{
+    font-family:var(--font);
+    font-weight:var(--fw-bold);
+    font-size:var(--fs-sm);
+    border-radius:var(--r-sm);
+    border:1px solid var(--border);
+    padding:11px 18px;
+    cursor:pointer;
+    background:var(--surface-overlay);
+    color:var(--text-primary);
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:filter .12s ease, transform .05s ease;
+  }
+  button.btn:active{transform:translateY(1px);}
+  button.btn:hover{filter:brightness(1.12);}
+  .btn-add{border-color:var(--brand-bordo); }
+  .btn-add::before{content:"+"; font-weight:800;}
+  .btn-accent{background:var(--accent); color:var(--on-accent); border-color:var(--accent);}
+  .btn-success{background:var(--success); color:#0e2b1c; border-color:var(--success);}
+  .btn-ghost{background:transparent;}
+  .btn-full{width:100%; justify-content:center;}
+
+  /* ---------- preview column ---------- */
+  .preview-line{margin-bottom:var(--space-3);}
+  .preview-line label{margin-bottom:6px;}
+  .preview-box{
+    background:var(--surface-overlay);
+    border:1px solid var(--border);
+    border-radius:var(--r-sm);
+    padding:10px 12px;
+    font-size:var(--fs-sm);
+    color:var(--text-primary);
+    min-height:20px;
+    word-break:break-word;
+  }
+  .body-preview{
+    background:var(--surface-overlay);
+    border:1px solid var(--border);
+    border-radius:var(--r-sm);
+    padding:var(--space-4);
+    font-family:var(--font-mono);
+    font-size:13px;
+    line-height:1.6;
+    white-space:pre-wrap;
+    min-height:280px;
+    max-height:460px;
+    overflow-y:auto;
+    color:var(--text-primary);
+  }
+  .body-preview.empty{color:var(--text-tertiary); font-family:var(--font);}
+
+  .badge-count{
+    font-size:var(--fs-xs);
+    background:var(--brand-bordo);
+    color:#fff;
+    padding:2px 9px;
+    border-radius:999px;
+    font-weight:var(--fw-bold);
+  }
+
+  .toast{
+    position:fixed;
+    bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--surface-overlay);
+    border:1px solid var(--accent);
+    color:var(--text-primary);
+    padding:12px 20px;
+    border-radius:var(--r-md);
+    font-size:var(--fs-sm);
+    font-weight:var(--fw-medium);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .footer-note{
+    text-align:center;
+    color:var(--text-tertiary);
+    font-size:var(--fs-xs);
+    padding:var(--space-6) var(--space-4) var(--space-8);
+  }
+
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+
+  /* ---------- pantalla de selección de usuario ---------- */
+  .login-screen{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:var(--space-6);
+  }
+  .login-screen .login-logo{height:60px; margin-bottom:var(--space-6);}
+  .login-screen h2{
+    font-size:var(--fs-xl);
+    font-weight:var(--fw-display);
+    margin:0 0 4px;
+    text-align:center;
+  }
+  .login-screen .login-sub{
+    font-size:var(--fs-sm);
+    color:var(--text-secondary);
+    margin-bottom:var(--space-8);
+    text-align:center;
+  }
+  .login-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:var(--space-3);
+    width:100%;
+    max-width:520px;
+  }
+  @media (max-width:520px){ .login-grid{grid-template-columns:1fr;} }
+  .login-btn{
+    display:flex;
+    align-items:center;
+    gap:var(--space-3);
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    border-radius:var(--r-md);
+    padding:var(--space-4);
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+    text-align:left;
+  }
+  .login-btn:hover{
+    border-color:var(--accent);
+    background:var(--surface-overlay);
+  }
+  .login-btn .login-avatar{
+    width:40px;height:40px;border-radius:50%;
+    background:var(--brand-bordo);
+    color:#fff;
+    font-weight:var(--fw-bold);
+    font-size:var(--fs-md);
+    display:flex;align-items:center;justify-content:center;
+    flex:none;
+  }
+  .login-btn .login-data{display:flex;flex-direction:column;line-height:1.3;overflow:hidden;}
+  .login-btn .login-data .ln{font-size:var(--fs-sm);font-weight:var(--fw-bold);color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .login-btn .login-data .le{font-size:var(--fs-xs);color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  .app-container{display:none;}
+</style>
+</head>
+<body>
+
+  <!-- ================= PANTALLA DE SELECCIÓN DE USUARIO ================= -->
+  <div class="login-screen" id="loginScreen">
+    <img src="https://amautainversiones.com/wp-content/uploads/2025/05/logo_amauta.png" alt="Amauta" class="login-logo">
+    <h2>OrdenBot</h2>
+    <p class="login-sub">Seleccioná tu usuario para continuar</p>
+    <div class="login-grid" id="loginGrid"></div>
+  </div>
+
+  <!-- ================= APP PRINCIPAL (oculta hasta elegir usuario) ================= -->
+  <div class="app-container" id="appContainer">
+
+  <div class="topbar">
+    <img src="https://amautainversiones.com/wp-content/uploads/2025/05/logo_amauta.png" alt="Amauta Inversiones Financieras" class="topbar-logo">
+    <div class="titles">
+      <h1>Orden<span>Bot</span></h1>
+      <span class="brand">Múltiples órdenes · Mesa &amp; Fondos</span>
+    </div>
+    <div class="user-badge" id="userBadge" style="display:none;">
+      <div class="user-info">
+        <span class="user-name" id="userName"></span>
+        <span class="user-email" id="userEmail"></span>
+      </div>
+      <div class="user-avatar" id="userAvatar"></div>
+    </div>
+  </div>
+
+  <div class="shell">
+
+    <!-- ================= LEFT: FORM ================= -->
+    <div class="col">
+
+      <div class="card">
+        <h2>Comitente</h2>
+        <div class="grid2">
+          <div class="field">
+            <label for="comitente">Número de comitente</label>
+            <input type="text" id="comitente" placeholder="Ej: 318000" inputmode="numeric">
+            <div class="hint" id="comitenteHint">Se busca automáticamente en la base de clientes.</div>
+          </div>
+          <div class="field">
+            <label for="nombreCliente">Nombre (auto)</label>
+            <input type="text" id="nombreCliente" placeholder="Se completa desde 'Clientes'" readonly>
+          </div>
+        </div>
+      </div>
+
+      <div id="ordersContainer"></div>
+
+      <div class="actions">
+        <button class="btn btn-add" id="btnAgregar">Agregar orden</button>
+        <button class="btn btn-accent" id="btnGenerar">Generar mail</button>
+      </div>
+
+    </div>
+
+    <!-- ================= RIGHT: PREVIEW ================= -->
+    <div class="col col-right">
+
+      <div class="card">
+        <h2>Destinatarios</h2>
+        <div class="preview-line">
+          <label>De</label>
+          <div class="preview-box" id="prevDe">—</div>
+        </div>
+        <div class="preview-line">
+          <label>Para</label>
+          <div class="preview-box" id="prevPara">—</div>
+        </div>
+        <div class="preview-line">
+          <label>CC</label>
+          <div class="preview-box" id="prevCC">informes@amautainversiones.com</div>
+        </div>
+        <div class="preview-line" style="margin-bottom:0;">
+          <label>Asunto</label>
+          <div class="preview-box" id="prevAsunto">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Cuerpo del mail <span class="badge-count" id="ordersBadge">0</span></h2>
+        <div class="body-preview empty" id="prevBody">Completá el comitente y al menos una orden para ver el mail acá…</div>
+        <div class="actions" style="margin-top:var(--space-4);">
+          <button class="btn btn-ghost" id="btnCopiarAsunto">Copiar asunto</button>
+          <button class="btn btn-ghost" id="btnCopiarCuerpo">Copiar cuerpo</button>
+        </div>
+        <button class="btn btn-success btn-full" id="btnBorrador" style="margin-top:var(--space-2);">Crear borrador en Gmail</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="footer-note">Amauta Inversiones Financieras · Matrícula CNV 1029 · Herramienta interna</div>
+
+  </div><!-- /app-container -->
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const DEST = {
+  ordenes: 'ordenes@amautainversiones.com',
+  fondos: 'fondos@amautainversiones.com',
+  mesa: 'mesaifa@balanz.com',
+  cc: 'informes@amautainversiones.com'
+};
+
+const OPERACIONES = [
+  { value:'compra',              label:'Compra',              grupo:'trading' },
+  { value:'venta',                label:'Venta',                grupo:'trading' },
+  { value:'caucion_colocadora',   label:'Caución colocadora',   grupo:'caucion' },
+  { value:'caucion_tomadora',     label:'Caución tomadora',     grupo:'caucion' },
+  { value:'suscripcion',          label:'Suscripción de FCI',   grupo:'fondos'  },
+  { value:'rescate',              label:'Rescate de FCI',       grupo:'fondos'  },
+];
+
+const PLAZOS_LIQ = ['T+0','T+1','T+2'];
+
+/* ============================================================
+   EQUIPO AMAUTA — mapeo email → nombre
+   ============================================================ */
+const EQUIPO = {
+  'agustin@amautainversiones.com':    'Agustín Carrizo',
+  'facundo@amautainversiones.com':    'Facundo Argañaraz',
+  'florencia@amautainversiones.com':  'Florencia Linares',
+  'jeronimo@amautainversiones.com':   'Jerónimo Cotella',
+  'natalia@amautainversiones.com':    'Natalia Gimenez Lascano',
+  'regina@amautainversiones.com':     'Regina Martinez Riekes',
+  'soporte@amautainversiones.com':    'Soporte Comercial',
+  'stefano@amautainversiones.com':    'Stefano Fortino',
+};
+
+let currentUser = { email:'', nombre:'', firma:'' };
+
+const CLIENTES = {
+"100025":"CAJA POPULAR DE AHORROS DE TUCUMAN SEGUROS",
+"100026":"CAJA POPULAR DE AHORROS DE TUCUMAN ART",
+"100050":"OSYM SRL",
+"100096":"TENSOLITE SA",
+"100173":"AZLEPI SRL",
+"100217":"VIDRIAL SRL",
+"100223":"KOUSAL SA",
+"1003048":"KRISTAL ANDREA",
+"100579":"ARGENTI LEMON SA",
+"100687":"CITRUSVIL SA",
+"101071":"FIDEICOMISO SANTIAGO 924",
+"101086":"VITRASERV SRL",
+"101270":"GANADERA DEL NORDESTE SRL",
+"101339":"JOSE DUMIT S.A",
+"101500":"CONSULTORES ESPECIALIZADOS SRL",
+"101589":"PUEBLE SA",
+"101602":"AMAUTA S.A",
+"101687":"TEILEN SA",
+"101788":"CONDOMINIO SAN MARTIN 766-768 ANA S FARES Y OTROS",
+"101809":"SOALEN SRL",
+"101863":"TERRI CITRUS SRL",
+"101910":"RO MAR S.R.L.",
+"101956":"FIDEICOMISO CALLE AYACUCHO 649 SFM",
+"101991":"VINES SRL",
+"101993":"FIDEICOMISO CALLE BOLIVAR 875 879 SFM",
+"102114":"ROLCAR SA",
+"102154":"CULTURA ATOMIZADA SAS",
+"102189":"MOYCO SRL",
+"102227":"OMODEO SA",
+"102229":"FUNDACION LEON",
+"102245":"TUCAGRO SRL",
+"102413":"INTERTEC SRL",
+"102496":"LATIN LEMON SA",
+"102644":"MIPOL REPUESTOS SA",
+"102703":"FOR DRINK SA",
+"102823":"TEMAS INDUSTRIALES SA",
+"102918":"YUHMAK SEGURIDAD INDUSTRIAL S.R.L.",
+"103045":"COBRANZAS DEL INTERIOR SRL",
+"103137":"AGRO ACONQUIJA SRL",
+"103181":"CENTRO DE REHABILITACION VIRGEN DE LA MERCED SRL",
+"103184":"VISIR SA",
+"103258":"CUSILLOS SRL",
+"103324":"ESTABLECIMIENTOS AGRICOLAS EL BARCO SA",
+"103344":"MESON HNOS SAS",
+"103345":"SAIKO S.A.",
+"103380":"GRUPO COMFYE NACIONAL S.R.L.",
+"103591":"BIOENERGIA SANTA ROSA SA",
+"103699":"FLIP SAS",
+"104221":"LA ASTURIANA SRL",
+"104369":"CACHI YACO SA",
+"104387":"GESTION INMOBILIARIA DEL NORTE SA",
+"104389":"PRODUCTORA DEL NOROESTE SA",
+"1047824":"DRAMIS PABLO GUILLERMO",
+"104877":"GICLIME SA",
+"105603":"NEME RACING TEAM",
+"105666":"CARLOS H. SALAS CONSTRUCTORA SRL",
+"1057322":"GARCIA FRANCISCO",
+"105971":"ENERGEA SAS",
+"1067077":"GIMENEZ LASCANO NATALIA",
+"107257":"AVANZZA SRL",
+"107324":"CARRERAS GRUPO LOGISTICO SA",
+"1074408":"TRECH GABRIEL ERNESTO Y/O DIAZ CERVASIO PAOLA KARINA",
+"107569":"KAVAK DEPORTES SRL",
+"107662":"PUERTAS SRL",
+"107792":"ECFA S.R.L.",
+"107884":"ARZOBISPADO DE TUCUMAN",
+"108462":"MICRO CONTROL S.A.",
+"109710":"GORTARI AGROPECUARIA SAAGMYS",
+"109767":"TECNOLOGIAS SYNAGRO SRL",
+"110824":"DESARROLLO NORTE INVEST SRL",
+"111111":"SILVIO HERRERA Y CÍA SRL",
+"111184":"FIDEICOMISO MATE DE LUNA Y THAMES",
+"1112860":"CERA - CONTI ALEJANDRO JOSE",
+"1112941":"CERA - BARBIERI NICOLAS OSCAR",
+"1114997":"QUILES SAINZ JORGE ESTEBAN",
+"1120057":"TRADI SILVIA ADRIANA",
+"1120632":"CERA - DRAMIS PABLO GUILLERMO",
+"1132774":"CERA - FARES GUILLERMO DAVID",
+"1134416":"LEGORBURU LUIS MARCELO",
+"1142695":"CERA - SANTOS JUAN MANUEL",
+"1151903":"CERA - SANTOS BOLLEA LUZ MARIA",
+"1168618":"CARELLE SUSANA BEATRIZ Y/O REISINGER FERNANDO DANIEL",
+"1172637":"CERA - CARRILLO SAL ALVARO",
+"1173610":"DI BECO ELIANA ELIZABETH",
+"1173630":"SOLER JUANA TERESA Y/O ROSA SOLER CARLOS SEBASTIAN",
+"1178610":"JALIL ANTONIO EDUARDO Y/O YAZBEK YANE BLANCA NELIDA",
+"1178810":"VILLAFAÑE MARTA INES",
+"1181171":"CORONEL MARIA FLORENCIA ...",
+"1189828":"CERA - ATENOR PEDRO REINALDO",
+"1190089":"CERA - MUNTANER JAVIER",
+"1197731":"CERA - ATENOR MARIA MERCEDES",
+"1201308":"SANDOVAL LUCIANA",
+"1202497":"LOVEY JUAN MARTIN",
+"1204936":"GONZALEZ ALLENDE CESAR MAXIMILIANO Y/O RUIZ SANDRA CAROLINA",
+"1207464":"FABRA MARIA GRACIELA Y/O CALFAT MARIA SOL",
+"1209090":"CARRIZO JOSE AGUSTIN",
+"1209959":"TORRES SILVIO ANDRES",
+"1217351":"BENITO SOFIA",
+"1259239":"LEGUIZAMON DANTE MATIAS Y/O LEZAMA FATIMA CAROLINA",
+"1260479":"ALONSO JORGE RICARDO Y/O DE URIBE ELENA MAGDALENA EMILIA",
+"1277471":"AGUIAR LUCIANA MARIA",
+"1278801":"COSSIO ALICIA MARIA Y/O TERAN BUSTILLO ANDRES",
+"1283827":"FABATA ALEJANDRO SEBASTIAN Y/O MAZZA SUSANA MARCELA",
+"1290997":"CALFAT MARIA SOL",
+"1295629":"RUIZ BEDMAR MARCELO AGUSTIN Y/O BOASSI JULIETA LUCIANA",
+"1304157":"CERA - GIACOSA MARIA ELISA",
+"1306129":"DORFMULLER VANINA DE LOURDES Y/O GARCIA ALEMAN FERNANDO SIMON",
+"1307473":"CERRIZUELA FIORI PILAR",
+"1309557":"CERRIZUELA FIORI LUJAN",
+"1310939":"MANDOLINI MARIA PAULA",
+"1319136":"PAZ MARIA MERCEDES",
+"1319810":"PEREIRA JOSE ROBERTO GABRIEL",
+"1320617":"HERRERA PAZ BALTAZAR",
+"1329812":"REY RAUL ESTEBAN",
+"1340240":"VAN MAMEREN SALVADOR",
+"1345386":"REY JUSTINA",
+"1345487":"REY SOFIA",
+"1350413":"PASTORINO JULIO CESAR",
+"1356258":"DIP LUIS ALBERTO Y/O CARRIZO ROSANA NOEMI",
+"1398693":"MORIS MARIA ELENA Y/O SIERRA MARÍA CECILIA",
+"1409785":"DIP LUIS AGUSTIN Y/O DIP LUIS ALBERTO",
+"1422327":"PESA MAXIMO",
+"1423975":"SIMONETTI PAOLA CLAUDIA Y/O MEDEOT LUCIA",
+"1433336":"ROMERO MARIA JOSE",
+"1433455":"CARRIZO ABARZA LEANDRO",
+"1445530":"BUSCETTO NICOLAS ANDRES Y/O SCAVARDA ROCIO AGUSTINA",
+"1447065":"ORONA PEDRO EXEQUIEL",
+"1450068":"BARBIERI OSCAR ROBERTO",
+"1460770":"CORTINA GUERINEAU JOSE HORACIO",
+"1462932":"FONTENLA DIEGO MARTIN Y/O ACUTO MARCELA FABIANA",
+"1465679":"HAUSTEIN JULIETA MARIA",
+"1470252":"SOSA RICARDO ROBERTO Y/O NAVARRO MARIA ALBA",
+"1470696":"PESA ILEANA",
+"1476372":"CRIADO MONICA ANDREA",
+"1481821":"BLASCO EDGARDO ARTURO",
+"1490732":"MASAGUER MARIA FELICITAS",
+"1492569":"GARRIDO RAFAEL BENJAMIN",
+"1496258":"MENA YANGÜEZ LISANDRO",
+"1500413":"CERA - BERNARDINEZ CARLOS ALBERTO",
+"1504491":"BELOQUI MARCELO HERNAN",
+"1526325":"OYHANARTE CAROLINA GLORIA",
+"1530939":"FORTINO STEFANO",
+"1532001":"BENITO FEDERICO Y/O GRIET CONSTANZA MARÍA",
+"1540380":"FANDOS DIEGO Y/O FORTINI EUGENIA",
+"1547069":"VILLAGRA GERMAN EDUARDO",
+"1554998":"COSTAL CORNEJO GONZALO",
+"1558044":"ALMADA EZEQUIEL JOSE Y/O PITTATORE MELINA RITA",
+"1579937":"DUHART AGUSTINA MARIA DE LOURDES",
+"1584701":"AZUBEL VICTOR SERGIO Y/O AZUBEL VICTORIA Y/O FARJI SELMA ROMINA",
+"1589898":"NADRA GARCIA HORACIO ENRIQUE Y/O MASI ELIZALDE MARIA DEL SOCORRO",
+"1589940":"LOPEZ LUIS ALFREDO",
+"1591214":"PLIZZO MARIA EUGENIA",
+"1594401":"BOQUET NORA MARINA Y/O FORTINI OSCAR ANTONIO",
+"1599727":"MERCADO MARCELO EDUARDO",
+"1604083":"ATENOR MARÍA MERCEDES",
+"1605657":"ATENOR PEDRO REINALDO",
+"1607111":"BARBIERI OSCAR ROBERTO Y/O BARBIERI OSCAR ROBERTO",
+"1609222":"DULOM JAVIER",
+"161395":"SILVIO HERRERA Y CIA S.R.L.",
+"1616484":"COLOMBRES GARMENDIA GUADALUPE",
+"1622199":"ARGAÑARAZ BERNARDO JOSE",
+"162255":"REFOREST LATAM SAS",
+"162277":"Yuhmak S.A.",
+"1622778":"ARGAÑARAZ VICTOR DANIEL Y/O LUNA FERRAZZANO ALINA INÉS",
+"1624183":"ANTONI MARIA BELEN",
+"162526":"EFP SOCIEDAD ANONIMA",
+"162717":"TRINEO TV SRL",
+"162842":"KRAN S.R.L.",
+"163521":"AVANCO SRL",
+"163618":"ATENOR HNO SRL",
+"1638047":"ABBADIE SANDRA CARINA Y/O TUSAR SERGIO GUSTAVO",
+"163834":"GIGANTO COMUNICACIONES S.R.L.",
+"163959":"ITINES SAS",
+"163969":"HACIENDAS DEL VALLE SRL",
+"1642628":"EBRI GEORGE Y/O SANGUEDOLCE JULIETA CELINA",
+"1651461":"VAN MAMEREN MATEO",
+"1660718":"LOVAISA MARINA ALEJANDRA",
+"18493":"MISURIELLO SANDRO MARCO",
+"19374":"SIMONETTI PAOLA CLAUDIA",
+"20575":"CASACCI MIGUEL ANGEL",
+"20781":"LA BAJADA S.A.",
+"20921":"GEMSA AUTOMOTORES S.A.",
+"20980":"SANATORIO 9 DE JULIO SA",
+"21270":"CASTILLO SACIFIA",
+"21293":"BARBIERI OSCAR ROBERTO Y O OTROS",
+"21303":"BP SA",
+"21305":"MADERO ASESORES DE SEGUROS SA",
+"21307":"VIDA SLOW SA",
+"21335":"OSCAR BARBIERI SA BT",
+"21345":"PESA FACUNDO Y/O MARTINEZ RIEKES REGINA MARIA",
+"21355":"DUMIT JOSE GUSTAVO",
+"21356":"DUMIT NESTOR RAUL ABRAHAM",
+"21357":"SCHEBYE S.A.",
+"21370":"PARRILLADA SRL",
+"21415":"BARBERO VERONICA MARTA",
+"21427":"EMA SRL",
+"21474":"LAS MARTINETAS SRL",
+"21514":"ALDAX GARCIA MARIA EUGENIA Y/O CUEZZO SANCHEZ JUAN JOSE",
+"21521":"CHIMIRRI MARCOS ANGEL",
+"21559":"STRASSER ANA MARIA Y/O SAAD ANA INES Y/O SAAD EUGENIO",
+"21560":"SAAD MIRTA ELENA Y/O DUMIT CARLOS JORGE Y/O DUMIT MARIANO AGUSTIN",
+"21562":"FIGUEROA SANTIAGO JOSE",
+"21564":"SAAD GLADYS ESTELA Y/O ELIAS LUIS GERARDO",
+"21594":"TRASUR SA",
+"21615":"SEGURIDAD INDUSTRIAL COMERCIAL (S.I.C.) S.R.L.",
+"21619":"FLORES LUIS DANIEL",
+"21657":"SEGURA IVANNA MARIA",
+"21684":"JIMENEZ SERGIO GUSTAVO Y/O VERA SILVINA DEL VALLE",
+"21759":"SAN BERNARDO SERVICIOS SOCIALES SRL",
+"21760":"FERREYRA JOSE MARIA",
+"21863":"ZARIFE LUCAS MATIAS",
+"21868":"FABATA ALEJANDRO SEBASTIAN",
+"21870":"WERCHOW SERVICIOS SOCIALES S.R.L.",
+"21887":"CATALAN CARLOS ENRIQUE",
+"21894":"LAZARTE ALEJANDRA FATIMA Y/O MORTON ERIK NILS",
+"21901":"BRITO CARLOS ALFREDO Y/O CORVALAN SILVIA BEATRIZ",
+"21959":"QUIROGA RODOLFO JAVIER Y/O VICENTE MYRIAM SUSANA",
+"21980":"AVERBUJ FEDERICO",
+"21982":"AVERBUJ JORGE HECTOR",
+"21986":"PADILLA MARIA ANA",
+"22027":"MEGA MATERIALES Y SERVICIOS SRL",
+"22045":"DO CAMPO FERNANDO ANTONIO",
+"22050":"LA SOLEDAD SA",
+"22051":"SABATE DIEGO",
+"22053":"FIDEICOMISO IRIGON",
+"22084":"VAN MAMEREN FEDERICO DIEGO",
+"22092":"CASTAÑO Carlos A. y/o NAVARRO Graciela Elizabeth del Valle y/o CASTAÑO Damian",
+"22093":"CASTAÑO DAMIAN",
+"22096":"PACIOS ALFONSO RICARDO",
+"22121":"DI BACCO Y CIA S.A.",
+"22137":"NAVARRO GRACIELA ELIZABETH DEL VALLE",
+"22152":"CARRILLO SAL ALVARO Y/O CARRILLO RICARDO",
+"22168":"DANON ALEJANDRO MARTIN Y/O BONACINA ANTONELLA",
+"22211":"MAZA GUILLERMO RUBEN Y/O MAZA CECILIA Y/O LOZANO ADELA NELIDA",
+"22293":"Mendez Sanz Bernardo Lucas",
+"22306":"PRESTI JOSE DARIO",
+"22412":"ACOSTA MARIA CRISTINA",
+"22453":"FORMA SRL",
+"22470":"CANGEMI SERGIO DANIEL Y/O CANGEMI FRANCO AGUSTIN",
+"22478":"VARGAS MIGUEL ALBERTO Y/O VARGAS JUAN MANUEL",
+"22481":"FILIP SILVANA",
+"22484":"PADILLA JUAN Y/O GARCIA HAMILTON SILVIA JOSEFINA",
+"22498":"ROLANDI MARIA LAURA Y/O BARILARI HORACIO GABRIEL",
+"22517":"ACUÑA RAMIRO MARTIN Y/O JAIME MARIA CECILIA",
+"22534":"DAHAN PABLO GERMAN Y/O FERNANDEZ ANALIA ALEXANDRA",
+"22545":"SFER ALBERTO Y/O MARTINEZ LOPEZ MARIA GABRIELA",
+"22546":"CORDOBA VALERIA CYNTHIA Y/O IBARRECHE CAMILA",
+"22555":"COLEGIO DE ABOGADOS DE TUCUMAN",
+"22557":"IRIARTE JOAQUIN Y/O IRIARTE ANA INES CAROLINA",
+"22559":"MORENO DIEGO ENRIQUE",
+"22560":"BRANDAN MARIANA",
+"22570":"ROUGES SIMON FERNANDO",
+"22573":"Chehin Mirta Graciela",
+"22586":"EMPRESA DE DISTRIBUCION ELECTRICA DE TUCUMAN SA",
+"22596":"BULACIO MAXIMO NILAMON",
+"22597":"LOBO MARIA JOSE",
+"22599":"SANTILLAN MARIO ZENON Y/O SANTILLAN JULIETA Y/O SANTILLAN ANA PAULA",
+"22600":"LESNIK CLAUDIA CRISTINA",
+"22722":"BULACIO STANLEY JIMENA MARIA",
+"22757":"REGI GRUPO SA",
+"22759":"RODRIGUEZ MAXIMILIANO JOSE",
+"22767":"EXPRESO BISONTE SRL",
+"22774":"FORENZA RICARDO",
+"22775":"AVILA MARIA VIRGINIA",
+"22805":"ACOSTA HECTOR RAUL",
+"22846":"SOLORZANO DIEGO ARIEL",
+"22958":"TOBA SRL",
+"23016":"METALAR SA",
+"23017":"CEBALLOS JOSE ALBERTO",
+"23045":"PADILLA MARIA MILAGROS",
+"23175":"PALAZZO EDUARDO ALEJANDRO",
+"23255":"YBAÑEZ SANDRA MARCELA Y/O ABBOUD MARCO FOUAD",
+"23267":"LA PURITA SRL",
+"23315":"CAJA DE PREVISION Y SEG SOC DE MED E ING DE TUCUMAN",
+"23455":"VIAÑA MARIA DEL CARMEN JOSEFINA",
+"23594":"SONEYRO GONZALEZ Hernan Daniel y/o BOGERO GIAMPIERI Solana Maria",
+"23596":"CORTINA JOSE HORACIO Y/O CORTINA GUERINEAU JOSE HORACIO",
+"23618":"TORRES FATIMA ELIZABETH Y/O SILVANA MARIEL BULACIOS",
+"23644":"ROJAS CARLOS ALBERTO Y/O JURI MARIA AIDA Y/O ROJAS MARIA LUCRECIA",
+"23730":"APFELBAUM MARIELA",
+"23811":"AGROPECUARIA MISTOL ANCHO SA",
+"23914":"LAZARTE MIGUEL ANGEL",
+"24038":"SILVETI PEREZ NELSON JAVIER",
+"24102":"DO CAMPO RAMON Y O MATTIACCI NORMA BEATRIZ",
+"24216":"CAJA DE PREVISION Y SEGURIDAD SOCIAL DE ABOGADOS Y PROCURADORES DE TUCUMAN",
+"24232":"CHEHIN JORGE RAUL",
+"24253":"PALIZA EDUARDO ARTURO Y/O PALIZA DIEGO DANIEL",
+"24321":"CORONEL DANIEL RENE Y/O CORONEL TATIANA NOELI",
+"24531":"CORTES CHRISTIAN HERNAN Y/O MARTINEZ PASTUR AIXA MARIA",
+"24536":"IRIARTE SANTIAGO JAVIER",
+"24537":"SCHAEFER MARIA CECILIA",
+"24583":"MOLINA AGUIRRE CRISTIAN OSVALDO Y/O RODRIGUEZ MARIA SOLEDAD",
+"24584":"CORNET PEDRO LEON Y/0 OTROS",
+"24587":"KESER EDUARDO BERNARDO",
+"24613":"ROJAS MARCELO ALEJANDRO Y/O OTROS",
+"24619":"FIGUEROA LUIS ROBERTO Y/O COLOMBRES ELVIRA INES",
+"24654":"CASTILLO RAUL OSCAR Y/O AGUIRRE OLGA MARIA",
+"24679":"AZALOT MARIA FERNANDA",
+"24729":"DIAZ SILVIA MERCEDES Y/O IÑIGO DIAZ JOSE IGNACIO",
+"24758":"SAAB GUILLERMO ANTONIO",
+"24806":"BRITO LUCIA MARIA",
+"24816":"PESA CARLOS ISAAC Y/O PESA FACUNDO",
+"24833":"PEDRAZA MARTIN",
+"24834":"ANCE MARIA CELIA Y/O DAONA SUSANA MARIA",
+"24843":"FACUNDO PESA & ILEANA PESA & CARLOS ISAAC PESA & SILVANA FILIP JTWROS",
+"24847":"FIGUEROA LUIS ROBERTO",
+"24867":"PALAZZO CARLOS SEBASTIAN",
+"24904":"NOVA SALUD SAS",
+"24916":"PAPA MARIO ALFREDO Y/O MONTOYA ELIANA EMILSE",
+"24996":"ROJAS ALVAREZ AGUSTIN Y/O ROJAS MARCELO ALEJANDRO",
+"24998":"CHIRIVELLA MENDEZ LORENA BEATRIZ",
+"25027":"CASADEY SANTIAGO",
+"25045":"MARIA EUGENIA MANSILLA",
+"25050":"APARICIO EDUARDO",
+"25062":"FERMOSELLE CLAUDIA PATRICIA",
+"25106":"MARTINEZ ELBA ELENA",
+"25239":"CARPIO WILO RODOLFO Y/O PEREZ YANINA VANESA",
+"25318":"CASADEY MARCELA",
+"25323":"SISTEC SRL",
+"25398":"NADAL DANTE OMAR",
+"25445":"MARCHESE TERESA DEL VALLE",
+"25496":"VALDEZ RAMIRO Y/O FLORES SANCHEZ NANCY ESTELA",
+"25540":"SALA ANA LIA Y/O SANCHEZ JOSE VICTOR",
+"25565":"JURI MARIA FERNANDA",
+"25692":"CORONEL MARIA FLORENCIA",
+"25734":"BARTOLETTI MARIA CONSTANZA",
+"25746":"AZALOT ANDREA SUSANA DEL VALLE",
+"25777":"FLORES SEBASTIAN LEANDRO Y/O RODRIGUEZ VICTORIA DEBORAH",
+"25997":"NUÑEZ ROMINA VANESA",
+"26034":"ASFOURA JOSE ALBERTO",
+"262881":"RIVERO LUIS FERNANDO Y/O SIVILA MONICA MARISOL",
+"26315":"LEAL SILVINA LORENA",
+"26331":"ROLANDI MARIA GABRIELA Y/O NADER ZELAYA FRANCISCO JOSE",
+"26340":"MENA MARIA CRISTINA",
+"263999":"TURBAY MARIO FIDEL EDUARDO",
+"264415":"ESTEVEZ PABLO ALFREDO",
+"26551":"MACIAS NADER MARIA SOFIA",
+"26585":"CORONEL SOFIA CANDELA Y/O CORONEL DANIEL RENE",
+"26634":"GOMEZ JOSE LUIS",
+"266399":"ABBOUD AXEL ALEJANDRO",
+"26803":"GALVEZ ALVARO RODRIGO",
+"26867":"MARTIN DANIEL HORACIO",
+"269461":"COTELLA JERONIMO DEL CORAZON DE JESUS",
+"270582":"SUMMA MARIA FERNANDA",
+"270807":"MOLINA VERONICA VANESA",
+"27096":"BARRIONUEVO MARTA INES Y/0 AUVIEUX ADRIAN ALBERTO",
+"27139":"IANIERO ADRIANO AGUSTIN",
+"273082":"LOPEZ RUBIO LUCAS FERNANDO",
+"27325":"RAIMONDO JULIETA SOFIA",
+"27425":"ALBIERO RODOLFO NICOLAS Y/O RAYA MARIA GRACIELA",
+"27581":"BECKER ERIKA TATIANA",
+"276320":"DIAN ANDRES",
+"276515":"MALDONADO YUBRIN LUCAS EXEQUIEL",
+"27699":"PIOVESAN HUGO JAVIER",
+"27944":"LOPEZ AVILA EDUARDO ADOLFO Y/O LOPEZ AVILA EDUARDO BENJAMIN",
+"27988":"DEPAULA MARIANO JAVIER",
+"28408":"STEFANONI CESAR EDGARDO",
+"28474":"AVILA MARIA JIMENA",
+"28644":"CAMINO VILLALONGA MARIANA",
+"28681":"GIACOSA MARIA JOSEFINA",
+"28806":"ABBOUD MARCO FOUAD",
+"28826":"ZAVALETA TOMAS",
+"28981":"ARGAÑARAZ CRISTIAN ARIEL",
+"29057":"LENIS ROMAN FEDERICO",
+"29159":"SANCHEZ ALICIA TERESA",
+"29224":"AGUIRRE OUNDJIAN JAVIER IGNACIO",
+"292827":"ALBORNOZ JESUS PABLO",
+"29387":"BARILARI MARIA INES",
+"29396":"CARRASCO LOPEZ MARIA FERNANDA Y/O LOPEZ MERIGLIO EMMA BEATRIZ",
+"294366":"GONZALEZ MARIELA NOEMI",
+"29456":"CARRILLO RICARDO Y/O CARRILLO SAL AGUSTINA MARIA",
+"29488":"AGUIRRE ROBERTO ANTONIO Y/O OUNDJIAN EMA ELISA Y/O AGUIRRE OUNDJIAN JAVIER IGNAC",
+"29501":"IÑIGO DIAZ JOSE IGNACIO",
+"29552":"CRUZADO ALEJANDRA ELIZABETH",
+"29893":"CORTEZ DELIA ALVARO FEDERICO",
+"30120":"RIVADENEIRA ALEJANDRO RENE",
+"301887":"FANLO QUINTAR NICOLÁS",
+"301909":"DECIMA ROBERTO EXEQUIEL",
+"305772":"CAILLAVA JUAN EDUARDO",
+"308114":"PAZ POSSE SANTIAGO",
+"309939":"ESTOFAN JOSE MARIA",
+"312438":"VEGA LUCIANA ELIZABETH",
+"312542":"FELER RAUL DANIEL",
+"315696":"GEIDO MARIA EUGENIA",
+"318000":"ARMANINI ALVARO BENJAMIN",
+"321180":"ABDELNUR IGNACIO AGUSTIN Y/O DE HARO MARIA ESPERANZA",
+"32178":"ZERPA LILIA SUSANA Y/O PEREZ JOSE MARIA",
+"32273":"DELIA MARIA GRACIELA",
+"323492":"ABDELNUR RICARDO DANIEL",
+"323882":"FORMOSO MARTIN",
+"324165":"FELIPE ZOSSI GONZALO",
+"324935":"GIRAUDO ESTEBAN AUGUSTO",
+"32535":"PERALTA JULIO CESAR",
+"325756":"DIP TARTALO ADRIAN ESTEBAN Y/O TOLEDO MARIA LAURA",
+"32682":"HUMBERTO DEBORAH MARICEL",
+"328724":"BARTOLUCCI EDUARDO LUIS Y/O BARTOLUCCI EMILIA",
+"328897":"PEREZ IBANEZ MARIANO",
+"328902":"IBANEZ LAGAREJOS ANA",
+"329257":"DELFINI MENDOZA IVANA",
+"329578":"MENDOZA MARIA CRISTINA DEL VALLE",
+"331373":"PAZ VERONICA ROSALIA",
+"33166":"AVELLANEDA PATRICIO",
+"332393":"ESPINOSA DIEGO EZEQUIEL",
+"333493":"DIAZ CRISTINA LORENA",
+"333662":"CONRAD MARTIN",
+"333760":"JAIRALA CAMPI MARIA CECILIA",
+"333843":"ROJAS MARCOS EUGENIO",
+"334605":"COMBES MARIA ALEJANDRA Y/O STESINA MARIA EMILIA",
+"334613":"GARCIA HAMILTON INES",
+"334913":"ZERDA ISOLINA",
+"335204":"BERNAT BALVERDE GABRIEL AGUSTIN",
+"335228":"RIOS MARIA CONSTANZA",
+"335853":"NOWAK ELIANA MARINA Y/O BARBIERI OSCAR ROBERTO",
+"336241":"MARTINEZ RIEKES MARLENE",
+"336810":"CIRELLI ALEJANDRO",
+"337586":"RIVADENEIRA CARLOS DAMIAN",
+"337590":"CORNET JOAQUIN",
+"337657":"AVILES GARCIA PABLO ESTEBAN",
+"337928":"GOLDMAN MOISES",
+"338163":"BERNARDINEZ RODOLFO EDUARDO",
+"338165":"BERNARDINEZ CARLOS ALBERTO",
+"338993":"FIGUEROA MARIA INES",
+"339284":"IRAMAIN ERNESTO JOSE",
+"339539":"FIORI COLOMBRES CONSTANZA INÉS DEL VALLE",
+"340289":"GRUCCI MARCO FEDERICO",
+"340455":"PALLOTTO ALEJANDRO EMILIO",
+"340711":"GARCIA HAMILTON FEDERICO",
+"342114":"RISSO PATRON FACUNDO",
+"342191":"GUERINEAU VALENTINA",
+"342386":"LAZARTE NOEMI VIVIANA Y/O LAZARTE ALEJANDRA FÁTIMA",
+"342576":"PAZ GRAMAJO RAMIRO",
+"342670":"POCHAT ALURRALDE JOSE ANTONIO",
+"342807":"LARES AGUSTINA",
+"342813":"DI LULLO ARAOZ SERGIO SANTIAGO",
+"342928":"SALAZAR GUILLERMO",
+"343305":"CUDMANI MARIA DANIELA",
+"343519":"ALBORNOZ MARIA DOLORES",
+"343695":"LENIS MARIA SOLEDAD",
+"343739":"PEREA MARIANA",
+"343962":"RIEKES MARLENE",
+"344047":"LOPEZ GARCIA CANDELARIA",
+"344501":"ARMET MARTA LIDIA",
+"344889":"ANDUJAR HILL TERAN MARIA FLORENCIA",
+"345049":"BRAVO FEDERICO",
+"34573":"CASTAÑO CASTELLANO MARIA EMILIA",
+"345780":"BUMBACHER MARINA BEATRIZ",
+"345789":"JIMENEZ GARCIA JOSE Y/O KARIME LIZA YANET",
+"346086":"YOUNG JOSE MARIA",
+"346386":"MAMPRIN JUAN PABLO",
+"347604":"SANCHEZ GONZALO BENJAMIN",
+"348134":"DUMIT GLADYS EUGENIA",
+"349767":"MEDINA MARIA VALENTINA",
+"349840":"DURAN OSVALDO HECTOR Y/O LOPEZ NORMA LILIANA",
+"350225":"MOLINA PADILLA XIMENA",
+"350720":"DATO MARIANA",
+"35112":"LENIS EDITH MARIA",
+"35131":"ARIAS PABLO JOSE",
+"351420":"CONTI ALEJANDRO JOSE",
+"35150":"GIACOSA MARIA ELISA",
+"351953":"MEDINA GUILLERMO FRANCISCO",
+"351957":"BARBA MARIA DEL HUERTO",
+"353311":"CHAZARRETA ZORRILLA MARIA EUGENIA",
+"353370":"LENCINA VIVIANA BEATRIZ Y/O SARMIENTO HECTOR EDUARDO",
+"353578":"FARES ANA SOFIA",
+"353579":"MARTINEZ RIEKES REGINA MARÍA",
+"353807":"CARCELLER LEONARDO ANIBAL Y/O CARCELLER MARIA CAMILA",
+"354179":"SOSA GONZALEZ MARCOS ALEJANDRO",
+"35489":"CORBALAN VERONICA CAROLINA",
+"355566":"LENIS JULIAN MARIO",
+"356049":"MACOME AGUSTIN MARIA",
+"356075":"NOVILLO ABEL LUIS Y/O LAPADULA MARIA MARTA",
+"356094":"FIORETTI BRUNO",
+"356100":"FARES GUILLERMO DAVID",
+"356451":"SADIR BOTINES FRANCISCA EUGENIA",
+"35691":"RUIZ MONACHESI CESAR NICOLAS",
+"357519":"FARES DANIEL OSCAR",
+"35788":"MARTINEZ ALVARO BERNABE",
+"358329":"JUAREZ CARRIZO ALICIA MARICEL",
+"36178":"MEDINA SERGIO FRANCISCO",
+"362408":"VELIZ MARTA DEL VALLE",
+"362425":"PEJKO ESTEBAN JOSE",
+"362485":"SALOMON MARTA CRISTINA",
+"363124":"SALIM BROVIA RUBEN CAYETANO",
+"364324":"GUERRA MARIA FERNANDA",
+"36469":"KERN LUCAS GABRIEL",
+"36495":"BETI CAMILO ALEJANDRO",
+"36496":"CORREA FERNANDO FABIAN",
+"36501":"TORREGO MARÍA BELÉN Y/O GIORI GUSTAVO ADOLFO",
+"366017":"OMODEO NICOLAS CESAR",
+"366458":"MARTINEZ CACERES MARIA JOSE",
+"36656":"FORTINI ANDREA",
+"36659":"TORRES DOWDALL JUAN MANUEL",
+"366692":"SALAS PATRICIO JOSE",
+"370382":"MIRANDA FABRICIO",
+"372973":"PAZ URIBURU EVARISTO JOSE",
+"374418":"ALVAREZ FARHAT ESTEBAN LUCAS",
+"375149":"MARTINEZ ARAOZ GRACIELA DEL VALLE",
+"37569":"DURAN JAVIER OSVALDO",
+"376347":"MEDINA MARIA ARACELIS Y/O MEDINA GUILLERMO FRANCISCO",
+"37660":"MAZZEO CAINZO ROSSANA Y/O CAINZO CARLOS ALBERTO",
+"377527":"PAZ JOSÉ AGUSTÍN",
+"37788":"BOLART JUAN PABLO",
+"378056":"JIMENEZ MUSSATTI FABRIZZIO AUGUSTO",
+"37814":"IAJYA VICTOR DANIEL",
+"378557":"ANDUJAR HILL TERAN ALICIA MARIA PIA",
+"379330":"NAHAS NESTOR JESUS",
+"379385":"SIERRA MARCO ANTONIO",
+"379561":"WITTE TOMAS",
+"379624":"LAMBERTI VICTOR OMAR",
+"379700":"BARRIONUEVO JOSE ALBERTO",
+"379805":"LOPEZ CALSINA FEDERICO MARTIN",
+"379876":"GRAMAJO DIEGO JOSE",
+"379935":"BERNAT BALVERDE JULIAN MARCELINO",
+"380028":"NOUGUES MARÍA FLORENCIA",
+"38008":"BERNARDINEZ ALVARO",
+"380370":"POSSE CARLOS ALBERTO",
+"380539":"PONCE MARIA BELEN Y/O PEREZ ROQUE GABRIEL",
+"380552":"CORREA JIMENEZ CELIA CAROLINA",
+"38067":"FANLO FEDERICO MIGUEL ANGEL Y/O FANLO QUINTAR NICOLÁS",
+"380730":"ORTIZ FRANCISCO TOMÁS",
+"381048":"STESINA MARIA EMILIA",
+"381416":"CORNET PEDRO LEON",
+"381540":"MARTONI MARIA CECILIA",
+"38204":"CARLETTO HORACIO LUIS",
+"38253":"BERNARDINEZ MARIANO EDUARDO",
+"384575":"BERTOLDI ADRIANA MABEL",
+"384607":"SANTOS BOLLEA LUZ MARIA",
+"384608":"FERRO FERNANDO DOMINGO",
+"38625":"NUÑEZ MARTIN JAVIER",
+"386656":"SABATE SANTIAGO",
+"38668":"ARGAÑARAZ ALEJANDRA DEL VALLE",
+"387469":"SEBEDIO GRACIELA",
+"387525":"FIRPO SILVANA",
+"387570":"CORREA PABLO TOMÀS",
+"387582":"DAVID ISORNI CESAR AUGUSTO",
+"388025":"GONZALEZ GALVAN KARINA DE LOS ANGELES",
+"388840":"BERTIKIAN SANTIAGO",
+"389207":"JATTIB EDUARDO ALE",
+"38929":"LOVAISA DIEGO ARTURO",
+"390831":"MARQUEZ SEBASTIAN",
+"39094":"MENTZ RAUL PEDRO Y/O SUAREZ JUDITH DEL HUERTO",
+"391023":"VACA GUILLERMO",
+"39155":"HERRERA MARTIN JOSE",
+"392312":"SANTOLAYA AUGUSTO EDUARDO",
+"392483":"TUSA CLAUDIA ELIZABETH",
+"39285":"PUERTAS ANDRES ALEJANDRO Y/O FILGUEIRA ESTEBAN IGNACIO",
+"393136":"LINARES FLORENCIA BELEN",
+"393292":"GOMEZ PROTO JUAN IGNACIO",
+"393314":"DANNA MARIA ANA",
+"393775":"SOLLAZZI NICOLAS ROBERTO",
+"394166":"NADAL CESAR MAXIMILIANO",
+"396191":"LUCERO JUAN DAMIAN",
+"39696":"MARTINEZ NOELIA VANESA",
+"4002":"PEREYRA OSCAR OSVALDO",
+"402451":"CAMACHO MARÍA CRISTINA",
+"408445":"CARNEIRO MONROY RICARDO DE JESUS",
+"409417":"GUZMÁN FACUNDO",
+"410667":"BENEDETTI CHRISTIAN FERNANDO",
+"410864":"ROMERO JOSE LUIS .",
+"412611":"FONTANA CRISTIAN MARCELO",
+"412947":"MITRE AGUSTINA",
+"412960":"TUMBURÚS PEDRO",
+"413798":"TORRES AIDA MERCEDES",
+"413807":"DIAZ HUERTA PAULA BELEN",
+"415162":"TERAN BUSTILLO ANDRES",
+"415580":"BRAHIM GABRIEL ESTEBAN",
+"415582":"AGUERO JUAN CARLOS",
+"415668":"FERNANDEZ MARIA FERNANDA",
+"415924":"GONZALEZ ALVO INES",
+"416917":"DELLA ROCCA PAOLA ADRIANA",
+"416919":"MASTRUZZO ANA LIGIA",
+"418099":"CASTILLO TADEO FABRICIO",
+"418311":"ROMAN CAÑETE ESTEBAN FRANCISCO",
+"418788":"ZIMERMAN MAXIMO",
+"420127":"HAHN GABRIEL VICTOR BALTHAZAR Y/O PLIZZO MARIA EUGENIA",
+"420750":"AZALOT ROXANA CELIA",
+"422032":"SANCHO MIÑANO GONZALO",
+"422536":"MONTENEGRO JÍMENA",
+"422763":"PAGANINI NICOLAS HUMBERTO",
+"423003":"CANO LUIS MANUEL",
+"423338":"CORREA HECTOR GABRIEL",
+"424281":"SUKLJE FABIAN MAXIMILIANO",
+"424840":"TUSA PAULA FLORENCIA",
+"425393":"MARENGO CAMILA LUCIANA",
+"425605":"AGUILERA KEVIN DANIEL Y/O VEGA MARIA CELIA",
+"426404":"MORALES LEZICA LUIS FERNANDO",
+"427056":"OTERO ROMANO MARIA VICTORIA",
+"427715":"LOVAISA JOSE LUIS",
+"428445":"PAEZ GUTIERREZ CRISTHIAN GUIDO GABRIEL",
+"430668":"SOSA CAROLINA ANAHI",
+"431477":"LOPEZ MIRABELLA LUCIANO",
+"432740":"SALGUERO JAVIER GUSTAVO",
+"432875":"CRITTO BENJAMIN ENRIQUE",
+"433421":"BETHENCOURT ROMINA DEL VALLE",
+"433717":"OMODEO PABLO MARCELO",
+"433973":"PASTERIS SERGIO ENRIQUE",
+"434393":"OMODEO JAVIER ANDRES",
+"434429":"OMODEO MARTA VICTORIA",
+"434499":"OMODEO ANGELICA ALEJANDRA",
+"435387":"MACIAN LILIANA ALICIA Y/O BARBIERI OSCAR ROBERTO",
+"435459":"CORREA JIMENEZ FLORENCIA IVANNA Y/O CORREA JIMENEZ CELIA CAROLINA",
+"435520":"OMODEO JUAN JOSE",
+"436809":"CAMBERA ENZO FRANCO",
+"437606":"CRUZ ARRIETA WALTER EZEQUIEL ANTONIO",
+"439089":"PONCE LOURDES SOFIA",
+"440212":"GUAITA JUAN IGNACIO",
+"441152":"ACEVEDO CRISTIAN MARCELO",
+"441660":"ROMERO MARIA VICTORIA",
+"441934":"DANESI JOSEFINA",
+"443561":"CERRIZUELA MARCOS JAVIER",
+"444605":"ISCAZATTI CAMILA ITATI",
+"444691":"MUÑIZ ADRIAN",
+"444713":"HARO MARIA FLORENCIA",
+"445602":"JOSE NAHUEL",
+"448943":"ESTRADA MARIANO",
+"454283":"ASTORGA FERNANDO MARTIN Y/O ASTORGA FERNANDO HORACIO",
+"454450":"BARBIERI NICOLAS OSCAR",
+"454543":"LOPEZ MARCOS PABLO DANIEL",
+"454904":"BARBIERI CAROLINA LILIANA",
+"457271":"CASTRO EUGENIA",
+"457368":"LADETTO PATRICIA ELENA",
+"460850":"PONCE LUCIA AYELEN",
+"460871":"ORIGUELA PEDRO RAFAEL",
+"462635":"MARENGO LUCAS EZEQUIEL",
+"465487":"ALE ANA LUCIA",
+"467830":"BARTOLUCCI PAULA Y/O PAZ ALEJANDRO JOSE",
+"468897":"ARGAÑARAZ FACUNDO",
+"468948":"SORIA MARIELA CARINA",
+"471856":"OBEID PEDEMONTE ROXANA SILVINA Y/O PEDEMONTE SYLVIA NORMA GLADYS",
+"474723":"CORNEJO PLIZZO MARIA DEL MILAGRO",
+"478287":"PRIETO MARIA JULIETA",
+"483393":"MEDINA MARCELA FATIMA",
+"486905":"ESPEJO JUAN PABLO",
+"489274":"AMOEDO HECTOR HERNAN",
+"498288":"CUDMANI JUAN JOSE",
+"498401":"LOPEZ AVILA MARIA CRISTINA",
+"50026":"BARLETTA AGUSTINA",
+"502939":"ALONSO JORGE RICARDO",
+"505974":"GARZON SOSA FEDERICO",
+"509289":"RODRIGUEZ ROMINA ELIZABETH",
+"509721":"OLARTE PAULA",
+"512002":"AZNAR FRANCISCO Y/O AZNAR CARLOS RAMIRO",
+"517913":"PEREZ GUILLAMON GUILLERMO MARTIN",
+"518956":"ROUGES MAGDALENA MARIA Y/O ROUGES LEON MARCELO",
+"519284":"KAETHNER HERNAN EMILIO",
+"521268":"ARGAÑARAZ FACUNDO DANIEL Y/O ARGAÑARAZ VICTOR DANIEL",
+"524936":"PLIZZO MARIA MARTHA",
+"527325":"FRANCESCHETTI MARTHA NIDIA",
+"527460":"NAVARRET EDITH MERCEDES",
+"535005":"ANASTASIO SALAS EVELYN MURIEL",
+"536370":"DI BECO ELIANA ELIZABETH Y/O NANINI RUBEN FRANCISCO",
+"541592":"MARENGO MARIA PAULA",
+"542795":"CUGUSI DARIO ESTEBAN",
+"543892":"PADUA CARLA MARIA",
+"547117":"SALAS CARLOS HORACIO JOSE",
+"548488":"LEDESMA VIRGINIA",
+"550660":"RIBONE ALEJANDRO JAVIER",
+"552080":"PEDESCOLL JULIETA MARIA",
+"555478":"FATTOR SIMON",
+"557412":"OLARTE VALENTINA",
+"563748":"PISA SOFÍA MARÍA",
+"565813":"NANINI RUBEN FRANCISCO Y/O BUSTOS MARTA PETRONA Y/O DI BECO ELIANA ELIZABETH",
+"576222":"BOLLINI CECILIA DIANA",
+"579783":"QUIROGA MARIA GABRIELA",
+"580488":"BRIZUELA MARIA FERNANDA",
+"580741":"CARRER TORNE NICOLAS",
+"580746":"PAPADAKIS LUCRECIA MARIA Y/O IÑIGO DIAZ JOSE IGNACIO",
+"583709":"ALBERO MARIA CAROLINA",
+"583856":"FERNANDEZ CARLOS FRANCISCO",
+"587936":"SUAREZ ANDREA CELESTE",
+"599619":"CARRIL ALEJANDRO FAVIO Y/O MORALES LEZICA MARIA ALEJANDRA",
+"607997":"FARIAS PEDRO EUGENIO",
+"617583":"CANCELLIERI AGUSTIN ALEJANDRO",
+"617706":"ROTONDO JORGE EDUARDO",
+"619350":"PRADO RICARDO FERNANDO",
+"637974":"DILASCIO MARTINO NICOLAS",
+"641226":"SCAVARDA ROCIO AGUSTINA",
+"641299":"BARTOLUCCI DANIEL",
+"643394":"SANCHEZ MARIA SILV",
+"643821":"DUMIT JOSE IGNACIO",
+"644240":"BARTOLUCCI CRISTIAN",
+"660713":"CADARIO PAULA JULIA",
+"660917":"GONZALEZ PALAZZO CHRISTIAN MARCELO",
+"663702":"MACOME TOMÁS",
+"675304":"BULACIO GOMEZ JOSEFINA MARIA DEL VALLE",
+"708755":"SUAREZ GONZALO FABRICIO",
+"71739":"SILVEYRA PERDRIEL Casiana",
+"732805":"BRAVO LUCIA",
+"735988":"TANZER SOFIA PAZ",
+"736014":"CORTEZ DOMINGO FEDERICO",
+"739362":"PESA MARTA AZUCENA",
+"752262":"DIAZ FERNANDEZ GUSTAVO",
+"760877":"PEREZ RUIZ MARTIN MIGUEL",
+"76289":"GUERINEAU HORACIO FRANCISCO",
+"77009":"FLORES SAWAYA JOSE ANTONIO",
+"780057":"CAMPERO MARTINETTI NICOLAS ALEJANDRO",
+"786795":"HERRERA MARIA VIRGINIA",
+"800879":"MENGARELLI VANESA ALEJANDRA",
+"809592":"LUNA FERRAZZANO ALINA INS",
+"823134":"BARTOLUCCI MARA JOS",
+"855600":"SREIDER CARLOS DANIEL",
+"859994":"JARA JOSEFINA",
+"869656":"MAZZA SUSANA MARCELA",
+"873782":"MUNOA MARTIN EZEQUIEL",
+"874631":"GARCIA QUINTEROS GASTON ALFREDO",
+"876709":"ORDOÑEZ MARIA PAULA",
+"888317":"VILLAGRA GERMAN EDUARDO Y/O SIERRA MARIA JOSEFINA DEL MILAGRO",
+"906598":"CASANOVA AJMAT MARIA DEL ROSARIO",
+"907000":"DIAZ ANDREA JUDITH",
+"926030":"LOVAISA DIEGO ARTURO Y/O RODRIGUEZ ROMINA ELIZABETH",
+"941335":"CRESPO LUCIANO",
+"968966":"RODRIGUEZ NORA BEATRIZ",
+"993250":"RUSCONI MARINA",
+"996254":"FIORETTI BRUNO Y/O CASTELLANO CARLA BEATRIZ"
+};
+
+let orderIdSeq = 0;
+const orders = new Map(); // id -> state
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function fmtMonto(v){
+  if(!v) return '';
+  const n = Number(String(v).replace(/\./g,'').replace(',','.'));
+  if(isNaN(n)) return v;
+  return n.toLocaleString('es-AR', {maximumFractionDigits:2});
+}
+function esUSD(moneda){ return moneda === 'USD MEP' || moneda === 'USD CCL'; }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function copyText(text, label){
+  navigator.clipboard.writeText(text).then(()=>toast(label + ' copiado ✓')).catch(()=>toast('No se pudo copiar'));
+}
+
+/* ============================================================
+   BUSCAR CLIENTE — usa el diccionario embebido
+   ============================================================ */
+function buscarCliente(comitente){
+  const nombreEl = document.getElementById('nombreCliente');
+  const hintEl = document.getElementById('comitenteHint');
+  if(!comitente){ nombreEl.value=''; hintEl.textContent='Se busca automáticamente en la base de clientes.'; hintEl.classList.remove('ok'); return; }
+
+  const nombre = CLIENTES[comitente] || '';
+  nombreEl.value = nombre;
+  if(nombre){ hintEl.textContent = 'Cliente encontrado ✓'; hintEl.classList.add('ok'); }
+  else{ hintEl.textContent = 'Comitente no encontrado en la base de clientes.'; hintEl.classList.remove('ok'); }
+  renderPreview();
+}
+
+/* ============================================================
+   ORDER CARDS — creación y render de campos dinámicos
+   ============================================================ */
+function crearOrden(){
+  const id = ++orderIdSeq;
+  orders.set(id, { id, operacion:'', especie:'', mercado:true, precio:'', moneda:'Pesos', monto:'', nominales:'', tasa:'', plazoDias:'', plazoLiq:'T+0', fondo:'', rescateModo:'monto', porMesa:false });
+  renderOrders();
+}
+
+function eliminarOrden(id){
+  orders.delete(id);
+  renderOrders();
+}
+
+function renderOrders(){
+  const container = document.getElementById('ordersContainer');
+  container.innerHTML = '';
+  let i = 0;
+  for(const [id, st] of orders){
+    i++;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = buildOrderHTML(id, i, st);
+    container.appendChild(card);
+  }
+  document.getElementById('ordersBadge').textContent = orders.size;
+  wireOrderEvents();
+  renderPreview();
+}
+
+function buildOrderHTML(id, i, st){
+  const opOptions = OPERACIONES.map(o => `<option value="${o.value}" ${st.operacion===o.value?'selected':''}>${o.label}</option>`).join('');
+  const grupo = OPERACIONES.find(o=>o.value===st.operacion)?.grupo || '';
+
+  let camposEspecificos = '';
+
+  if(grupo === 'trading'){
+    camposEspecificos = `
+      <div class="grid2">
+        <div class="field">
+          <label>Especie</label>
+          <input type="text" data-field="especie" data-id="${id}" placeholder="GGAL / S12S5 / ..." value="${st.especie}">
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <select data-field="moneda" data-id="${id}">
+            ${['Pesos','USD MEP','USD CCL'].map(m=>`<option ${st.moneda===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Precio</label>
+          <div class="price-row">
+            <input type="text" data-field="precio" data-id="${id}" placeholder="0,00" value="${st.precio}" ${st.mercado?'disabled':''}>
+            <span class="chip ${st.mercado?'active':''}" data-toggle-mercado="${id}">Mercado</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>${st.operacion==='venta' ? 'Nominales' : 'Monto'}</label>
+          <input type="text" data-field="${st.operacion==='venta' ? 'nominales' : 'monto'}" data-id="${id}" placeholder="${st.operacion==='venta' ? 'Ej: 1.000' : 'Ej: 2.000.000'}" value="${st.operacion==='venta' ? st.nominales : st.monto}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Plazo de liquidación</label>
+        <select data-field="plazoLiq" data-id="${id}">
+          ${PLAZOS_LIQ.map(p=>`<option ${st.plazoLiq===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </div>
+      <div class="switch-row" style="margin-top:var(--space-3); margin-bottom:0;">
+        <div>
+          <div class="label-txt">Ejecutar por mesa (Balanz)</div>
+          <div class="label-sub">Envía esta orden a mesaifa@balanz.com en lugar de ordenes@</div>
+        </div>
+        <div class="switch ${st.porMesa?'on':''}" data-toggle-mesa="${id}"></div>
+      </div>
+    `;
+  } else if(grupo === 'caucion'){
+    camposEspecificos = `
+      <div class="grid3">
+        <div class="field">
+          <label>Monto</label>
+          <input type="text" data-field="monto" data-id="${id}" placeholder="Ej: 2.000.000" value="${st.monto}">
+        </div>
+        <div class="field">
+          <label>Tasa (% TNA)</label>
+          <input type="text" data-field="tasa" data-id="${id}" placeholder="Ej: 32" value="${st.tasa}">
+        </div>
+        <div class="field">
+          <label>Plazo (días)</label>
+          <input type="text" data-field="plazoDias" data-id="${id}" placeholder="Ej: 30" value="${st.plazoDias}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Moneda</label>
+        <select data-field="moneda" data-id="${id}">
+          ${['Pesos','USD MEP','USD CCL'].map(m=>`<option ${st.moneda===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+    `;
+  } else if(grupo === 'fondos'){
+    const esRescate = st.operacion === 'rescate';
+    camposEspecificos = `
+      <div class="grid2">
+        <div class="field">
+          <label>Fondo</label>
+          <input type="text" data-field="fondo" data-id="${id}" placeholder="Ej: Delta Pesos" value="${st.fondo}">
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <select data-field="moneda" data-id="${id}">
+            ${['Pesos','USD MEP','USD CCL'].map(m=>`<option ${st.moneda===m?'selected':''}>${m}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      ${esRescate ? `
+      <div class="field">
+        <label>Rescate en base a</label>
+        <select data-field="rescateModo" data-id="${id}">
+          <option value="monto" ${st.rescateModo==='monto'?'selected':''}>Monto</option>
+          <option value="nominales" ${st.rescateModo==='nominales'?'selected':''}>Cuotapartes / nominales</option>
+        </select>
+      </div>` : ''}
+      <div class="field" style="margin-bottom:0;">
+        <label>${esRescate && st.rescateModo==='nominales' ? 'Cuotapartes' : 'Monto'}</label>
+        <input type="text" data-field="${esRescate && st.rescateModo==='nominales' ? 'nominales' : 'monto'}" data-id="${id}" placeholder="Ej: 2.000.000" value="${esRescate && st.rescateModo==='nominales' ? st.nominales : st.monto}">
+      </div>
+    `;
+  } else {
+    camposEspecificos = `<div class="hint">Elegí una operación para ver los campos correspondientes.</div>`;
+  }
+
+  return `
+    <div class="order-head" style="margin:0 0 var(--space-4);">
+      <div class="order-num"><span class="dot">${i}</span> Orden ${i}</div>
+      ${orders.size>1 ? `<button class="order-remove" data-remove="${id}">Eliminar</button>` : ''}
+    </div>
+    <div class="field">
+      <label>Operación</label>
+      <select data-field="operacion" data-id="${id}">
+        <option value="" ${st.operacion===''?'selected':''} disabled>Elegir…</option>
+        ${opOptions}
+      </select>
+    </div>
+    ${camposEspecificos}
+  `;
+}
+
+function wireOrderEvents(){
+  document.querySelectorAll('[data-field]').forEach(el=>{
+    el.addEventListener('input', onFieldChange);
+    el.addEventListener('change', onFieldChange);
+  });
+  document.querySelectorAll('[data-remove]').forEach(el=>{
+    el.addEventListener('click', ()=>eliminarOrden(Number(el.dataset.remove)));
+  });
+  document.querySelectorAll('[data-toggle-mercado]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = Number(el.dataset.toggleMercado);
+      const st = orders.get(id);
+      st.mercado = !st.mercado;
+      if(st.mercado) st.precio='';
+      renderOrders();
+    });
+  });
+  document.querySelectorAll('[data-toggle-mesa]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = Number(el.dataset.toggleMesa);
+      const st = orders.get(id);
+      st.porMesa = !st.porMesa;
+      renderOrders();
+    });
+  });
+}
+
+function onFieldChange(e){
+  const id = Number(e.target.dataset.id);
+  const field = e.target.dataset.field;
+  const st = orders.get(id);
+  if(!st) return;
+  st[field] = e.target.value;
+
+  // Pop-ups de advertencia por USD
+  if(field === 'moneda' || field === 'operacion'){
+    const moneda = st.moneda;
+    const operacion = st.operacion;
+    if(esUSD(moneda) && operacion === 'venta'){
+      alert('⚠️ RECUERDA QUE SI UNA EMPRESA VENDE CON USD, QUEDAN NO OPERABLES.');
+    }
+    if(esUSD(moneda) && operacion === 'compra'){
+      alert('⚠️ SI UNA PERSONA COMPRA CON USD, NO PUEDE ADQUIRIR DÓLAR OFICIAL POR 90 DÍAS.');
+    }
+  }
+
+  // si cambia la operación o el modo de rescate, hay que re-renderizar los campos
+  if(field === 'operacion' || field === 'rescateModo'){
+    renderOrders();
+  } else {
+    renderPreview();
+  }
+}
+
+/* ============================================================
+   PREVIEW / GENERACIÓN DEL MAIL
+   ============================================================ */
+function lineaOrden(i, st){
+  const op = OPERACIONES.find(o=>o.value===st.operacion);
+  if(!op) return `Orden ${i}: (elegir operación)`;
+
+  if(op.grupo === 'trading'){
+    const precio = st.mercado ? 'Mercado' : (st.precio || '—');
+    const lineas = [
+      `Operación: ${op.label.toUpperCase()}`,
+      `Especie: ${st.especie || '—'}`,
+      `Precio: ${precio}`,
+      `Moneda: ${st.moneda}`,
+    ];
+    if(st.operacion === 'venta'){
+      lineas.push(`Nominales: ${fmtMonto(st.nominales) || '—'}`);
+    } else {
+      lineas.push(`Monto: $${fmtMonto(st.monto) || '—'}`);
+    }
+    lineas.push(`Plazo: ${st.plazoLiq}`);
+    if(st.porMesa) lineas.push(`Vía mesa (Balanz)`);
+    return lineas.join('\n');
+  }
+
+  if(op.grupo === 'caucion'){
+    return [
+      `Operación: ${op.label.toUpperCase()}`,
+      `Monto: $${fmtMonto(st.monto) || '—'}`,
+      `Tasa: ${st.tasa || '—'}% TNA`,
+      `Plazo: ${st.plazoDias || '—'} días`,
+      `Moneda: ${st.moneda}`
+    ].join('\n');
+  }
+
+  if(op.grupo === 'fondos'){
+    const esRescate = st.operacion === 'rescate';
+    const verbo = esRescate ? 'rescatar' : 'suscribir';
+    if(esRescate && st.rescateModo === 'nominales'){
+      return `Solicitamos ${verbo} ${fmtMonto(st.nominales) || '—'} cuotapartes del fondo ${st.fondo || '—'}`;
+    } else {
+      return `Solicitamos ${verbo} $${fmtMonto(st.monto) || '—'} al fondo ${st.fondo || '—'}`;
+    }
+  }
+  return '';
+}
+
+function calcularDestinatarios(){
+  const to = new Set();
+  for(const st of orders.values()){
+    const op = OPERACIONES.find(o=>o.value===st.operacion);
+    if(!op) continue;
+    if(op.grupo === 'fondos') to.add(DEST.fondos);
+    else if(op.grupo === 'trading') to.add(st.porMesa ? DEST.mesa : DEST.ordenes);
+    else if(op.grupo === 'caucion') to.add(st.porMesa ? DEST.mesa : DEST.ordenes);
+  }
+  return Array.from(to);
+}
+
+function hayUSD(){
+  return Array.from(orders.values()).some(st => esUSD(st.moneda));
+}
+
+function hayCompraVentaCaucion(){
+  return Array.from(orders.values()).some(st => {
+    const op = OPERACIONES.find(o=>o.value===st.operacion);
+    return op && (op.grupo === 'trading' || op.grupo === 'caucion');
+  });
+}
+
+const DDJJ_BALANZ = 'Al confirmar esta operación, con relación a la cuenta comitente titular de esta operación, entendiendo como tal a su titular y cotitulares, de corresponder, informo, en carácter de declaración jurada, que conozco, entiendo y cumplo con la normativa vigente aplicable a esta operatoria, conforme se detalla en el documento de declaraciones por operatoria - vigente desde 24/06/2026 (https://cms.balanz.com/PFS/113822_2026.06.24ddjjoperativasbcvplataformappt.pdf), que no me encuentro alcanzado por ninguna restricción legal o reglamentaria para realizarla. Soy consciente de que esta operación está sujeta a los riesgos propios del mercado sin que Balanz Capital Valores S.A.U. asegure rentabilidad alguna.';
+
+function construirCuerpo(comitente, nombre){
+  const lineas = [];
+  lineas.push('Estimados,');
+  lineas.push('');
+  lineas.push('Por medio de la presente se solicita cursar la/las siguiente/s orden/es:');
+  lineas.push('');
+  lineas.push(`Comitente: ${comitente || '—'} – ${nombre || '—'}`);
+  lineas.push('');
+
+  let i = 0;
+  for(const st of orders.values()){
+    i++;
+    lineas.push(lineaOrden(i, st));
+    lineas.push('');
+  }
+
+  if(hayCompraVentaCaucion()){
+    lineas.push(DDJJ_BALANZ);
+    lineas.push('');
+  }
+
+  if(hayUSD()){
+    lineas.push('Declaración jurada BCRA:');
+    lineas.push('Declaro con carácter de declaración jurada que los fondos involucrados en la/las operación/es en moneda extranjera detallada/s no se encuentran alcanzados por restricciones cambiarias vigentes y que la operación cumple con la normativa vigente del BCRA.');
+    lineas.push('');
+  }
+
+  lineas.push('Saludos cordiales.');
+  return lineas.join('\n');
+}
+
+function renderPreview(){
+  const comitente = document.getElementById('comitente').value.trim();
+  const nombre = document.getElementById('nombreCliente').value.trim();
+
+  // De (usuario logueado)
+  document.getElementById('prevDe').textContent = currentUser.email
+    ? `${currentUser.nombre} <${currentUser.email}>`
+    : '—';
+
+  const to = calcularDestinatarios();
+  document.getElementById('prevPara').textContent = to.length ? to.join(', ') : '—';
+  document.getElementById('prevCC').textContent = DEST.cc;
+  document.getElementById('prevAsunto').textContent = (comitente || nombre)
+    ? `Comitente ${comitente || '—'} – ${nombre || '—'}`
+    : '—';
+
+  const bodyEl = document.getElementById('prevBody');
+  const hayOrdenValida = Array.from(orders.values()).some(st => st.operacion);
+  if(!comitente || !hayOrdenValida){
+    bodyEl.classList.add('empty');
+    bodyEl.textContent = 'Completá el comitente y al menos una orden para ver el mail acá…';
+    return;
+  }
+  bodyEl.classList.remove('empty');
+  bodyEl.textContent = construirCuerpo(comitente, nombre);
+}
+
+/* ============================================================
+   ACCIONES: comitente, copiar, borrador
+   ============================================================ */
+document.getElementById('comitente').addEventListener('input', (e)=>{
+  buscarCliente(e.target.value.trim());
+});
+
+document.getElementById('btnAgregar').addEventListener('click', crearOrden);
+document.getElementById('btnGenerar').addEventListener('click', renderPreview);
+
+document.getElementById('btnCopiarAsunto').addEventListener('click', ()=>{
+  copyText(document.getElementById('prevAsunto').textContent, 'Asunto');
+});
+document.getElementById('btnCopiarCuerpo').addEventListener('click', ()=>{
+  copyText(document.getElementById('prevBody').textContent, 'Cuerpo');
+});
+
+document.getElementById('btnBorrador').addEventListener('click', ()=>{
+  const to = document.getElementById('prevPara').textContent;
+  const cc = document.getElementById('prevCC').textContent;
+  const asunto = document.getElementById('prevAsunto').textContent;
+  const cuerpo = document.getElementById('prevBody').textContent;
+
+  if(to === '—' || asunto === '—'){
+    toast('Completá el comitente y al menos una orden primero');
+    return;
+  }
+
+  const url = 'https://mail.google.com/mail/?view=cm&fs=1'
+    + '&to=' + encodeURIComponent(to)
+    + '&cc=' + encodeURIComponent(cc)
+    + '&su=' + encodeURIComponent(asunto)
+    + '&body=' + encodeURIComponent(cuerpo);
+  window.open(url, '_blank');
+  toast('Abriendo Gmail…');
+});
+
+/* ============================================================
+   INIT — auto-detecta el usuario logueado del portal
+   ============================================================ */
+function renderLoginScreen(){
+  const grid = document.getElementById('loginGrid');
+  grid.innerHTML = '';
+  const emails = Object.keys(EQUIPO);
+  emails.forEach(email => {
+    const nombre = EQUIPO[email];
+    const inicial = nombre.charAt(0).toUpperCase();
+    const btn = document.createElement('div');
+    btn.className = 'login-btn';
+    btn.innerHTML = `
+      <div class="login-avatar">${inicial}</div>
+      <div class="login-data">
+        <span class="ln">${nombre}</span>
+        <span class="le">${email}</span>
+      </div>`;
+    btn.addEventListener('click', () => seleccionarUsuario(email));
+    grid.appendChild(btn);
+  });
+}
+
+function seleccionarUsuario(email){
+  currentUser.email = email;
+  currentUser.nombre = EQUIPO[email] || email.split('@')[0];
+  currentUser.firma = '';
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+
+  mostrarUsuario();
+  crearOrden();
+  renderPreview();
+}
+
+function mostrarUsuario(){
+  const badge = document.getElementById('userBadge');
+  const nameEl = document.getElementById('userName');
+  const emailEl = document.getElementById('userEmail');
+  const avatarEl = document.getElementById('userAvatar');
+  if(!currentUser.email) return;
+
+  nameEl.textContent = currentUser.nombre;
+  emailEl.textContent = currentUser.email;
+  avatarEl.textContent = currentUser.nombre.charAt(0).toUpperCase();
+  badge.style.display = 'flex';
+}
+
+/* Toma el email del login del portal (localStorage 'amauta:session').
+   Si está en el equipo, entra directo; si no, muestra el selector. */
+function emailDelPortal(){
+  try{
+    const raw = localStorage.getItem('amauta:session');
+    if(!raw) return '';
+    const s = JSON.parse(raw);
+    if(s && s.email) return String(s.email).toLowerCase();
+    const tok = s && s.access_token;
+    if(tok){
+      const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+      return String(payload.email || '').toLowerCase();
+    }
+  }catch(e){}
+  return '';
+}
+
+(function init(){
+  const email = emailDelPortal();
+  if(email && EQUIPO[email]){
+    seleccionarUsuario(email);   // entra directo con el usuario del portal
+  } else {
+    renderLoginScreen();         // fallback: elegir usuario
+  }
+})();
+</script>
+</body>
+</html>
