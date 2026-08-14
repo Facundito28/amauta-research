@@ -476,6 +476,14 @@ input[type="number"]:focus{outline:none;border-color:var(--accent);}
   </div>
   <div class="am-sep"></div>
   <div class="sec">
+    <div class="sec-hdr"><div class="sec-line" style="background:var(--teal)"></div><span class="sec-title" style="color:var(--teal)">Mercado — carga fiscal (opcional)</span></div>
+    <div class="sec-body">
+      <div class="toggle-row"><span class="tgl-lbl">IVA 10,5% sobre interés<small style="display:block;color:var(--muted);font-weight:400">Sólo si el comprador NO es exento (ej. comisionista / VACO). Con FCI o institucional exento, dejar apagado.</small></span><div class="track" id="tg-m-iva" onclick="toggleMImp('iva')"><div class="knob"></div></div></div>
+      <div class="toggle-row"><span class="tgl-lbl">Percepción IIBB sobre interés <input type="number" id="m-iibb-rate" value="2" min="0" max="10" step="0.1" style="width:60px;margin:0 6px;padding:4px 6px;background:var(--surface-overlay,#2C2728);border:1px solid var(--border2,#3A3433);color:inherit;border-radius:5px" oninput="calc()">%</span><div class="track" id="tg-m-iibb" onclick="toggleMImp('iibb')"><div class="knob"></div></div></div>
+    </div>
+  </div>
+  <div class="am-sep"></div>
+  <div class="sec">
     <div class="sec-hdr"><div class="sec-line" style="background:var(--rd)"></div><span class="sec-title" style="color:var(--rd)">Banco — Tasa de descuento</span></div>
     <div class="sec-body">
       <div class="cart3" style="margin-bottom:10px">
@@ -489,9 +497,9 @@ input[type="number"]:focus{outline:none;border-color:var(--accent);}
   <div class="sec">
     <div class="sec-hdr"><div class="sec-line" style="background:var(--rd)"></div><span class="sec-title" style="color:var(--rd)">Banco — Comisiones y gastos</span></div>
     <div class="sec-body">
-      <div class="row"><span class="lbl">Comisión bancaria (% s/ VN)<small>Tarifa típica: 0,6% (BPBA) — varía por banco</small></span><input type="range" id="b-com" min="0" max="0.03" value="0.006" step="0.0005" style="flex:1" oninput="calc()"><span id="bComOut" class="vr">0,60%</span></div>
+      <div class="row"><span class="lbl">Comisión bancaria (% s/ VN)<small>Tarifa típica: 0,6% (BPBA) — varía por banco</small></span><input type="range" id="b-com" min="0" max="0.03" value="0" step="0.0005" style="flex:1" oninput="calc()"><span id="bComOut" class="vr">0,00%</span></div>
       <div class="toggle-row"><span class="tgl-lbl">IVA 21% sobre la comisión bancaria</span><div class="track on" id="tg-comiva" onclick="toggleImp('comiva')"><div class="knob"></div></div></div>
-      <div class="row"><span class="lbl">Gastos administrativos / análisis crediticio<small>Fijo en pesos · cargo único por operación</small></span><input type="number" id="b-gadm" value="5000" min="0" step="500" style="flex:1"><span id="bGadmOut" class="vr" style="display:none">$ 5.000</span></div>
+      <div class="row"><span class="lbl">Gastos administrativos / análisis crediticio<small>Fijo en pesos · cargo único por operación</small></span><input type="number" id="b-gadm" value="0" min="0" step="500" style="flex:1"><span id="bGadmOut" class="vr" style="display:none">$ 0</span></div>
       <div class="toggle-row"><span class="tgl-lbl">IVA 21% sobre gastos administrativos</span><div class="track on" id="tg-gadmiva" onclick="toggleImp('gadmiva')"><div class="knob"></div></div></div>
       <div class="row"><span class="lbl">Impuesto de sellos (mutuo bancario)<small>Base: VN × alícuota × días/91 (proporcional trimestral)</small></span>
         <select id="sel-sellos" onchange="onSellosChange()">
@@ -511,10 +519,10 @@ input[type="number"]:focus{outline:none;border-color:var(--accent);}
   <div class="sec">
     <div class="sec-hdr"><div class="sec-line" style="background:var(--rd)"></div><span class="sec-title" style="color:var(--rd)">Banco — Carga fiscal</span></div>
     <div class="sec-body">
-      <div class="toggle-row"><span class="tgl-lbl">Imp. al débito bancario (0,6% sobre el débito en cuenta)</span><div class="track on" id="tg-db" onclick="toggleImp('db')"><div class="knob"></div></div></div>
-      <div class="toggle-row"><span class="tgl-lbl">Imp. al crédito bancario (0,6% sobre el crédito en cuenta)</span><div class="track on" id="tg-cr" onclick="toggleImp('cr')"><div class="knob"></div></div></div>
+      <div class="toggle-row"><span class="tgl-lbl">Imp. al débito bancario (0,6% sobre el débito en cuenta)</span><div class="track" id="tg-db" onclick="toggleImp('db')"><div class="knob"></div></div></div>
+      <div class="toggle-row"><span class="tgl-lbl">Imp. al crédito bancario (0,6% sobre el crédito en cuenta)</span><div class="track" id="tg-cr" onclick="toggleImp('cr')"><div class="knob"></div></div></div>
       <div class="toggle-row"><span class="tgl-lbl">IVA sobre intereses — alícuota reducida 10,5% (servicios financieros, art. 28 Ley IVA)</span><div class="track on" id="tg-iva" onclick="toggleImp('iva')"><div class="knob"></div></div></div>
-      <div class="toggle-row"><span class="tgl-lbl">IVAP — Percepción IVA sobre intereses (1,5% sobre el interés)</span><div class="track on" id="tg-ivap" onclick="toggleImp('ivap')"><div class="knob"></div></div></div>
+      <div class="toggle-row"><span class="tgl-lbl">Percepción sobre intereses <input type="number" id="b-ivap-rate" value="1.5" min="0" max="10" step="0.1" style="width:64px;margin:0 6px;padding:4px 6px;background:var(--surface-overlay,#2C2728);border:1px solid var(--border2,#3A3433);color:inherit;border-radius:5px" oninput="calc()">% sobre el interés</span><div class="track" id="tg-ivap" onclick="toggleImp('ivap')"><div class="knob"></div></div></div>
       <div class="row" style="margin-top:4px"><span class="lbl">Retención SIRCREB / IIBB<small>Provincia del cliente</small></span>
         <select id="sel-prov" onchange="onProvChange()">
           <option value="0">Sin retención / Exento — 0%</option>
@@ -541,7 +549,8 @@ input[type="number"]:focus{outline:none;border-color:var(--accent);}
           <div class="res-body">
             <div class="rl"><span class="rl-n">Valor nominal (VN)</span><span class="rl-v" id="m-vn">—</span></div>
             <div class="rl"><span class="rl-n">Interés a descontar</span><span class="rl-v cn" id="m-int">—</span></div>
-            <div class="rl"><span class="rl-n">IVA intereses</span><span class="rl-v cz" id="m-iva-int">$ 0</span></div>
+            <div class="rl"><span class="rl-n">IVA intereses (10,5%)</span><span class="rl-v cz" id="m-iva-int">$ 0</span></div>
+            <div class="rl"><span class="rl-n">Percep. IIBB s/ interés</span><span class="rl-v cz" id="m-iibb-out">$ 0</span></div>
             <div class="rl"><span class="rl-n">Monto descontado bruto</span><span class="rl-v cp" id="m-bruto">—</span></div>
             <div class="rl"><span class="rl-n">Arancel Amauta + IVA</span><span class="rl-v cg" id="m-alyc">—</span></div>
             <div class="rl"><span class="rl-n">Derecho de mercado + IVA</span><span class="rl-v cb" id="m-dcho">—</span></div>
@@ -561,7 +570,7 @@ input[type="number"]:focus{outline:none;border-color:var(--accent);}
             <div class="rl"><span class="rl-n">Valor nominal (VN)</span><span class="rl-v" id="b-vn">—</span></div>
             <div class="rl"><span class="rl-n" id="b-int-lbl">Interés descontado</span><span class="rl-v cn" id="b-int">—</span></div>
             <div class="rl"><span class="rl-n">IVA sobre intereses (10,5%)</span><span class="rl-v cz" id="b-iva-int">$ 0</span></div>
-            <div class="rl"><span class="rl-n">IVAP s/ intereses (1,5%)</span><span class="rl-v cz" id="b-ivap-int">$ 0</span></div>
+            <div class="rl"><span class="rl-n">Percepción s/ intereses</span><span class="rl-v cz" id="b-ivap-int">$ 0</span></div>
             <div class="rl"><span class="rl-n">Monto descontado bruto</span><span class="rl-v" id="b-bruto">—</span></div>
             <div class="rl"><span class="rl-n">Comisión bancaria</span><span class="rl-v cn" id="b-com-out">—</span></div>
             <div class="rl"><span class="rl-n">IVA s/ comisión</span><span class="rl-v cz" id="b-comiva-out">$ 0</span></div>
@@ -601,7 +610,7 @@ input[type="number"]:focus{outline:none;border-color:var(--accent);}
         <tbody>
           <tr><td class="name">Imp. débito (0,6%)</td><td><span class="pill pill-zero">No aplica</span></td><td><span class="pill pill-aplica">Aplica</span></td><td style="font-size:11px;color:var(--color-text-tertiary)">Al girar el cheque contra la cuenta bancaria. En mercado no hay débito bancario en el circuito.</td></tr>
           <tr><td class="name">Imp. crédito (0,6%)</td><td><span class="pill pill-zero">No aplica</span></td><td><span class="pill pill-aplica">Aplica</span></td><td style="font-size:11px;color:var(--color-text-tertiary)">Al acreditar el neto del descuento en la cuenta bancaria. En mercado los fondos no pasan por ese circuito.</td></tr>
-          <tr><td class="name">IVA sobre intereses (21%)</td><td><span class="pill pill-zero">No aplica</span></td><td><span class="pill pill-aplica">Aplica siempre</span></td><td style="font-size:11px;color:var(--color-text-tertiary)">El banco siempre cobra IVA sobre intereses. En mercado el comprador es casi siempre FCI o institucional exento.</td></tr>
+          <tr><td class="name">IVA sobre intereses (10,5%)</td><td><span class="pill pill-zero">No aplica</span></td><td><span class="pill pill-aplica">Aplica siempre</span></td><td style="font-size:11px;color:var(--color-text-tertiary)">El banco siempre cobra IVA sobre intereses. En mercado el comprador es casi siempre FCI o institucional exento.</td></tr>
           <tr><td class="name">Retención SIRCREB / IIBB</td><td><span class="pill pill-zero">No aplica</span></td><td><span class="pill pill-aplica">Aplica siempre</span></td><td style="font-size:11px;color:var(--color-text-tertiary)">SIRCREB retiene IIBB directamente sobre créditos bancarios. En mercado no hay acreditación bancaria en el descuento.</td></tr>
           <tr><td class="name">Comisión del agente</td><td><span class="pill pill-cond">Negociable</span></td><td><span class="pill pill-aplica">Aplica</span></td><td style="font-size:11px;color:var(--color-text-tertiary)">El banco cobra comisión opaca. En Amauta es transparente y acordada con el comercial.</td></tr>
           <tr><td class="name">Costo de aval SGR</td><td><span class="pill pill-cond">Solo avalado</span></td><td><span class="pill pill-zero">No aplica</span></td><td style="font-size:11px;color:var(--color-text-tertiary)">Solo en segmento avalado. En directo garantizado o cadena de valor, sin costo de SGR.</td></tr>
@@ -809,7 +818,7 @@ input[type="number"]:focus{outline:none;border-color:var(--accent);}
 <script>
 var SGR_DATA={'GARANTIZAR ':{ar:0.0325,gs:0.0035,fj:0},'ACINDAR PYMES':{ar:0.0395,gs:0.004,fj:50},'ARGENPYMES':{ar:0.04,gs:0,fj:0},'AVALUAR':{ar:0.04,gs:0.002,fj:30},'AVAL RURAL':{ar:0,gs:0,fj:0},'CUYO AVAL':{ar:0.035,gs:0,fj:0},'AVALES DEL CENTRO':{ar:0.03,gs:0.0035,fj:50},'CARDINAL':{ar:0.025,gs:0.0035,fj:50},'MOVIL':{ar:0.05,gs:0.005,fj:0},'INNOVA':{ar:0.06,gs:0.005,fj:0},'INTEGRA PYMES':{ar:0.045,gs:0.002,fj:50},'INTERGARANTIAS':{ar:0,gs:0,fj:0},'PYME AVAL':{ar:0,gs:0,fj:0},'UNION':{ar:0,gs:0,fj:0}};
 var IVA=0.21,DCHO=0.0006,MIN_ALYC=0.0025;
-var seg='av',cart='pref',tipoTasa='adel',imp={db:true,cr:true,iva:true,ivap:true,comiva:true,gadmiva:true};
+var seg='av',cart='pref',tipoTasa='adel',imp={db:false,cr:false,iva:true,ivap:false,comiva:true,gadmiva:true},mimp={iva:false,iibb:false};
 function showTab(id,btn){document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');}
 function setSegmento(s){seg=s;['av','dir','cad'].forEach(function(k){document.getElementById('btn-'+k).className='sbtn'+(s===k?' s'+k:'');});document.getElementById('sgr-wrap').style.display=s==='av'?'block':'none';document.getElementById('m-sgr-rows').style.display=s==='av'?'block':'none';calc();}
 function setTipoTasa(t){tipoTasa=t;document.getElementById('btn-tadel').className='cbtn'+(t==='adel'?' cstd':'');document.getElementById('btn-tvenc').className='cbtn'+(t==='venc'?' cstd':'');document.getElementById('lbl-tb').firstChild.textContent='Tasa nominal banco (% TNA '+(t==='adel'?'adelantada':'vencida')+')';document.getElementById('lbl-tb-sub').textContent=t==='adel'?'Interés deducido del VN al desembolso':'Interés vencido — comparable apples-to-apples vs mercado';calc();}
@@ -818,6 +827,7 @@ function getSellos(){var v=document.getElementById('sel-sellos').value;if(v==='m
 function setCartera(c){cart=c;['pref','std','cust'].forEach(function(k){document.getElementById('btn-'+k).className='cbtn'+(c===k?' c'+k:'');});document.getElementById('cust-block').style.display=c==='cust'?'block':'none';calc();}
 function onSGRChange(){var d=SGR_DATA[document.getElementById('sgr-sel').value]||{ar:0,gs:0,fj:0};document.getElementById('sgr-ar').value=d.ar;document.getElementById('sgr-gs').value=d.gs;document.getElementById('sgr-fj').value=d.fj;calc();}
 function toggleImp(k){imp[k]=!imp[k];document.getElementById('tg-'+k).classList.toggle('on',imp[k]);calc();}
+function toggleMImp(k){mimp[k]=!mimp[k];document.getElementById('tg-m-'+k).classList.toggle('on',mimp[k]);calc();}
 function getSircreb(){var v=document.getElementById('sel-prov').value;if(v==='manual')return(parseFloat(document.getElementById('sircreb-manual').value)||0)/100;return parseFloat(v)||0;}
 function onProvChange(){document.getElementById('row-manual').style.display=document.getElementById('sel-prov').value==='manual'?'flex':'none';calc();}
 function calcAlyc(vn,dias,mBruto){var neto,fmla;if(cart==='pref'){var r=vn*0.0025*(dias/90);neto=Math.max(r,vn*MIN_ALYC);fmla=r<vn*MIN_ALYC?'Mínimo: VN × 0,25%':'VN × 0,25% × ('+dias+'/90)';}else if(cart==='std'){var r2=vn*0.01*(dias/360);neto=Math.max(r2,vn*MIN_ALYC);fmla=r2<vn*MIN_ALYC?'Mínimo: VN × 0,25%':'VN × 1% × ('+dias+'/360)';}else{var tna=parseFloat(document.getElementById('cust-rate').value)/100;neto=vn*tna*(dias/360);fmla='VN × '+(tna*100).toFixed(1)+'% × ('+dias+'/360)';}var dcho=mBruto*DCHO/90*Math.min(90,dias);return{neto:neto,conIva:neto*(1+IVA),dcho:dcho,dchoConIva:dcho*(1+IVA),fmla:fmla};}
@@ -850,14 +860,18 @@ function calc(){
   // ===== MERCADO (AMAUTA) =====
   var tdesc=tm/(1+tm*f);
   var mInt=tdesc*vn*f;
-  var mIvaInt=0; // Mercado: IVA exento sobre intereses (Ley 24.452 art.5 + exenciones MAV)
-  var mBruto=vn-mInt-mIvaInt;
+  // Mercado: IVA e IIBB sobre interés SÓLO si se activan (ej. comisionista/VACO).
+  // Con comprador exento (FCI/institucional) van en 0 (default).
+  var mIvaInt=mimp.iva?mInt*0.105:0;
+  var mIibbRate=(parseFloat(document.getElementById('m-iibb-rate').value)||0)/100;
+  var mIibb=mimp.iibb?mInt*mIibbRate:0;
+  var mBruto=vn-mInt-mIvaInt-mIibb;
   var alyc=calcAlyc(vn,dias,mBruto);
   var sgrArM=seg==='av'?Math.max(vn*sgrAr*f,sgrAr>0?200:0):0;
   var sgrGsM=seg==='av'?vn*sgrGs:0;
   var sgrIvaM=seg==='av'?sgrGsM*IVA:0;
   var sgrFjM=seg==='av'?sgrFj:0;
-  var mCosto=mInt+mIvaInt+alyc.conIva+alyc.dchoConIva+sgrArM+sgrGsM+sgrIvaM+sgrFjM;
+  var mCosto=mInt+mIvaInt+mIibb+alyc.conIva+alyc.dchoConIva+sgrArM+sgrGsM+sgrIvaM+sgrFjM;
   var mNeto=vn-mCosto;
   var mCd=f>0?mCosto/vn/f:0;var mCi=mNeto>0?mCosto/mNeto/f:0;var mEA=mNeto>0?Math.pow(vn/mNeto,1/f)-1:0;
   // ===== BANCO COMERCIAL =====
@@ -867,7 +881,8 @@ function calc(){
   else{bInt=tb/(1+tb*f)*vn*f;} // Vencido: convertimos a tasa de descuento equivalente
   var IVA_B=0.105; // Servicios financieros: alícuota reducida 10,5% (art. 28 Ley IVA)
   var bIvaInt=imp.iva?bInt*IVA_B:0;
-  var bIvapInt=imp.ivap?bInt*0.015:0;
+  var bIvapRate=(parseFloat(document.getElementById('b-ivap-rate').value)||0)/100;
+  var bIvapInt=imp.ivap?bInt*bIvapRate:0;
   var bBruto=vn-bInt-bIvaInt-bIvapInt;
   // Comisión bancaria (sobre VN) + IVA
   var bComM=vn*bCom;
@@ -902,7 +917,8 @@ function calc(){
   document.getElementById('dcho-val-disp').textContent='Bruto×0,06%×MIN(90,'+dias+')/90 = '+fmt(alyc.dchoConIva)+' c/IVA';
   document.getElementById('m-vn').textContent=fmt(vn);
   document.getElementById('m-int').textContent='- '+fmt(mInt);
-  var mIE=document.getElementById('m-iva-int');mIE.textContent='$ 0';mIE.className='rl-v cz';
+  var mIE=document.getElementById('m-iva-int');mIE.textContent=mIvaInt>0?'- '+fmt(mIvaInt):'$ 0';mIE.className='rl-v '+(mIvaInt>0?'cn':'cz');
+  var mIB=document.getElementById('m-iibb-out');mIB.textContent=mIibb>0?'- '+fmt(mIibb):'$ 0';mIB.className='rl-v '+(mIibb>0?'cn':'cz');
   document.getElementById('m-bruto').textContent=fmt(mBruto);
   document.getElementById('m-alyc').textContent='- '+fmt(alyc.conIva);
   document.getElementById('m-dcho').textContent='- '+fmt(alyc.dchoConIva);
