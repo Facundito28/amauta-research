@@ -1791,7 +1791,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-30n-csv-clientes';
+var CRM_BUILD = '2026-07-30o-autosync-clientes';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
@@ -2778,7 +2778,30 @@ document.getElementById('csvClientesInput').addEventListener('change', async (e)
   e.target.value='';
 });
 
-loadAll();
+/* Auto-actualización del padrón: al abrir el CRM, en segundo plano y en silencio,
+   relee la pestaña CLIENTES desde la planilla y actualiza el padrón. Si el doGet
+   falla (planilla no accesible), no pasa nada: queda el padrón de crm_clientes. */
+async function autoSyncClientesFromSheet(){
+  const url=(CONFIG && CONFIG.sheetsWebhookUrl||'').trim();
+  if(!url) return;
+  try{
+    const res=await fetch(url,{method:'GET'});
+    const data=await res.json();
+    if(data && data.clientes && data.clientes.length>1){
+      const cli=rowsToClientes(data.clientes);
+      const n=Object.keys(cli).length;
+      if(n){
+        Object.assign(CLIENTES_AUM, cli);   // suma/actualiza; no borra
+        rebuildClientesIndex();
+        await saveClientes();
+        populateSelects();
+        console.log('[CRM] padrón auto-actualizado desde CLIENTES:', n, 'clientes');
+      }
+    }
+  }catch(e){ /* silencioso: el sincronizar/doGet no está accesible */ }
+}
+
+loadAll().then(function(){ autoSyncClientesFromSheet(); });
 </script>
 </body>
 </html>
