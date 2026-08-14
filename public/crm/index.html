@@ -566,8 +566,10 @@ table.hist tr:hover td{background:var(--surface-overlay);}
       <div class="field-note" style="margin-bottom:10px;line-height:1.5;">Trae el histórico y el AUM desde tu planilla de Google (misma URL del Web App configurada en ⚙). Requiere la versión actualizada del Apps Script (incluye <strong>doGet</strong>).</div>
       <div class="btn-row" style="margin-top:0;">
         <button class="btn btn-primary btn-small" id="btnSyncDesdeSheets">⬇ Sincronizar desde Google Sheets</button>
-        <label class="btn btn-ghost btn-small" style="cursor:pointer;">📄 Importar CSV<input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;"></label>
+        <label class="btn btn-ghost btn-small" style="cursor:pointer;">📄 Importar CSV (actividades)<input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;"></label>
+        <label class="btn btn-ghost btn-small" style="cursor:pointer;">👥 Importar CSV de clientes<input type="file" id="csvClientesInput" accept=".csv,text/csv" style="display:none;"></label>
       </div>
+      <div class="field-note" style="margin-top:6px;">Si el sincronizar falla, exportá la pestaña <strong>CLIENTES</strong> a CSV (Archivo → Descargar → CSV) y subila con <strong>Importar CSV de clientes</strong> — trae todo el padrón con su asesor, sin depender del Apps Script.</div>
       <div class="reenviar-box" style="margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:10px;">
         <div style="font-weight:600;margin-bottom:8px;">Reenviar actividades a la planilla</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
@@ -1789,7 +1791,7 @@ function showToast(msg, isWarn){
 /* Banner visible dentro del CRM cuando no se pudo leer la sesión / los datos.
    Muestra el motivo (window.__crmAuthDiag) y botones para reintentar o re-loguear.
    Así el diagnóstico queda EN PANTALLA (el iframe no muestra su consola en "top"). */
-var CRM_BUILD = '2026-07-29m-fecha';
+var CRM_BUILD = '2026-07-30n-csv-clientes';
 function ocultarBannerReconexion(){ const b=document.getElementById('crm-reconexion'); if(b) b.remove(); }
 function mostrarBannerReconexion(haySesion){
   ocultarBannerReconexion();
@@ -2745,6 +2747,33 @@ document.getElementById('csvImportInput').addEventListener('change', async (e)=>
     console.error(err);
     status.textContent='No se pudo leer el CSV.';
     showToast('Error al leer el CSV', true);
+  }
+  e.target.value='';
+});
+
+/* Importar la pestaña CLIENTES (CSV) al padrón — sin depender del sincronizar/doGet.
+   Detecta sola la columna de nombre (ignora códigos) y la de asesor. */
+document.getElementById('csvClientesInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const status = document.getElementById('sync-status');
+  try{
+    let text = await file.text();
+    if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+    const rows = parseCSV(text);
+    const cli = rowsToClientes(rows);
+    const n = Object.keys(cli).length;
+    if(!n){ status.textContent='No se detectaron clientes válidos en el CSV (necesito una columna con nombres).'; showToast('CSV de clientes sin filas válidas', true); e.target.value=''; return; }
+    Object.assign(CLIENTES_AUM, cli);   // suma/actualiza; no borra
+    rebuildClientesIndex();
+    await saveClientes();
+    populateSelects(); renderContactabilidad(); renderMetrics();
+    const total = Object.keys(CLIENTES_AUM).length;
+    status.textContent = `Clientes importados del CSV: ${n} filas · padrón total ahora: ${total}.`;
+    showToast(`Clientes importados ✓ (${n})`);
+  }catch(err){
+    console.error(err);
+    status.textContent='No se pudo leer el CSV de clientes.';
+    showToast('Error al leer el CSV de clientes', true);
   }
   e.target.value='';
 });
