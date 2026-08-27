@@ -29,8 +29,10 @@ Decisiones tomadas: infra nueva **bajo cuentas de Amauta**; **Supabase nuevo y a
 1. **GitHub**: agregarlo como collaborator a `Cuffa28/amauta-research` (y los otros dos si aplica).
 2. **Vercel**: invitarlo a la org de Amauta (`amautaproyectos` / la que tenga los deploys). Definir si MiAmauta se deploya ahí o se transfiere a Amauta después.
 3. **Supabase**: **no** tocar producción. Solo entregarle `supabase/schema-portal.sql`. Si además querés que arranque con datos de ejemplo (research/CEDEARs) sin esperar al colector, avisame y **exporto un seed** de `instruments`, `instrument_blocks` y una foto de `cedears_live/params/series` (sin nada de `crm_*`).
-4. **Reuters/LSEG (el `.bat`/colector)**: localizar el **colector externo** en la máquina donde corre (NO está en el repo). Decidir si él corre su propio colector (necesita licencia Refinitiv) o lee de un feed compartido. Ver Parte 4.
+4. **Reuters/LSEG (el `.bat`/colector)**: nada que preparar — el colector vive en la **PC de Reuters** y el dev **ya tiene acceso**. Él lo replica con su Claude siguiendo **[TRASPASO-2-COLECTOR-REUTERS.md](TRASPASO-2-COLECTOR-REUTERS.md)**.
 5. **Confirmar** que no le pasás ningún `.env.local`.
+
+> Facundo **no configura nada técnico**: solo tilda accesos. Todo lo demás lo ejecuta el dev con su Claude (ver [TRASPASO-0-EMPEZAR-Y-PROMPT.md](TRASPASO-0-EMPEZAR-Y-PROMPT.md)).
 
 ---
 
@@ -71,7 +73,7 @@ Portal interno **Next.js** (deploy en Vercel). Lo estático viejo quedó en `leg
 1. **Correr su propio colector** → necesita el **código del colector externo** (hay que ubicarlo en la máquina donde corre hoy, fuera de esta carpeta) **+ una licencia Refinitiv/Eikon propia** + el service_role de su Supabase. Es lo más aislado pero implica costo de licencia.
 2. **Leer del feed que ya tenemos** → dejar que MiAmauta lea `cedears_*` de nuestro Supabase de producción con la **anon key** (solo lectura, RLS lo permite). Evita la licencia, pero acopla MiAmauta a nuestro proyecto (el que tiene el CRM). Si se elige esto, conviene una **anon key** y nada más — nunca el service_role.
 
-> **Acción para Facundo:** ubicar el `.bat`/colector (no está bajo `Claude Code/`) y decidir camino 1 vs 2. Si querés, te ayudo a encontrarlo y a documentarlo.
+> El colector vive en la **PC de Reuters** (el dev tiene acceso). El paso a paso para ubicarlo y re-apuntarlo a su Supabase está en **[TRASPASO-2-COLECTOR-REUTERS.md](TRASPASO-2-COLECTOR-REUTERS.md)** — lo corre su Claude ahí. Facundo no interviene.
 
 ---
 
