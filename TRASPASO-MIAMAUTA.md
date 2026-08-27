@@ -1,5 +1,7 @@
 # Traspaso de "Amauta Local" → MiAmauta
 
+> 📍 **Dónde se corre:** PASO **A** — en la **PC del dev**, con **su Claude organización**, sobre el clon de `Cuffa28/amauta-research`. (El colector es aparte: PASO B, ver `TRASPASO-2-COLECTOR-REUTERS.md`.) Ver el mapa en `TRASPASO-0-EMPEZAR-Y-PROMPT.md`.
+
 Documento para **replicar** lo que armamos en **Amauta Local** dentro de **MiAmauta** (el portal que está construyendo el dev del equipo). Facundo **no construye nada**: solo entrega código, esquema y esta guía. La web Local actual (`amauta-research.vercel.app`) **queda intacta**.
 
 Decisiones tomadas: infra nueva **bajo cuentas de Amauta**; **Supabase nuevo y aislado** para MiAmauta (no se comparte el de producción, que tiene el CRM); dev **interno de confianza**.

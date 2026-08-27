@@ -1,5 +1,7 @@
 # Colector LSEG/Reuters + el `.bat` — runbook
 
+> 📍 **Dónde se corre:** PASO **B** — en la **PC de Reuters**, con la **sesión de Claude de esa PC**, sobre la **carpeta del colector** (no este repo). Requisito previo: haber hecho el PASO A y tener a mano la **URL + `service_role` de tu Supabase nuevo**. Ver el mapa en `TRASPASO-0-EMPEZAR-Y-PROMPT.md`.
+
 El **Monitor CEDEARs** y las **Noticias Reuters** de Amauta Local **no** se alimentan desde la web: los llena un **colector externo** que corre en la **PC de Reuters** (Windows) y baja datos de **LSEG Refinitiv / Reuters Eikon**. Escribe directo a Supabase con la **service_role key**. Este colector **no está en ningún repo** — vive solo en esa PC (a la que ya tenés acceso).
 
 > Este runbook es para correr **en la PC de Reuters, con tu Claude Code**. Objetivo: ubicar el colector, entenderlo, y hacer que además (o en vez de) escribir al Supabase de producción, escriba a **TU Supabase nuevo**. No rompas el colector de producción: **duplicá y apuntá a lo tuyo**.
