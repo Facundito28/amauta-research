@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amauta — Generador de Mails</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&family=Fira+Sans+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --negro: #111111; --amarillo: #F5C800; --amarillo-oscuro: #D4A900;
+    --amarillo-claro: #FFF8D6; --blanco: #FFFFFF; --gris-bg: #F7F6F2;
+    --gris-borde: #E0DDD5; --gris-texto: #555550; --gris-hint: #9E9B93; --azul: #1A4A8A;
+  }
+  body { font-family: 'Fira Sans', sans-serif; background: var(--gris-bg); color: var(--negro); min-height: 100vh; line-height: 1.6; }
+  header { background: var(--negro); padding: 0 2rem; display: flex; align-items: center; height: 60px; border-bottom: 3px solid var(--amarillo); }
+  .logo-a { font-family: 'Fira Sans Condensed', sans-serif; font-weight: 700; font-size: 28px; color: var(--amarillo); letter-spacing: -1px; margin-right: 12px; }
+  .header-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.2); margin-right: 12px; }
+  .header-text h1 { font-size: 14px; font-weight: 500; color: var(--blanco); }
+  .header-text p { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 300; margin-top: 1px; }
+  .container { max-width: 980px; margin: 0 auto; padding: 2rem 1.5rem; display: grid; grid-template-columns: 230px 1fr; gap: 1.5rem; align-items: start; }
+  .sidebar { position: sticky; top: 1.5rem; }
+  .sidebar-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gris-hint); margin-bottom: 8px; padding-left: 2px; }
+  .broker-group { margin-bottom: 10px; }
+  .broker-name { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gris-hint); padding: 4px 12px; margin-bottom: 2px; }
+  .type-btn { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 12px; border-radius: 6px; border: 1.5px solid transparent; background: transparent; color: var(--gris-texto); font-family: 'Fira Sans', sans-serif; font-size: 13px; cursor: pointer; text-align: left; margin-bottom: 2px; transition: all 0.15s; }
+  .type-btn:hover { background: var(--blanco); color: var(--negro); }
+  .type-btn.active { background: var(--amarillo-claro); color: var(--negro); border-color: var(--amarillo); font-weight: 500; }
+  .type-btn svg { width: 15px; flex-shrink: 0; opacity: 0.5; }
+  .type-btn.active svg { opacity: 1; }
+  hr.sdiv { border: none; border-top: 1px solid var(--gris-borde); margin: 10px 0; }
+  .sidebar-note { font-size: 11px; color: var(--gris-hint); line-height: 1.55; padding: 0 2px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .section-title { font-family: 'Fira Sans Condensed', sans-serif; font-size: 23px; font-weight: 700; color: var(--negro); margin-bottom: 3px; letter-spacing: -0.02em; }
+  .section-sub { font-size: 13px; color: var(--gris-texto); margin-bottom: 1.25rem; font-weight: 300; }
+  .card { background: var(--blanco); border: 1px solid var(--gris-borde); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .card-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gris-hint); margin-bottom: 14px; }
+  .form-row { margin-bottom: 13px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .form-row label { display: block; font-size: 12px; font-weight: 500; color: var(--gris-texto); margin-bottom: 5px; }
+  .form-row input { width: 100%; padding: 9px 12px; font-family: 'Fira Sans', sans-serif; font-size: 14px; color: var(--negro); background: var(--blanco); border: 1.5px solid var(--gris-borde); border-radius: 6px; outline: none; transition: border-color 0.15s; }
+  .form-row input:focus { border-color: var(--amarillo-oscuro); }
+  .form-row input::placeholder { color: var(--gris-hint); }
+  .hint { font-size: 11px; color: var(--gris-hint); margin-top: 3px; font-weight: 300; }
+  .generate-btn { width: 100%; padding: 11px; font-family: 'Fira Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--negro); background: var(--amarillo); border: none; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; margin-bottom: 1rem; }
+  .generate-btn:hover { background: var(--amarillo-oscuro); }
+  .result-card { display: none; }
+  .result-card.visible { display: block; }
+  .mail-output { font-family: 'Fira Sans', sans-serif; font-size: 13.5px; line-height: 1.85; color: var(--negro); background: #FAFAF8; border: 1px solid var(--gris-borde); border-radius: 7px; padding: 1.25rem; margin-bottom: 12px; }
+  .mail-output p { margin: 0 0 8px 0; }
+  .mail-output p:last-child { margin-bottom: 0; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .copy-btn { padding: 9px 18px; font-family: 'Fira Sans', sans-serif; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1.5px solid var(--negro); background: var(--negro); color: var(--blanco); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all 0.15s; }
+  .copy-btn:hover { background: #333; }
+  .copy-btn.copied { background: #1A6B3A; border-color: #1A6B3A; }
+  .gmail-btn { padding: 9px 18px; font-family: 'Fira Sans', sans-serif; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1.5px solid var(--gris-borde); background: var(--blanco); color: var(--gris-texto); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all 0.15s; text-decoration: none; }
+  .gmail-btn:hover { background: var(--gris-bg); color: var(--negro); border-color: var(--gris-texto); }
+  .copy-note { font-size: 11px; color: var(--gris-hint); }
+  .asunto-row { display: flex; align-items: baseline; gap: 8px; background: var(--amarillo-claro); border: 1px solid var(--amarillo); border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; }
+  .asunto-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gris-texto); white-space: nowrap; }
+  .asunto-texto { font-size: 13px; font-weight: 500; color: var(--negro); }
+  @media (max-width: 660px) {
+    .container { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .broker-group { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .broker-name { grid-column: 1/-1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-a">A</div>
+  <div class="header-divider"></div>
+  <div class="header-text">
+    <h1>Amauta Inversiones</h1>
+    <p>Generador de mails — Soporte Comercial</p>
+  </div>
+</header>
+
+<div class="container">
+  <aside class="sidebar">
+    <div class="sidebar-label">Seleccioná el mail</div>
+    <div class="broker-group">
+      <div class="broker-name">PPI</div>
+      <button class="type-btn active" onclick="selectType('ppi-apertura', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Apertura jurídica
+      </button>
+      <button class="type-btn" onclick="selectType('ppi-seg-apertura', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Seguimiento apertura
+      </button>
+      <button class="type-btn" onclick="selectType('ppi-legajo', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/></svg>Actualización legajo
+      </button>
+      <button class="type-btn" onclick="selectType('ppi-seg-legajo', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>Seguimiento legajo
+      </button>
+    </div>
+    <hr class="sdiv">
+    <div class="broker-group">
+      <div class="broker-name">Balanz</div>
+      <button class="type-btn" onclick="selectType('balanz-apertura', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Apertura jurídica
+      </button>
+      <button class="type-btn" onclick="selectType('balanz-seg', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Seguimiento apertura
+      </button>
+    </div>
+    <hr class="sdiv">
+    <div class="broker-group">
+      <div class="broker-name">ONE618</div>
+      <button class="type-btn" onclick="selectType('one-apertura', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Apertura jurídica
+      </button>
+      <button class="type-btn" onclick="selectType('one-seg', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Seguimiento apertura
+      </button>
+    </div>
+    <hr class="sdiv">
+    <p class="sidebar-note">Vacío = "estimados" (plural). Con nombre = singular.</p>
+  </aside>
+
+  <main>
+
+    <!-- PPI APERTURA -->
+    <div class="panel active" id="panel-ppi-apertura">
+      <p class="section-title">Apertura jurídica — PPI</p>
+      <p class="section-sub">Solicitud de documentación para apertura de cuenta comitente jurídica en PPI.</p>
+      <div class="card">
+        <div class="card-label">Datos del mail</div>
+        <div class="form-row"><label>Nombre del contacto</label><input id="ppi-ap-nombre" type="text" placeholder="ej: Marcelo"><div class="hint">Opcional — se usa en el saludo</div></div>
+        <div class="form-row"><label>Tratamiento</label><select id="ppi-ap-modo" style="padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--negro);background:white;cursor:pointer;"><option value="plural" selected>Plural (estimados / ustedes)</option><option value="tu">Tuteo (vos / te)</option><option value="usted">Usted</option></select><div class="hint">Cambia el tono en todo el mail</div></div>
+        <div class="form-row"><label>Email del contacto</label><input id="ppi-ap-email" type="email" placeholder="ej: marcelo@empresa.com"><div class="hint">Opcional — pre-llena el "Para" en Gmail</div></div>
+        <div class="form-row"><label>Compañero/a que lo derivó</label><input id="ppi-ap-companero" type="text" placeholder="ej: Martín"></div>
+        <div class="form-row"><label>Nombre de la empresa</label><input id="ppi-ap-empresa" type="text" placeholder="ej: Inversiones del Sur SA"></div>
+        <div class="form-row"><label>Tipo societario</label><input id="ppi-ap-tipo" type="text" placeholder="SA / SRL / SAS"><div class="hint">Si es SAS se agrega el ítem de servicio de domicilio automáticamente</div></div>
+      </div>
+      <button class="generate-btn" onclick="generateMail('ppi-apertura')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>Generar mail
+      </button>
+      <div class="result-card card" id="result-ppi-apertura">
+        <div class="card-label">Mail generado</div>
+        <div class="asunto-row"><span class="asunto-label">Asunto:</span><span class="asunto-texto" id="asunto-ppi-apertura"></span></div>
+        <div class="mail-output" id="output-ppi-apertura"></div>
+        <div class="btn-row">
+          <button class="copy-btn" id="copybtn-ppi-apertura" onclick="copyMail('output-ppi-apertura','copybtn-ppi-apertura')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar
+          </button>
+          <a class="gmail-btn" id="gmailbtn-ppi-apertura" href="#" onclick="openGmail('ppi-apertura'); return false;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Abrir Gmail
+          </a>
+        </div>
+        <p class="copy-note">💡 <strong>Abrir Gmail</strong> copia el formato y pre-llena "Para" y "Asunto" — solo pegá con Ctrl+V en el cuerpo.</p>
+      </div>
+    </div>
+
+    <!-- PPI SEG APERTURA -->
+    <div class="panel" id="panel-ppi-seg-apertura">
+      <p class="section-title">Seguimiento apertura — PPI</p>
+      <p class="section-sub">Consulta de novedades sobre la documentación para la apertura.</p>
+      <div class="card">
+        <div class="card-label">Datos del mail</div>
+        <div class="form-row"><label>Nombre del contacto</label><input id="ppi-sap-nombre" type="text" placeholder="ej: Marcelo"><div class="hint">Opcional — se usa en el saludo</div></div>
+        <div class="form-row"><label>Tratamiento</label><select id="ppi-sap-modo" style="padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--negro);background:white;cursor:pointer;"><option value="plural" selected>Plural (estimados / ustedes)</option><option value="tu">Tuteo (vos / te)</option><option value="usted">Usted</option></select><div class="hint">Cambia el tono en todo el mail</div></div>
+        <div class="form-row"><label>Email del contacto</label><input id="ppi-sap-email" type="email" placeholder="ej: marcelo@empresa.com"><div class="hint">Opcional — pre-llena el "Para" en Gmail</div></div>
+      </div>
+      <button class="generate-btn" onclick="generateMail('ppi-seg-apertura')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>Generar mail
+      </button>
+      <div class="result-card card" id="result-ppi-seg-apertura">
+        <div class="card-label">Mail generado</div>
+        <div class="asunto-row"><span class="asunto-label">Asunto:</span><span class="asunto-texto" id="asunto-ppi-seg-apertura"></span></div>
+        <div class="mail-output" id="output-ppi-seg-apertura"></div>
+        <div class="btn-row">
+          <button class="copy-btn" id="copybtn-ppi-seg-apertura" onclick="copyMail('output-ppi-seg-apertura','copybtn-ppi-seg-apertura')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar
+          </button>
+          <a class="gmail-btn" href="#" onclick="openGmail('ppi-seg-apertura'); return false;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Abrir Gmail
+          </a>
+        </div>
+        <p class="copy-note">💡 <strong>Abrir Gmail</strong> copia el formato y pre-llena "Para" y "Asunto" — solo pegá con Ctrl+V en el cuerpo.</p>
+      </div>
+    </div>
+
+    <!-- PPI LEGAJO -->
+    <div class="panel" id="panel-ppi-legajo">
+      <p class="section-title">Actualización de legajo — PPI</p>
+      <p class="section-sub">Solicitud de documentación para actualizar el legajo de un cliente en PPI.</p>
+      <div class="card">
+        <div class="card-label">Datos del mail</div>
+        <div class="form-row"><label>Nombre del contacto</label><input id="ppi-leg-nombre" type="text" placeholder="ej: Marcelo"><div class="hint">Opcional — se usa en el saludo</div></div>
+        <div class="form-row"><label>Tratamiento</label><select id="ppi-leg-modo" style="padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--negro);background:white;cursor:pointer;"><option value="plural" selected>Plural (estimados / ustedes)</option><option value="tu">Tuteo (vos / te)</option><option value="usted">Usted</option></select><div class="hint">Cambia el tono en todo el mail</div></div>
+        <div class="form-row"><label>Email del contacto</label><input id="ppi-leg-email" type="email" placeholder="ej: marcelo@empresa.com"><div class="hint">Opcional — pre-llena el "Para" en Gmail</div></div>
+        <div class="form-row"><label>Nombre de la empresa</label><input id="ppi-leg-empresa" type="text" placeholder="ej: Inversiones del Sur SA"></div>
+        <div class="form-row"><label>Fecha de cierre de EECC</label><input id="ppi-leg-fecha" type="text" placeholder="ej: 30/6/2025"></div>
+        <div class="form-row"><label>Año del EECC</label><input id="ppi-leg-anio" type="text" placeholder="ej: 2025"></div>
+        <div class="form-row"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="ppi-leg-designacion" checked style="width:16px;height:16px;accent-color:#1A4A8A;cursor:pointer;"> Incluir acta de designación y aceptación de cargos</label><div class="hint">Destildá si en este pedido no la solicitan</div></div>
+      </div>
+      <button class="generate-btn" onclick="generateMail('ppi-legajo')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>Generar mail
+      </button>
+      <div class="result-card card" id="result-ppi-legajo">
+        <div class="card-label">Mail generado</div>
+        <div class="asunto-row"><span class="asunto-label">Asunto:</span><span class="asunto-texto" id="asunto-ppi-legajo"></span></div>
+        <div class="mail-output" id="output-ppi-legajo"></div>
+        <div class="btn-row">
+          <button class="copy-btn" id="copybtn-ppi-legajo" onclick="copyMail('output-ppi-legajo','copybtn-ppi-legajo')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar
+          </button>
+          <a class="gmail-btn" href="#" onclick="openGmail('ppi-legajo'); return false;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Abrir Gmail
+          </a>
+        </div>
+        <p class="copy-note">💡 <strong>Abrir Gmail</strong> copia el formato y pre-llena "Para" y "Asunto" — solo pegá con Ctrl+V en el cuerpo.</p>
+      </div>
+    </div>
+
+    <!-- PPI SEG LEGAJO -->
+    <div class="panel" id="panel-ppi-seg-legajo">
+      <p class="section-title">Seguimiento legajo — PPI</p>
+      <p class="section-sub">Recordatorio ~2 semanas después de la solicitud de legajo.</p>
+      <div class="card">
+        <div class="card-label">Datos del mail</div>
+        <div class="form-row"><label>Nombre del contacto</label><input id="ppi-sleg-nombre" type="text" placeholder="ej: Marcelo"><div class="hint">Opcional — se usa en el saludo</div></div>
+        <div class="form-row"><label>Tratamiento</label><select id="ppi-sleg-modo" style="padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--negro);background:white;cursor:pointer;"><option value="plural" selected>Plural (estimados / ustedes)</option><option value="tu">Tuteo (vos / te)</option><option value="usted">Usted</option></select><div class="hint">Cambia el tono en todo el mail</div></div>
+        <div class="form-row"><label>Email del contacto</label><input id="ppi-sleg-email" type="email" placeholder="ej: marcelo@empresa.com"><div class="hint">Opcional — pre-llena el "Para" en Gmail</div></div>
+        <div class="form-row"><label>Nombre de la empresa</label><input id="ppi-sleg-empresa" type="text" placeholder="ej: Inversiones del Sur SA"></div>
+      </div>
+      <button class="generate-btn" onclick="generateMail('ppi-seg-legajo')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>Generar mail
+      </button>
+      <div class="result-card card" id="result-ppi-seg-legajo">
+        <div class="card-label">Mail generado</div>
+        <div class="asunto-row"><span class="asunto-label">Asunto:</span><span class="asunto-texto" id="asunto-ppi-seg-legajo"></span></div>
+        <div class="mail-output" id="output-ppi-seg-legajo"></div>
+        <div class="btn-row">
+          <button class="copy-btn" id="copybtn-ppi-seg-legajo" onclick="copyMail('output-ppi-seg-legajo','copybtn-ppi-seg-legajo')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar
+          </button>
+          <a class="gmail-btn" href="#" onclick="openGmail('ppi-seg-legajo'); return false;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Abrir Gmail
+          </a>
+        </div>
+        <p class="copy-note">💡 <strong>Abrir Gmail</strong> copia el formato y pre-llena "Para" y "Asunto" — solo pegá con Ctrl+V en el cuerpo.</p>
+      </div>
+    </div>
+
+    <!-- BALANZ APERTURA -->
+    <div class="panel" id="panel-balanz-apertura">
+      <p class="section-title">Apertura jurídica — Balanz</p>
+      <p class="section-sub">Instrucciones para iniciar la apertura de cuenta comitente en Balanz.</p>
+      <div class="card">
+        <div class="card-label">Datos del mail</div>
+        <div class="form-row"><label>Nombre del contacto</label><input id="bal-ap-nombre" type="text" placeholder="ej: Marcelo"><div class="hint">Opcional — se usa en el saludo</div></div>
+        <div class="form-row"><label>Tratamiento</label><select id="bal-ap-modo" style="padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--negro);background:white;cursor:pointer;"><option value="plural" selected>Plural (estimados / ustedes)</option><option value="tu">Tuteo (vos / te)</option><option value="usted">Usted</option></select><div class="hint">Cambia el tono en todo el mail</div></div>
+        <div class="form-row"><label>Email del contacto</label><input id="bal-ap-email" type="email" placeholder="ej: marcelo@empresa.com"><div class="hint">Opcional — pre-llena el "Para" en Gmail</div></div>
+        <div class="form-row"><label>Compañero/a que lo derivó</label><input id="bal-ap-companero" type="text" placeholder="ej: Martín"></div>
+        <div class="form-row"><label>Nombre de la empresa</label><input id="bal-ap-empresa" type="text" placeholder="ej: Inversiones del Sur SA"></div>
+      </div>
+      <button class="generate-btn" onclick="generateMail('balanz-apertura')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>Generar mail
+      </button>
+      <div class="result-card card" id="result-balanz-apertura">
+        <div class="card-label">Mail generado</div>
+        <div class="asunto-row"><span class="asunto-label">Asunto:</span><span class="asunto-texto" id="asunto-balanz-apertura"></span></div>
+        <div class="mail-output" id="output-balanz-apertura"></div>
+        <div class="btn-row">
+          <button class="copy-btn" id="copybtn-balanz-apertura" onclick="copyMail('output-balanz-apertura','copybtn-balanz-apertura')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar
+          </button>
+          <a class="gmail-btn" href="#" onclick="openGmail('balanz-apertura'); return false;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Abrir Gmail
+          </a>
+        </div>
+        <p class="copy-note">💡 <strong>Abrir Gmail</strong> copia el formato y pre-llena "Para" y "Asunto" — solo pegá con Ctrl+V en el cuerpo.</p>
+      </div>
+    </div>
+
+    <!-- BALANZ SEG -->
+    <div class="panel" id="panel-balanz-seg">
+      <p class="section-title">Seguimiento apertura — Balanz</p>
+      <p class="section-sub">Consulta sobre el inicio de la apertura de cuenta en Balanz.</p>
+      <div class="card">
+        <div class="card-label">Datos del mail</div>
+        <div class="form-row"><label>Nombre del contacto</label><input id="bal-sap-nombre" type="text" placeholder="ej: Marcelo"><div class="hint">Opcional — se usa en el saludo</div></div>
+        <div class="form-row"><label>Tratamiento</label><select id="bal-sap-modo" style="padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--negro);background:white;cursor:pointer;"><option value="plural" selected>Plural (estimados / ustedes)</option><option value="tu">Tuteo (vos / te)</option><option value="usted">Usted</option></select><div class="hint">Cambia el tono en todo el mail</div></div>
+        <div class="form-row"><label>Email del contacto</label><input id="bal-sap-email" type="email" placeholder="ej: marcelo@empresa.com"><div class="hint">Opcional — pre-llena el "Para" en Gmail</div></div>
+      </div>
+      <button class="generate-btn" onclick="generateMail('balanz-seg')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>Generar mail
+      </button>
+      <div class="result-card card" id="result-balanz-seg">
+        <div class="card-label">Mail generado</div>
+        <div class="asunto-row"><span class="asunto-label">Asunto:</span><span class="asunto-texto" id="asunto-balanz-seg"></span></div>
+        <div class="mail-output" id="output-balanz-seg"></div>
+        <div class="btn-row">
+          <button class="copy-btn" id="copybtn-balanz-seg" onclick="copyMail('output-balanz-seg','copybtn-balanz-seg')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar
+          </button>
+          <a class="gmail-btn" href="#" onclick="openGmail('balanz-seg'); return false;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Abrir Gmail
+          </a>
+        </div>
+        <p class="copy-note">💡 <strong>Abrir Gmail</strong> copia el formato y pre-llena "Para" y "Asunto" — solo pegá con Ctrl+V en el cuerpo.</p>
+      </div>
+    </div>
+
+    <!-- ONE618 APERTURA -->
+    <div class="panel" id="panel-one-apertura">
+      <p class="section-title">Apertura jurídica — ONE618</p>
+      <p class="section-sub">Solicitud de documentación para apertura de cuenta comitente jurídica en ONE618.</p>
+      <div class="card">
+        <div class="card-label">Datos del mail</div>
+        <div class="form-row"><label>Nombre del contacto</label><input id="one-ap-nombre" type="text" placeholder="ej: Marcelo"><div class="hint">Opcional — se usa en el saludo</div></div>
+        <div class="form-row"><label>Tratamiento</label><select id="one-ap-modo" style="padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--negro);background:white;cursor:pointer;"><option value="plural" selected>Plural (estimados / ustedes)</option><option value="tu">Tuteo (vos / te)</option><option value="usted">Usted</option></select><div class="hint">Cambia el tono en todo el mail</div></div>
+        <div class="form-row"><label>Email del contacto</label><input id="one-ap-email" type="email" placeholder="ej: marcelo@empresa.com"><div class="hint">Opcional — pre-llena el "Para" en Gmail</div></div>
+        <div class="form-row"><label>Compañero/a que lo derivó</label><input id="one-ap-companero" type="text" placeholder="ej: Martín"></div>
+        <div class="form-row"><label>Nombre de la empresa</label><input id="one-ap-empresa" type="text" placeholder="ej: Inversiones del Sur SA"></div>
+      </div>
+      <button class="generate-btn" onclick="generateMail('one-apertura')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>Generar mail
+      </button>
+      <div class="result-card card" id="result-one-apertura">
+        <div class="card-label">Mail generado</div>
+        <div class="asunto-row"><span class="asunto-label">Asunto:</span><span class="asunto-texto" id="asunto-one-apertura"></span></div>
+        <div class="mail-output" id="output-one-apertura"></div>
+        <div class="btn-row">
+          <button class="copy-btn" id="copybtn-one-apertura" onclick="copyMail('output-one-apertura','copybtn-one-apertura')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar
+          </button>
+          <a class="gmail-btn" href="#" onclick="openGmail('one-apertura'); return false;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Abrir Gmail
+          </a>
+        </div>
+        <p class="copy-note">💡 <strong>Abrir Gmail</strong> copia el formato y pre-llena "Para" y "Asunto" — solo pegá con Ctrl+V en el cuerpo.</p>
+      </div>
+    </div>
+
+    <!-- ONE618 SEG -->
+    <div class="panel" id="panel-one-seg">
+      <p class="section-title">Seguimiento apertura — ONE618</p>
+      <p class="section-sub">Consulta de novedades sobre la documentación para la apertura.</p>
+      <div class="card">
+        <div class="card-label">Datos del mail</div>
+        <div class="form-row"><label>Nombre del contacto</label><input id="one-sap-nombre" type="text" placeholder="ej: Marcelo"><div class="hint">Opcional — se usa en el saludo</div></div>
+        <div class="form-row"><label>Tratamiento</label><select id="one-sap-modo" style="padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:13px;color:var(--negro);background:white;cursor:pointer;"><option value="plural" selected>Plural (estimados / ustedes)</option><option value="tu">Tuteo (vos / te)</option><option value="usted">Usted</option></select><div class="hint">Cambia el tono en todo el mail</div></div>
+        <div class="form-row"><label>Email del contacto</label><input id="one-sap-email" type="email" placeholder="ej: marcelo@empresa.com"><div class="hint">Opcional — pre-llena el "Para" en Gmail</div></div>
+      </div>
+      <button class="generate-btn" onclick="generateMail('one-seg')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>Generar mail
+      </button>
+      <div class="result-card card" id="result-one-seg">
+        <div class="card-label">Mail generado</div>
+        <div class="asunto-row"><span class="asunto-label">Asunto:</span><span class="asunto-texto" id="asunto-one-seg"></span></div>
+        <div class="mail-output" id="output-one-seg"></div>
+        <div class="btn-row">
+          <button class="copy-btn" id="copybtn-one-seg" onclick="copyMail('output-one-seg','copybtn-one-seg')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar
+          </button>
+          <a class="gmail-btn" href="#" onclick="openGmail('one-seg'); return false;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Abrir Gmail
+          </a>
+        </div>
+        <p class="copy-note">💡 <strong>Abrir Gmail</strong> copia el formato y pre-llena "Para" y "Asunto" — solo pegá con Ctrl+V en el cuerpo.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+var AZUL = '#1A4A8A';
+var AMARILLO_RESALTE = '#F5C800';
+var mailTextos = {};
+
+function selectType(mailType, btn) {
+  document.querySelectorAll('.type-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('panel-' + mailType).classList.add('active');
+}
+
+function v(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function p(txt) { return '<p style="margin:0 0 8px 0;">' + txt + '</p>'; }
+function itemAzul(txt) { return '<span style="color:' + AZUL + ';font-weight:bold;display:block;margin:2px 0;">• ' + txt + '</span>'; }
+function itemNegro(txt) { return '<span style="color:#111111;font-weight:bold;display:block;margin:2px 0;">• ' + txt + '</span>'; }
+function listaAzul(arr) { return '<div style="margin:14px 0 10px 16px;">' + arr.map(function(txt){ return '<p style="margin:0 0 8px 0;color:' + AZUL + ';font-weight:bold;">• ' + txt + '</p>'; }).join('') + '</div>'; }
+function listaAzulIndent(arr) { return '<div style="margin:4px 0 10px 16px;">' + arr.map(function(txt){ return '<span style="color:' + AZUL + ';font-weight:bold;display:block;margin:2px 0;">• ' + txt + '</span>'; }).join('') + '</div>'; }
+function listaNegro(arr) { return '<div style="margin:14px 0 10px 16px;">' + arr.map(function(txt){ return '<p style="margin:0 0 8px 0;color:#111111;font-weight:bold;">• ' + txt + '</p>'; }).join('') + '</div>'; }
+function fraseFinal(modo) {
+  var cargo = (modo === 'tu') ? 'a tu cargo' : 'a su cargo';
+  var txt = 'Con la documentación enviada, nosotros nos encargamos de completar los formularios necesarios. De esta manera, luego quedaría ' + cargo + ' únicamente la firma de dichos documentos.';
+  return p('<em><strong>' + txt + '</strong></em>');
+}
+function lineaAmarilla(modo) {
+  var txt;
+  if (modo === 'tu')      txt = 'Intentá cargar la documentación que tengas disponible y en caso de faltar algo, luego nosotros te pedimos lo restante.';
+  else if (modo === 'usted') txt = 'Le pedimos que cargue la documentación disponible y en caso de faltar algo, luego nosotros le solicitamos lo restante.';
+  else                    txt = 'Intenten cargar la documentación que tengan disponible y en caso de faltar algo, luego nosotros les solicitamos lo restante.';
+  return p('<strong style="background-color:' + AMARILLO_RESALTE + ';color:#111111;padding:1px 3px;">' + txt + '</strong>');
+}
+function saludoHTML(n, modo) {
+  var h = new Date().getHours();
+  var hora = (h >= 13) ? 'Buenas tardes' : 'Buenos días';
+  if (modo === 'usted') return hora + (n ? ' ' + n : '') + ', ¿cómo está?';
+  if (n) return hora + ' ' + n + ', ¿cómo estás?';
+  return hora + ' estimados, ¿cómo están?';
+}
+function quedo(modo) {
+  if (modo === 'tu')    return 'Quedo a disposición ante cualquier consulta.<br>Saludos!';
+  if (modo === 'usted') return 'Quedo a disposición ante cualquier consulta.<br>Saludos!';
+  return 'Cualquier consulta, quedamos a disposición.<br>Saludos!';
+}
+
+function genPpiApertura(n, comp, emp, tipo, modo) {
+  comp = comp || '[nombre del compañero/a]'; emp = emp || '[nombre de la empresa]';
+  var esSAS = tipo && tipo.trim().toUpperCase() === 'SAS';
+  var doc = [
+    'ESTATUTO SOCIAL ORIGINAL Y MODIFICACIONES (actualizado, en caso de corresponder) debidamente inscripto en IGJ y el Registro Público, certificado por Escribano.',
+    'ACTA DE ASAMBLEA Y DE DIRECTORIO de aprobación de balance, designación y aceptación de cargos vigentes.',
+    'ÚLTIMO BALANCE ANUAL, auditado por contador público y legalizado por el CPCE.',
+    'COPIA DEL REGISTRO DE ACCIONISTAS o CHART SOCIETARIO —hasta los Beneficiarios Finales— actualizado.',
+    'RÚBRICA DE LOS LIBROS de Asamblea, Directorio y Registro de Accionistas.',
+    'Copia nítida de frente y dorso del DNI de los firmantes, accionistas y autorizados.',
+    'PODER DE LOS FIRMANTES, debidamente certificado por escribano y legalizado (solo en caso de corresponder).',
+    'Constancia CBU de las cuentas a vincular.',
+    'Indicarnos un mail de contacto de la empresa (a fines generales y administrativos).',
+    'Indicarnos si la empresa realiza actividad inmobiliaria. En caso afirmativo, confirmar si la operatoria es con bienes propios o administran de terceros.',
+    'Certificado Mipyme.'
+  ];
+  if (esSAS) doc.push('Servicio a nombre de la sociedad correspondiente a la sede social, o a nombre del representante legal por ese domicilio.');
+  var firm = ['Estado civil (en caso de estar casado/a: foto del DNI del cónyuge):','Si es o no PEP (Persona Expuesta Políticamente):','Actividad principal:','Profesión:','Mail personal:','Teléfono personal:'];
+  var acc = ['DNI frente y dorso:','Estado civil:','Si es o no PEP (Persona Expuesta Políticamente):','Profesión:'];
+  var presentacion = (modo === 'usted') ? '¡un gusto saludarlo!' : (n ? '¡un gusto!' : '¡un gusto saludarlos!');
+  var comparto = (modo === 'plural') ? 'les comparto' : (modo === 'usted' ? 'le comparto' : 'te comparto');
+  var necesito = (modo === 'tu') ? 'necesito:' : 'necesitamos:';
+  var html = p(saludoHTML(n, modo) + ' Mi nombre es Sofía Vera Linares, formo parte del equipo de Amauta Inversiones, ' + presentacion);
+  html += p('A continuación, y en base a lo conversado con ' + comp + ', ' + comparto + ' la documentación solicitada para la apertura de cuenta comitente jurídica de ' + emp + ' en ALyC Portfolio Personal Inversiones (PPI):');
+  html += listaAzul(doc);
+  html += p('Además, de los firmantes ' + necesito);
+  html += listaAzulIndent(firm);
+  html += p('De los accionistas / beneficiarios finales con el 10% o más de participación ' + necesito);
+  html += listaAzulIndent(acc);
+  html += fraseFinal(modo);
+  html += p(quedo(modo));
+  return html;
+}
+
+function genSegApertura(n, modo) {
+  var html = p(saludoHTML(n, modo));
+  if (modo === 'tu')       html += p('Te quería consultar si tenés novedades de la documentación solicitada para avanzar con la apertura de cuenta, o si hay algo en que te pueda ayudar.');
+  else if (modo === 'usted') html += p('Le quería consultar si tiene novedades de la documentación solicitada para avanzar con la apertura de cuenta, o si hay algo en que le pueda ayudar.');
+  else                     html += p('Les quería consultar si tendrían novedades de la documentación solicitada para avanzar con la apertura de cuenta, o si hay algo en que los pueda ayudar.');
+  html += p(quedo(modo));
+  return html;
+}
+
+function genPpiLegajo(n, emp, fecha, anio, conDesignacion, modo) {
+  emp = emp||'[nombre de la empresa]'; fecha = fecha||'[fecha de cierre]'; anio = anio||'[año]';
+  var doc = ['EECC cerrados al '+fecha+', certificados por contador y legalizados por el Consejo.','Copia del acta de aprobación EECC '+anio+' pasada a libro con firmas + hoja de rúbrica.'];
+  if (conDesignacion !== false) doc.push('Copia del acta de designación y aceptación de cargos vigentes con firmas + hoja de rúbrica.');
+  var html = p(saludoHTML(n, modo));
+  html += p('A fin de actualizar el legajo de '+emp+', desde PPI solicitan la siguiente documentación:');
+  html += listaAzul(doc);
+  html += p(quedo(modo));
+  return html;
+}
+
+function genPpiSegLegajo(n, emp, modo) {
+  emp = emp||'[nombre de la empresa]';
+  var html = p(saludoHTML(n, modo));
+  if (modo === 'tu')       html += p('Te quería consultar si pudiste revisar la documentación que solicitan desde PPI para actualizar el legajo de '+emp+', ya que nos la volvieron a pedir.') + p('Te recordamos que, de no enviarse lo solicitado, corremos el riesgo de que bloqueen la cuenta.');
+  else if (modo === 'usted') html += p('Le quería consultar si pudo revisar la documentación que solicitan desde PPI para actualizar el legajo de '+emp+', ya que nos la volvieron a pedir.') + p('Le recordamos que, de no enviarse lo solicitado, corremos el riesgo de que bloqueen la cuenta.');
+  else                     html += p('Les quería consultar si pudieron revisar la documentación que solicitan desde PPI para actualizar el legajo de '+emp+', ya que nos la volvieron a pedir.') + p('Les recordamos que, de no enviarse lo solicitado, corremos el riesgo de que bloqueen la cuenta.');
+  html += p('Desde ya, muchas gracias.<br>Saludos!');
+  return html;
+}
+
+function genBalanzApertura(n, comp, emp, modo) {
+  comp = comp||'[nombre del compañero/a]'; emp = emp||'[nombre de la empresa]';
+  var doc = [
+    'Primero se debe acceder al link <a href="https://www.balanz.com/abrir-cuenta-juridica.aspx" style="color:#1A4A8A;">https://www.balanz.com/abrir-cuenta-juridica.aspx</a> e ingresar los datos jurídicos y de los firmantes. En donde dice asesor financiero poner <a href="mailto:informes@amautainversiones.com" style="color:#1A4A8A;">informes@amautainversiones.com</a>',
+    'Esta información es volcada automáticamente en el convenio de apertura. Aclaración: La documentación va firmada de manera digital vía Docusign.',
+    'Por otra parte, deben enviarnos toda la restante documentación necesaria para la apertura (adjunto en PDF) y nosotros la remitimos a la ALyC.',
+    'Adjuntamos un modelo Word de composición societaria (que debe ser completado).',
+    'Adjuntamos también un tutorial de ayuda.'
+  ];
+  var detallo = (modo === 'usted') ? 'le detallo' : (modo === 'tu' ? 'te detallo' : 'les detallo');
+  var saludo = (modo === 'usted') ? '¡Un gusto saludarlo!' : (n ? '¡Un gusto saludarte!' : '¡Un gusto saludarlos!');
+  var html = p(saludoHTML(n, modo) + ' Mi nombre es Sofía Vera Linares, formo parte del área de soporte de Amauta Inversiones. ' + saludo);
+  html += p('En base a lo conversado con '+comp+', '+detallo+' la información necesaria para proceder con la apertura de la cuenta comitente de '+emp+' en Balanz:');
+  html += listaNegro(doc);
+  html += lineaAmarilla(modo);
+  html += p(quedo(modo));
+  return html;
+}
+
+function genBalanzSeg(n, modo) {
+  var html = p(saludoHTML(n, modo));
+  if (modo === 'tu')       html += p('Te quería consultar si pudiste iniciar la apertura de cuenta, o si hay algo en que te pueda ayudar.');
+  else if (modo === 'usted') html += p('Le quería consultar si pudo iniciar la apertura de cuenta, o si hay algo en que le pueda ayudar.');
+  else                     html += p('Les quería consultar si pudieron iniciar la apertura de cuenta, o si es que hay algo en que los pueda ayudar.');
+  html += p(quedo(modo));
+  return html;
+}
+
+function genOneApertura(n, comp, emp, modo) {
+  comp = comp||'[nombre del compañero/a]'; emp = emp||'[nombre de la empresa]';
+  var doc = [
+    'ESTATUTO SOCIAL ORIGINAL Y MODIFICACIONES (actualizado, en caso de corresponder) debidamente inscripto en IGJ y el Registro Público, certificado por Escribano.',
+    'ACTA DE ASAMBLEA Y DE DIRECTORIO de aprobación de balance, designación y aceptación de cargos vigentes.',
+    'ÚLTIMO BALANCE ANUAL, auditado por contador público y legalizado por el CPCE.',
+    'COPIA DEL REGISTRO DE ACCIONISTAS o CHART SOCIETARIO —hasta los Beneficiarios Finales— actualizado.',
+    'RÚBRICA DE LOS LIBROS de Asamblea, Directorio y Registro de Accionistas.',
+    'Copia nítida de frente y dorso del DNI de los firmantes, accionistas y autorizados.',
+    'PODER DE LOS FIRMANTES, debidamente certificado por escribano y legalizado (solo en caso de corresponder).',
+    'Constancia CBU de las cuentas a vincular.',
+    'Certificado Mipyme.',
+    'Indicar un mail con el cual tendrán acceso a la cuenta.'
+  ];
+  var firm = ['Estado civil (en caso de estar casado/a: foto del DNI del cónyuge):','Si es o no PEP (Persona Expuesta Políticamente):','Actividad principal:','Profesión:','Mail personal:','Teléfono personal:','Domicilio laboral:'];
+  var acc = ['DNI frente y dorso:','Estado civil:','Si es o no PEP (Persona Expuesta Políticamente):','Profesión:'];
+  var comparto = (modo === 'usted') ? 'le comparto' : (modo === 'tu' ? 'te comparto' : 'les comparto');
+  var necesito = (modo === 'tu') ? 'necesito:' : 'necesitamos:';
+  var saludo = (modo === 'usted') ? '¡Un gusto saludarlo!' : (n ? '¡Un gusto saludarte!' : '¡Un gusto saludarlos!');
+  var html = p(saludoHTML(n, modo) + ' Mi nombre es Sofía Vera Linares, formo parte del equipo de Amauta Inversiones. ' + saludo);
+  html += p('En base a lo conversado con '+comp+', '+comparto+' la documentación solicitada para la apertura de cuenta comitente jurídica de '+emp+' en ALyC ONE618:');
+  html += listaAzul(doc);
+  html += p('Además, de los firmantes ' + necesito);
+  html += listaAzulIndent(firm);
+  html += p('De los accionistas / beneficiarios finales que posean participación ' + necesito);
+  html += listaAzulIndent(acc);
+  html += fraseFinal(modo);
+  html += p(quedo(modo));
+  return html;
+}
+
+// Mapa de asuntos por tipo
+var ASUNTOS = {
+  'ppi-apertura':    function() { var emp = v('ppi-ap-empresa'); return 'APERTURA CUENTA COMITENTE JURÍDICA PPI' + (emp ? ' - ' + emp.toUpperCase() : ''); },
+  'ppi-seg-apertura':function() { return 'APERTURA CUENTA COMITENTE JURÍDICA PPI'; },
+  'ppi-legajo':      function() { var emp = v('ppi-leg-empresa'); return 'ACTUALIZACIÓN DE LEGAJO PPI' + (emp ? ' - ' + emp.toUpperCase() : ''); },
+  'ppi-seg-legajo':  function() { var emp = v('ppi-sleg-empresa'); return 'ACTUALIZACIÓN DE LEGAJO PPI' + (emp ? ' - ' + emp.toUpperCase() : ''); },
+  'balanz-apertura': function() { var emp = v('bal-ap-empresa'); return 'APERTURA CUENTA COMITENTE JURÍDICA BALANZ' + (emp ? ' - ' + emp.toUpperCase() : ''); },
+  'balanz-seg':      function() { return 'APERTURA CUENTA COMITENTE JURÍDICA BALANZ'; },
+  'one-apertura':    function() { var emp = v('one-ap-empresa'); return 'APERTURA CUENTA COMITENTE JURÍDICA ONE618' + (emp ? ' - ' + emp.toUpperCase() : ''); },
+  'one-seg':         function() { return 'APERTURA CUENTA COMITENTE JURÍDICA ONE618'; }
+};
+
+// Mapa de emails por tipo
+var EMAIL_IDS = {
+  'ppi-apertura': 'ppi-ap-email', 'ppi-seg-apertura': 'ppi-sap-email',
+  'ppi-legajo': 'ppi-leg-email', 'ppi-seg-legajo': 'ppi-sleg-email',
+  'balanz-apertura': 'bal-ap-email', 'balanz-seg': 'bal-sap-email',
+  'one-apertura': 'one-ap-email', 'one-seg': 'one-sap-email'
+};
+
+function generateMail(type) {
+  var html = '';
+  // Mapa directo tipo → prefijo del selector
+  var modoMap = {
+    'ppi-apertura':'ppi-ap','ppi-seg-apertura':'ppi-sap',
+    'ppi-legajo':'ppi-leg','ppi-seg-legajo':'ppi-sleg',
+    'balanz-apertura':'bal-ap','balanz-seg':'bal-sap',
+    'one-apertura':'one-ap','one-seg':'one-sap'
+  };
+  var prefix = modoMap[type] || 'ppi-ap';
+  var modoEl = document.getElementById(prefix+'-modo');
+  var modo = modoEl ? modoEl.value : 'plural';
+
+  if      (type==='ppi-apertura')    html = genPpiApertura(v('ppi-ap-nombre'),v('ppi-ap-companero'),v('ppi-ap-empresa'),v('ppi-ap-tipo'),modo);
+  else if (type==='ppi-seg-apertura')html = genSegApertura(v('ppi-sap-nombre'),modo);
+  else if (type==='ppi-legajo')      html = genPpiLegajo(v('ppi-leg-nombre'),v('ppi-leg-empresa'),v('ppi-leg-fecha'),v('ppi-leg-anio'),document.getElementById('ppi-leg-designacion').checked,modo);
+  else if (type==='ppi-seg-legajo')  html = genPpiSegLegajo(v('ppi-sleg-nombre'),v('ppi-sleg-empresa'),modo);
+  else if (type==='balanz-apertura') html = genBalanzApertura(v('bal-ap-nombre'),v('bal-ap-companero'),v('bal-ap-empresa'),modo);
+  else if (type==='balanz-seg')      html = genBalanzSeg(v('bal-sap-nombre'),modo);
+  else if (type==='one-apertura')    html = genOneApertura(v('one-ap-nombre'),v('one-ap-companero'),v('one-ap-empresa'),modo);
+  else if (type==='one-seg')         html = genSegApertura(v('one-sap-nombre'),modo);
+
+  mailTextos[type] = document.getElementById('output-'+type).innerHTML = html;
+
+  // Mostrar asunto sugerido
+  var asuntoEl = document.getElementById('asunto-'+type);
+  if (asuntoEl && ASUNTOS[type]) asuntoEl.textContent = ASUNTOS[type]();
+
+  var result = document.getElementById('result-'+type);
+  result.classList.add('visible');
+  result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  resetBtn('copybtn-'+type);
+}
+
+function openGmail(type) {
+  var el = document.getElementById('output-'+type);
+  if (!el || !el.textContent.trim()) { alert('Primero generá el mail.'); return; }
+
+  var htmlContent = el.innerHTML;
+  var plainText = el.innerText;
+  var didCopy = false;
+
+  // Construir URL con to= y su= si están disponibles
+  var emailId = EMAIL_IDS[type];
+  var toEmail = emailId ? v(emailId) : '';
+  var asunto = (ASUNTOS[type] ? ASUNTOS[type]() : '');
+  var url = 'https://mail.google.com/mail/?view=cm&fs=1&cc=informes%40amautainversiones.com';
+  if (toEmail) url += '&to=' + encodeURIComponent(toEmail);
+  if (asunto)  url += '&su=' + encodeURIComponent(asunto);
+
+  function doOpen() {
+    window.open(url, '_blank');
+    if (!didCopy) alert('No se pudo copiar automáticamente. Copiá el mail manualmente antes de pegar en Gmail.');
+  }
+
+  if (navigator.clipboard && window.ClipboardItem) {
+    var blobHtml = new Blob([htmlContent], {type:'text/html'});
+    var blobPlain = new Blob([plainText], {type:'text/plain'});
+    navigator.clipboard.write([new ClipboardItem({'text/html':blobHtml,'text/plain':blobPlain})])
+      .then(function(){ didCopy = true; doOpen(); })
+      .catch(function(){
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        var sel = window.getSelection();
+        sel.removeAllRanges(); sel.addRange(range);
+        try { document.execCommand('copy'); didCopy = true; } catch(e) {}
+        sel.removeAllRanges();
+        doOpen();
+      });
+  } else {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(range);
+    try { document.execCommand('copy'); didCopy = true; } catch(e) {}
+    sel.removeAllRanges();
+    doOpen();
+  }
+}
+
+function resetBtn(btnId) {
+  var btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar';
+  btn.classList.remove('copied');
+}
+
+function copyMail(outputId, btnId) {
+  var el = document.getElementById(outputId);
+  var btn = document.getElementById(btnId);
+  var htmlContent = el.innerHTML;
+  var plainText = el.innerText;
+  if (navigator.clipboard && window.ClipboardItem) {
+    var blob = new Blob([htmlContent], {type:'text/html'});
+    var plain = new Blob([plainText], {type:'text/plain'});
+    navigator.clipboard.write([new ClipboardItem({'text/html':blob,'text/plain':plain})]).then(function(){showCopied(btn);}).catch(function(){fallbackCopy(el,btn);});
+  } else { fallbackCopy(el,btn); }
+}
+
+function fallbackCopy(el, btn) {
+  var range = document.createRange();
+  range.selectNodeContents(el);
+  var sel = window.getSelection();
+  sel.removeAllRanges(); sel.addRange(range);
+  try { document.execCommand('copy'); sel.removeAllRanges(); showCopied(btn); }
+  catch(e) { sel.removeAllRanges(); alert('No se pudo copiar. Seleccioná el texto con Ctrl+A y copiá con Ctrl+C.'); }
+}
+
+function showCopied(btn) {
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg> ¡Copiado!';
+  btn.classList.add('copied');
+  setTimeout(function(){ resetBtn(btn.id); }, 2000);
+}
+</script>
+</body>
+</html>

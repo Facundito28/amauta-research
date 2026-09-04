@@ -25,6 +25,11 @@ const TOOLS = [
   { href: "/crm", title: "CRM", sub: "Gestión comercial y clientes", icon: "🤝", short: "CRM" },
 ];
 
+const SUPPORT = [
+  { href: "/soporte/aum", title: "AUM Neto", sub: "Calculador de AUM neto (Excel)", icon: "💰", short: "AUM Neto" },
+  { href: "/soporte/aperturas", title: "Aperturas", sub: "Generador de mails de aperturas", icon: "✉️", short: "Aperturas" },
+];
+
 const AmautaMark = ({ size = 36 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
     <polygon points="20,2.5 37.5,20 20,37.5 2.5,20" fill="#F3CF11" />
@@ -291,6 +296,19 @@ export default function AppFrame({ children }: { children: React.ReactNode }) {
               }`}
             >
               {t.live ? <span className="cedears-live-dot" /> : <span className="news-nav-ico">{t.icon}</span>}
+              <span className="ticker">{t.short}</span>
+              <span className="inst-name">{t.sub}</span>
+            </Link>
+          ))}
+
+          <div className="nav-group-label">Soporte</div>
+          {SUPPORT.map((t) => (
+            <Link
+              key={t.href}
+              href={t.href}
+              className={`cedears-nav-entry tool-nav-entry${pathname === t.href ? " active" : ""}`}
+            >
+              <span className="news-nav-ico">{t.icon}</span>
               <span className="ticker">{t.short}</span>
               <span className="inst-name">{t.sub}</span>
             </Link>
